@@ -100,6 +100,8 @@ bash launcher_sockeye.sh
 
 ## License
 
+Tony Liang
+
 This project is licensed under the [MIT License](LICENSE)
 
 ## Reference
