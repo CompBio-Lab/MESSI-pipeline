@@ -1,0 +1,35 @@
+/* 
+  Process to read in real data (Mu portion) and standardize it for
+  downstream uses. Things done here including:
+   - TODO: Add what should be done in here
+   - Transform response vector to categorical str (yes or no), case sensitive
+*/
+
+process PREPARE_MU_DATA {
+  def onSockeye = workflow.projectDir.toString().contains('/scratch')
+	/* process metadata and configs */
+	tag "${dataset_name}"
+  label 'process_low'
+	// TODO: move this containter to somewhere else?
+  container "${ onSockeye ? 
+		'save_simulate.sif' : 
+		'tonyliang19/save_simulate:latest' }"  
+	publishDir (
+		path: "${params.outdir}/${task.process.tokenize(':').join('/').toLowerCase()}/${dataset_name}",
+		saveAS: { file },
+		mode: 'copy',
+		overwrite: true
+	)
+
+  /* Important blocks */
+  input:
+  tuple val(dataset_name), path(mu_path)
+  output:
+  tuple val(dataset_name), path("${dataset_name}.h5mu"),  emit: mu_data // Path to processed h5mu file
+  tuple val(dataset_name), path("*.log"),                 emit: log
+  """
+  transform_mudata_format.py --mu_path=${mu_path} \
+    --dataset_name=${dataset_name} > \
+    ${dataset_name}.log
+  """
+}

@@ -1,0 +1,38 @@
+/* 
+  Process to read in real data (MAE portion) and standardize it for
+  downstream uses. Things done here including:
+   - TODO: Add what should be done in here
+   - Transform response vector to factor chr
+   - Make MAE in bioc format, this would overwrite the original content
+   - etc.
+*/
+
+process PREPARE_MAE_DATA {
+  def onSockeye = workflow.projectDir.toString().contains('/scratch')
+	/* process metadata and configs */
+	tag "${dataset_name}"
+	// TODO: move this containter to somewhere else?
+  label 'process_low'
+  container "${ onSockeye ? 
+		'save_simulate.sif' : 
+		'tonyliang19/save_simulate:latest' }"  
+	publishDir (
+		path: "${params.outdir}/${task.process.tokenize(':').join('/').toLowerCase()}/${dataset_name}",
+		saveAS: { file },
+		mode: 'copy',
+		overwrite: true
+	)
+
+  /* Important blocks */
+  input:
+  tuple val(dataset_name), path(mae_path)
+  output:
+  tuple val(dataset_name), path("${dataset_name}_mae_data"),  emit: mae_data // Directory containing MultiAssayExperiment
+  tuple val(dataset_name), path("*.log"),                     emit:log
+  script:
+  """
+  transform_mae_format.R --mae_path=${mae_path} \
+    --dataset_name=${dataset_name} > \
+    ${dataset_name}.log
+  """
+}

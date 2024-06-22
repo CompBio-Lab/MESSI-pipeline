@@ -1,0 +1,396 @@
+---
+title: "GSE71669"
+author: "Amrit Singh"
+date: "2023-07-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(GEOquery)
+library(ENmix)
+library(HDF5Array)
+library(MultiAssayExperiment)
+library(annotate)
+library(hugene10sttranscriptcluster.db)
+library(tidyverse)
+library(mixOmics)
+library(immunedeconv)
+```
+
+## bladder cancer dataset
+ - gene expression + methylation
+ - [GSE71669](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE71669)
+
+```{r}
+gds <- getGEO("GSE71669")
+```
+
+# Gene expression
+- [HuGene-1_0-st] Affymetrix Human Gene 1.0 ST Array [transcript (gene) version]
+
+## import mrna exprs
+
+```{r}
+mrna_exprs <- exprs(gds$`GSE71669-GPL6244_series_matrix.txt.gz`)
+```
+
+## QC on mrna datasets
+
+```{r}
+pcs <- pca(t(mrna_exprs))
+plotIndiv(pcs, title = "mrna")
+```
+> no clear outliers
+
+## import sample metadata
+
+```{r}
+mrna_pdata <- pData(gds$`GSE71669-GPL6244_series_matrix.txt.gz`)
+```
+
+## Create response variable (IMPORTANT!)
+
+```{r}
+stage <- mrna_pdata$`tstage:ch1`
+stage[grep("Ta", stage)] <- "non-invasive bladder cancer"
+stage[!(stage %in% "non-invasive bladder cancer")] <- "invasive bladder cancer"
+
+## add response to pdata
+mrna_pdata$response <- factor(stage, levels = c("non-invasive bladder cancer", "invasive bladder cancer"))
+
+## do any samples repeat
+any(table(mrna_pdata$title) > 1) # nope
+```
+
+
+## check if sample ordering matches between mrna_exprs and mrna_pdata
+
+```{r}
+all(rownames(mrna_pdata) == colnames(mrna_exprs))
+
+## rename sample to patient id
+rownames(mrna_pdata) <- colnames(mrna_exprs) <- mrna_pdata$title
+```
+
+
+## import mrna annotation
+
+```{r}
+mrna_ann <- data.frame(probeids = rownames(mrna_exprs),
+                       gensym = getSYMBOL(rownames(mrna_exprs), "hugene10sttranscriptcluster"))
+mrna_ann <- na.omit(mrna_ann)
+```
+
+## only keep probes with non-NA Gene Symbols
+
+```{r}
+mrna_exprs <- mrna_exprs[mrna_ann$probeids, ]
+hist(mrna_exprs)
+```
+
+> removed probe with genesym=NA, data is already log2 transformed
+
+## Methylation
+- 	Illumina HumanMethylation27 BeadChip (HumanMethylation27_270596_v.1.2)
+
+### import cpg data
+
+```{r}
+cpg_exprs <- exprs(gds$`GSE71669-GPL8490_series_matrix.txt.gz`)
+```
+
+### QC on cpg data
+
+```{r}
+par(mfrow = c(1, 2))
+hist(cpg_exprs)
+plot(rowMeans(cpg_exprs))
+```
+
+#### remove negative values
+
+```{r}
+## remove cpgs with negative values
+cpg_exprs[cpg_exprs < 0] <- NA
+cpg_exprs <- na.omit(cpg_exprs)
+```
+
+> data seems to be beta values [0,1]
+
+
+#### outlier detection
+
+```{r}
+hist(cpg_exprs)
+
+pcs <- pca(t(cpg_exprs))
+plotIndiv(pcs, title="cpgs")
+```
+
+## import sample metadata
+
+```{r}
+cpg_pdata <- pData(gds$`GSE71669-GPL8490_series_matrix.txt.gz`)
+```
+
+## check if sample ordering matches between mrna_exprs and mrna_pdata
+
+```{r}
+all(rownames(cpg_pdata) == colnames(cpg_exprs))
+
+## rename sample to patient id
+rownames(cpg_pdata) <- colnames(cpg_exprs) <- cpg_pdata$title
+```
+
+## import cpg annotation
+
+```{r}
+cpg_ann <- gds$`GSE71669-GPL8490_series_matrix.txt.gz`@featureData@data
+cpg_ann <- cpg_ann[rownames(cpg_exprs), ]
+```
+
+## Estimate cell-type frequencies
+
+### mRNA
+
+```{r}
+mrna_exprs_avg0 <- mrna_exprs %>% 
+  as.data.frame() %>% 
+  mutate(probeids = rownames(.)) %>% 
+  inner_join(mrna_ann, "probeids") %>% 
+  dplyr::select(-probeids) %>% 
+  group_by(gensym) %>% 
+  summarise(across(everything(), mean))
+mrna_exprs_avg <- as.matrix(mrna_exprs_avg0[, -1])
+rownames(mrna_exprs_avg) <- mrna_exprs_avg0$gensym
+
+xCell.data <- immunedeconv::xCell.data
+cc_mrna <- immunedeconv::deconvolute(mrna_exprs_avg, "xcell")
+cc_mrna$cell_type <- gsub(" ", ".", cc_mrna$cell_type)
+
+pcs <- pca(t(cc_mrna[,-1]))
+plotIndiv(pcs)
+```
+
+> outlier detected ("GSM1838846")
+
+#### plot immune cells after removing outlier
+
+```{r}
+cc_mrna %>% 
+  gather(sample, fraction, -cell_type) %>%
+  # plot as stacked bar chart
+  ggplot(aes(x = sample, y = fraction, fill = cell_type)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  scale_x_discrete(limits = rev(levels(cc_mrna)))
+
+```
+
+> outlier detected ("GSM1838846")
+
+### CpGs 
+
+```{r}
+cc_cpg=estimateCellProp(userdata=cpg_exprs,
+                          refdata="FlowSorted.Blood.450k",
+                          nonnegative = TRUE)
+
+pcs <- pca(cc_cpg[,-1])
+plotIndiv(pcs)
+```
+
+> combine cell-type dataset and compare
+
+## merge metadata
+
+```{r}
+colnames(mrna_pdata) <- paste("mrna", colnames(mrna_pdata), sep="_")
+colnames(mrna_pdata)[colnames(mrna_pdata) == "mrna_title"] <- "title"
+colnames(mrna_pdata)[colnames(mrna_pdata) == "mrna_response"] <- "response"
+colnames(cpg_pdata) <- paste("cpg", colnames(cpg_pdata), sep="_")
+colnames(cpg_pdata)[colnames(cpg_pdata) == "cpg_title"] <- "title"
+
+## union
+metadata_all <- mrna_pdata %>% 
+  full_join(cpg_pdata, "title") %>% 
+  as.data.frame()
+rownames(metadata_all) <- metadata_all$title
+
+## intersection
+metadata_complete <- mrna_pdata %>% 
+  inner_join(cpg_pdata, "title") %>% 
+  as.data.frame()
+rownames(metadata_complete) <- metadata_complete$title
+
+write.csv(metadata_all, "metadata_all.csv")
+write.csv(metadata_complete, "metadata_complete.csv")
+```
+
+## merge cells datasets
+
+```{r}
+## reformat cc_mrna data
+cc_mrna2 <- as.matrix(cc_mrna[,-1])
+rownames(cc_mrna2) <- cc_mrna$cell_type
+cc_mrna2 <- t(cc_mrna2) %>% 
+  as.data.frame() %>% 
+  mutate(Sample_Name = rownames(.))
+
+intersect(colnames(cc_mrna2), colnames(cc_cpg)) ## no cell-type names match
+cc_exprs_all = data.frame(full_join(cc_mrna2, cc_cpg, "Sample_Name"))
+rownames(cc_exprs_all) <- cc_exprs_all$Sample_Name
+
+
+## cc
+cc_exprs_all <- cc_exprs_all[metadata_all$title, setdiff(colnames(cc_exprs_all), "Sample_Name")]
+cc_exprs_complete <- cc_exprs_all[metadata_complete$title, setdiff(colnames(cc_exprs_all), "Sample_Name")]
+write.csv(cc_exprs_all, "cc_exprs_all.csv")
+write.csv(cc_exprs_complete, "cc_exprs_complete.csv")
+```
+
+## do the same cell-types cluster together?
+
+```{r}
+result <- pls(cc_exprs_complete[, intersect(colnames(cc_exprs_complete), colnames(cc_mrna2))], cc_exprs_complete[, intersect(colnames(cc_exprs_complete), colnames(cc_cpg))])
+
+plotIndiv(result)
+plotVar(result, col=c("red", "black"), cutoff = 0.3, cex=rep(4, 2))
+```
+
+> common cell-type from both datasets cluster together
+
+
+## Multiassay experiment (R)
+
+## all samples
+
+```{r}
+mrna_exprs2 <- as.data.frame(t(mrna_exprs)) %>% 
+  dplyr::mutate(sample = rownames(.))
+cpg_exprs2 <- as.data.frame(t(cpg_exprs)) %>% 
+  dplyr::mutate(sample = rownames(.))
+mrna_cpg_exprs <- full_join(mrna_exprs2, cpg_exprs2, "sample")
+rownames(mrna_cpg_exprs) <- mrna_cpg_exprs$sample
+
+# mrna
+mrna_exprs_all <- mrna_cpg_exprs[metadata_all$title, rownames(mrna_exprs)]
+write.csv(mrna_exprs_all, "mrna_exprs_all.csv")
+
+# cpg
+cpg_exprs_all <- mrna_cpg_exprs[metadata_all$title, rownames(cpg_exprs)]
+write.csv(cpg_exprs_all, "cpg_exprs_all.csv")
+
+## check order of all sample
+all(rownames(metadata_all) == rownames(mrna_exprs_all))
+all(rownames(metadata_all) == rownames(cpg_exprs_all))
+all(rownames(metadata_all) == rownames(cc_exprs_all))
+
+## create MAE
+mae_all <- MultiAssayExperiment(experiments = list(mrna = t(mrna_exprs_all), 
+                                                   cpg = t(cpg_exprs_all), 
+                                                   cc = t(cc_exprs_all)), 
+                                colData = metadata_all)
+mae_all@ExperimentList@metadata = list(mrna=mrna_ann, cpg=cpg_ann)
+mae_all@metadata <- list("GSE" = "GSE71669")
+saveHDF5MultiAssayExperiment(mae_all, dir = "gse71669_all", verbose = TRUE, replace = TRUE)
+```
+
+## complete cases
+
+```{r}
+# mrna
+mrna_exprs_complete <- mrna_cpg_exprs[metadata_complete$title, rownames(mrna_exprs)]
+write.csv(mrna_exprs_complete, "mrna_exprs_complete.csv")
+
+# cpg
+cpg_exprs_complete <- mrna_cpg_exprs[metadata_complete$title, rownames(cpg_exprs)]
+write.csv(cpg_exprs_complete, "cpg_exprs_complete.csv")
+
+## check order of all sample
+all(rownames(metadata_complete) == rownames(mrna_exprs_complete))
+all(rownames(metadata_complete) == rownames(cpg_exprs_complete))
+all(rownames(metadata_complete) == rownames(cc_exprs_complete))
+
+## create MAE
+mae_complete <- MultiAssayExperiment(experiments = list(mrna = t(mrna_exprs_complete), 
+                                                   cpg = t(cpg_exprs_complete), 
+                                                   cc = t(cc_exprs_complete)), 
+                                colData = metadata_complete)
+mae_complete@ExperimentList@metadata = list(mrna=mrna_ann, cpg=cpg_ann)
+mae_complete@metadata <- list("GSE" = "GSE71669")
+saveHDF5MultiAssayExperiment(mae_complete, dir = "gse71669_complete", verbose = TRUE, replace = TRUE)
+
+```
+
+## save annotation files
+
+```{r}
+write.csv(mrna_ann, "mrna_ann.csv")
+write.csv(cpg_ann, "cpg_ann.csv")
+```
+
+# Write to MuData
+
+```{python}
+import anndata
+from anndata import AnnData
+import mudata as md
+from mudata import MuData
+import pandas as pd
+
+mrna_ann_pd = pd.read_csv("mrna_ann.csv", index_col=0)
+mrna_ann_pd.index = mrna_ann_pd.index.map(str)
+cpg_ann_pd = pd.read_csv("cpg_ann.csv", index_col=0)
+cpg_ann_pd.index = cpg_ann_pd.index.map(str)
+
+# all
+metadata_all = pd.read_csv("metadata_all.csv", index_col=0)
+metadata_all.index = metadata_all.index.map(str)
+## mrna
+mrna_exprs_pd_all = pd.read_csv("mrna_exprs_all.csv", index_col=0)
+mrna_exprs_pd_all.index = mrna_exprs_pd_all.index.map(str)
+mrna_anndata_all = AnnData(X = mrna_exprs_pd_all, obs = metadata_all, var = mrna_ann_pd, uns={"GSE": "GSE71669"})
+## cpg
+cpg_exprs_pd_all = pd.read_csv("cpg_exprs_all.csv", index_col=0)
+cpg_exprs_pd_all.index = cpg_exprs_pd_all.index.map(str)
+cpg_anndata_all = AnnData(X = cpg_exprs_pd_all, obs = metadata_all, var = cpg_ann_pd, uns={"GSE": "GSE71669"})
+## cc
+cc_exprs_pd_all = pd.read_csv("cc_exprs_all.csv", index_col=0)
+cc_exprs_pd_all.index = cc_exprs_pd_all.index.map(str)
+cc_anndata_all = AnnData(X = cc_exprs_pd_all, obs = metadata_all, uns={"GSE": "GSE71669"})
+## merge data
+mdata_all = MuData({"mrna": mrna_anndata_all, "cpg": cpg_anndata_all, "cc": cc_anndata_all})
+mdata_all.write("../Python/gse71669_all.h5mu")
+
+# complete
+# all
+metadata_complete = pd.read_csv("metadata_complete.csv", index_col=0)
+metadata_complete.index = metadata_complete.index.map(str)
+## mrna
+mrna_exprs_pd_complete = pd.read_csv("mrna_exprs_complete.csv", index_col=0)
+mrna_exprs_pd_complete.index = mrna_exprs_pd_complete.index.map(str)
+mrna_anndata_complete = AnnData(X = mrna_exprs_pd_complete, obs = metadata_complete, var = mrna_ann_pd, uns={"GSE": "GSE71669"})
+## cpg
+cpg_exprs_pd_complete = pd.read_csv("cpg_exprs_complete.csv", index_col=0)
+cpg_exprs_pd_complete.index = cpg_exprs_pd_complete.index.map(str)
+cpg_anndata_complete = AnnData(X = cpg_exprs_pd_complete, obs = metadata_complete, var = cpg_ann_pd, uns={"GSE": "GSE71669"})
+## cc
+cc_exprs_pd_complete = pd.read_csv("cc_exprs_complete.csv", index_col=0)
+cc_exprs_pd_complete.index = cc_exprs_pd_complete.index.map(str)
+cc_anndata_complete = AnnData(X = cc_exprs_pd_complete, obs = metadata_complete, uns={"GSE": "GSE71669"})
+## merge data
+mdata_complete = MuData({"mrna": mrna_anndata_complete, "cpg": cpg_anndata_complete, "cc": cc_anndata_complete})
+mdata_complete.write("gse71669_complete.h5mu")
+
+
+```
+
+# remove all csv files
+
+```{bash}
+rm *.csv
+```
+

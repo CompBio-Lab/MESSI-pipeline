@@ -1,0 +1,7 @@
+dataset_name,tar_path
+GSE71669,/scratch/st-singha53-1/tliang19/multi-omics-pipeline/data/GSE71669.tar.gz
+rosmap,/scratch/st-singha53-1/tliang19/multi-omics-pipeline/data/rosmap.tar.gz
+tcga-blca,/scratch/st-singha53-1/tliang19/multi-omics-pipeline/data/tcga-blca.tar.gz
+tcga-brca,/scratch/st-singha53-1/tliang19/multi-omics-pipeline/data/tcga-brca.tar.gz
+tcga-kipan,/scratch/st-singha53-1/tliang19/multi-omics-pipeline/data/tcga-kipan.tar.gz
+tcga-thca,/scratch/st-singha53-1/tliang19/multi-omics-pipeline/data/tcga-thca.tar.gz
