@@ -1,0 +1,3 @@
+# Ignore the contents from stabl, so it doesnt waste space on github
+stabl_data/
+data.zip

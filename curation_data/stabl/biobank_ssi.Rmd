@@ -1,0 +1,181 @@
+---
+title: Curation of biobank ssi from Stabl
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: github_document
+---
+
+## Data basic information
+
+This curates the biobank ssi data from [Stabl](https://github.com/gregbellan/Stabl/tree/main)
+
+
+Surgical Site Infections (SSI)
+
+Training
+
+- Outcome: Control (`77`) Vs. SSI (`16`)
+- CyTOF: `93` samples — `1125` biomarkers
+- Proteomics: `91` samples — `721` biomarkers
+
+```{r setup, message=FALSE}
+# Load libraries
+library(here)
+library(tidyverse)
+library(MultiAssayExperiment)
+library(mixOmics)
+# Custom functions to use
+plot_pca <- function(df, title=NULL, ...) {
+  if (is.null(title)) stop("Need to supply title")
+  pcs <- pca(df) 
+  plotIndiv(pcs, title=title, ...)
+}
+
+plot_hist <- function(df, ...) {
+  x <- df %>% 
+    select_if(is.numeric) %>%
+    as.matrix()
+  
+  # Plot it
+  hist(x=x, ...)
+}
+
+plot_response_dist <- function(df, y_col, width=0.5, palette="Dark2", ...) {
+  df |> 
+  mutate({{y_col}} := factor({{y_col}})) %>%
+  ggplot(aes(x = {{y_col}}, fill={{y_col}}), ...) +
+  geom_bar(width = width) +
+  labs(...) +
+  scale_fill_brewer(palette = palette) +
+  theme_bw()
+}
+
+
+
+# Parameters to use
+data_dir <- here("curation_data/stabl/stabl_data/biobank_ssi")
+cytof_path <- here(data_dir, "CyTOF.csv")
+proteomics_path <- here(data_dir, "Proteomics.csv")
+outcome_path <- here(data_dir, "outcome.csv")
+```
+
+
+## Sanity Checks
+
+Then, we could first load the data and inspect each of them
+
+```{r read-data, message=F}
+# Loading the data
+cytof <- read_csv(cytof_path)
+proteomics <- read_csv(proteomics_path)
+outcome <- read_csv(outcome_path)
+```
+
+Cytof looks like this
+
+```{r}
+# First 6 rows are like
+head(cytof)
+```
+Then, we could perform pca on the data to see if any outlier, and plot histogram to check overall distribution of all the numeric variables
+
+```{r}
+# Check outlier
+plot_pca(cytof, title="CyTOF")
+plot_hist(cytof, main="Histogram of CyTOF distribution")
+```
+
+
+Outcome looks like this
+
+```{r}
+# First 6 rows
+head(outcome)
+head(outcome) |> summary()
+```
+
+Then, count distribution of classes in the outcome
+
+```{r}
+# Plot the distribution of classes in the outcome
+plot_response_dist(outcome, model1b, x="Model1b", fill = "Model1b",
+                   title="Distribution of classes in the outcome")
+```
+
+
+summary of proteomics
+
+```{r}
+# Show first 6 rows
+head(proteomics)
+```
+
+Proteomics has one identifier column `r colnames(proteomics)[1]`, where rest are numeric. So, we could see overall distribution of these biomarker variables.
+
+```{r}
+# PCA on it to see if any noticeable outlier
+plot_pca(proteomics, title = "Proteomics", )
+# Histogram to see overal distributions of values of each biomarker
+plot_hist(proteomics, main="Histogram of Proteomics biomarkers")
+```
+
+Notice, there is a common identifier among the 3 objects, so we could use it to wrap out data into MultiAssayExperiment format.
+
+```{r}
+intersect(colnames(cytof), intersect(colnames(outcome), colnames(proteomics)))
+```
+
+## MultiAssayExperiment conversion
+
+Before conversion, we need to check dimension of all the data and see if they could match
+
+```{r}
+all_data <- list(cytof=cytof, proteomics=proteomics, outcome=outcome)
+# Check dimension
+lapply(all_data, dim)
+# Now noticed we only had 91 in proteomics, so we need to reduce the size of 
+# our data from 91 to 93
+common_samples <- Reduce(intersect, sapply(all_data, function(x) x$sampleID)) 
+# Then we could subset those data only
+common_data <- lapply(all_data, function(x) x %>% filter(sampleID %in% common_samples))
+# Then extract the X and y component
+# For MAE we required dimensions to Ni x M, where M is number of obs
+X <- common_data[1:2]  |> lapply(function(omic){
+  # For each omic, we need to put the sampleID to be rowname
+  # and transpose it for the MAE req
+  mat <- omic |>
+        tibble::column_to_rownames(var="sampleID") |>
+        t()
+  return(mat)
+  
+})
+Y <- common_data[[3]]
+```
+
+```{r mae-conversion}
+# Wrap it to MAE constructor, notice its named "mae_"
+mae <- MultiAssayExperiment(experiments = X, metadata = Y)
+# And add the response to a slot of the mae
+mae$response <- Y$model1b
+# Where it looks like this
+mae
+```
+
+Saving this to disk
+
+> TODO: fix here
+
+```{r}
+# TODO: save the MultiAssayExperiment to disk
+
+```
+
+
+
+
+
+
+
+
+
+
+
