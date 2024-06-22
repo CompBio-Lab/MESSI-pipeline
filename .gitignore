@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 # Files from nextflow
 capsule/
 small.nf
@@ -128,7 +126,6 @@ rsconnect/
 
 
 # Python-rlated
->>>>>>> 669b786 (use new repo instead to get rid of old packs)
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -187,11 +184,7 @@ coverage.xml
 *.pot
 
 # Django stuff:
-<<<<<<< HEAD
-*.log
-=======
 #*.log
->>>>>>> 669b786 (use new repo instead to get rid of old packs)
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
@@ -204,12 +197,8 @@ instance/
 .scrapy
 
 # Sphinx documentation
-<<<<<<< HEAD
-docs/_build/
-=======
 #docs/*_build/
 *_build/
->>>>>>> 669b786 (use new repo instead to get rid of old packs)
 
 # PyBuilder
 target/

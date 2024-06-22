@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-# multi-omics-pipeline
-Nextflow pipeline for multi-omics methods
-=======
 # Multi Omics Pipeline
 
 **Table of contents**:
@@ -127,4 +123,3 @@ Wang, T., Shao, W., Huang, Z. et al. MOGONET integrates multi-omics data using g
 
 
 
->>>>>>> 669b786 (use new repo instead to get rid of old packs)
