@@ -1,11 +1,13 @@
-# Multi Omics Pipeline
+# Multiomics Experiments with SyStematic Interrogation (MESSI)
 
 **Table of contents**:
 
 1. [Overview](#overview)
 2. [Project Structure](#project-structure)
 3. [Setup the project](#setup)
-4. [References](#reference)
+4. [Running the pipeline](#running-the-pipeline)
+5. [Result Inspection](#result-inspection)
+5. [References](#reference)
 
 ## Overview
 
@@ -40,57 +42,87 @@ The main software dependencies are the following:
 - make `>= 3.82`
 - git `>= 2.31.8`
 
-Once you have these requirements setup, then you could clone the project with `git` and
+Once you have these requirements setup, then you could clone the project with `git` in your desired place and
 change the directory to the clone repo:
 
 ```bash
-# If you dont have git loaded, then run these first
-module load gcc/9.4.0 git/2.31.1
+# This would unload the current modules that you are using (could be easily reverted)
+module purge
+# Then load relevant modules
+module load gcc/9.4.0 git/2.31.8
 # Choose a place you like to clone the repo, ideally the scratch space
-# Then clone repos accordingly
-git clone git@github.com:CompBio-Lab/multi_omics.git
-cd multi_omics
-# Update the pipeline subrepo
-git submodule sync --recursive
-git -c protocol.version=2 submodule update --init --force --depth=1 --recursive
-# Then after successful clone, you could then cd to that repo
-cd multi-omics-pipeline
-git switch main
+git clone git@github.com:CompBio-Lab/MESSI-pipeline.git
+# Then go into the directory of the repo
 ```
 
 Then, create a `.env` file in the current directory and use the following template:
 
-This is exactly what's inside `sample.env`, simply replace the file to `.env`
+This is exactly what's inside `sample.env`, simply replace the file to `.env` using this command:
+
 ```bash
+mv sample.env .env
+```
+
+Then edit the contents of the new `.env` file instead:
+
+```bash
+# You could also use vi or vim
+nano .env
+```
+
+```bash
+# ----------------------------------------------
+# INSIDE THE .env file
+# ----------------------------------------------
 # The renamed file should not be tracked by git
 # Important variables to replace the value
 ALLOCATION_CODE=REPLACE # This should be the account to deduct computing resources usage
 USER=REPLACE # This should be your cwl 
+MAIL_USER=REPLACE # This should be the email to receive notification of the pipeline
 ```
+
+For example the `.env` could be like the following:
+
+```bash
+# NOTICE there's no space between the `=` in VAR=VALUE 
+ALLOCATION_CODE=st-myuser-123
+USER=my_cwl_username
+MAIL_USER=dummy_name@gmail.com
+```
+
 > [!Warning]
 > Make sure you do not track this .env file onto git
 
-Then, you could start to setup the required apptainer images for the pipeline by the following command:
+Then, you could start to setup the required apptainer images (This could take a while to run, better to hang it in a `tmux`/`screen` session) for the pipeline by the following command:
 
 ```bash
 # Run this command under the this same pipeline root dir
 make setup
 ```
+> [!TIP]
+> If you see an error of `no space left`, this is due to the apptainer cache that it creates in your home dir, which you could clean it by the following command:
+>
+> `rm -r ~/.apptainer/cache`
 
-If you see an error of `no space left`, this is due to the apptainer cache that it creates in your home dir, which you could clean it by this:
+Then, you could resume the setup command after have encountered and solved the `no space error`:
 
 ```bash
-# This should remove the caches
-rm -r ~/.apptainer/cache
-# Once finished, you could rerun the previous step
-# as it only pulls images that does not exists on your
-# filesystem only, without having to repull everything
 make setup
 ```
 
-Once you see `Finished setting up environment`, then you should have all images stored under `/arc/project/ALLOCATION_CODE/USER/MESSI-apptainer-images`
+Once you see the log:
+```bash
+Finished setting up environment
+```
+This means all required images have successfully downlaoded and stored under `/arc/project/<ALLOCATION_CODE>/<USER>/MESSI-apptainer-images`
 
-Lastly, you could start the pipeline by submmitting wrapper script that sends the batch script to SLURM:
+### Data Source
+
+Given ARC Sockeye have no internet connection on compute nodes, which means user cannot pull data during the pipeline computation. Hence, the data have pre-stored in a common directory.
+
+### Running the pipeline
+
+Lastly, you could start the pipeline by submitting the wrapper script that sends the batch script to SLURM:
 
 ```bash
 # If you see any complains from this script, then is likely you did not setup properly
@@ -98,9 +130,39 @@ Lastly, you could start the pipeline by submmitting wrapper script that sends th
 bash launcher_sockeye.sh
 ```
 
-## License
+## Result inspection
 
-Tony Liang
+For viewing the log of current runtime status of the pipeline, you could check the latest `MESSI-main-<job-id>.log` file in the root dir of the repo:
+
+```bash
+# <job id> is the one generated from SLURM
+# Usually numeric, for example 1234567 is a job id here:
+cat MESSI-main-1234567.log
+```
+
+In order to see the results of the pipeline, you could inspect the final results in this directory as it progresses using this command:
+
+```bash
+# Assuming you are in the root dir of the repo
+ls MESSI_results
+```
+
+The directory structure of the `MESSI_results/` should be like the following once the pipeline have completed:
+
+```bash
+MESSI_results
+```
+
+
+There's option to change this default directory by changing the `OUTDIR` param in the `launch_MESSI_pipeline.sh` script:
+
+```bash
+# It is possible to use a for loop in the bash script to pass multiple OUTDIR and run as a monte carlo cross validation
+OUTDIR=another_directory_that_you_like
+```
+
+
+## License
 
 This project is licensed under the [MIT License](LICENSE)
 
