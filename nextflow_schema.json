@@ -1,0 +1,370 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/tonyliang19/multi-omics-pipeline/master/nextflow_schema.json",
+  "title": "tonyliang19/multi-omics-pipeline pipeline parameters",
+  "description": "Benchmark Multiomics integration methods over single cell and spatial bulk data",
+  "type": "object",
+  "defs": {
+    "input_output_options": {
+      "title": "Input/output options",
+      "type": "object",
+      "fa_icon": "fas fa-terminal",
+      "description": "Define where the pipeline should find input data and save output data.",
+      "required": ["outdir", "samplesheet"],
+      "properties": {
+        "outdir": {
+          "type": "string",
+          "format": "directory-path",
+          "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
+          "fa_icon": "fas fa-folder-open"
+        },
+        "samplesheet": {
+          "type": "string",
+          "description": "The input samplesheet",
+          "fa_icon": "fas fa-file-csv"
+        }
+      }
+    },
+    "skip_method_options": {
+      "title": "Skip method options",
+      "type": "object",
+      "description": "Skip or run certain method",
+      "default": "",
+      "properties": {
+        "skip_cplr": {
+          "type": "boolean",
+          "description": "Skip cooperative learning (R method)"
+        },
+        "skip_diablo": {
+          "type": "boolean",
+          "description": "Skip DIABLO  (R method)"
+        },
+        "skip_rgcca": {
+          "type": "boolean",
+          "description": "Skip RGCCA  (R method)"
+        },
+        "skip_mogonet": {
+          "type": "boolean",
+          "description": "Skip MOGONET  (Python method)"
+        },
+        "skip_mofa": {
+          "type": "boolean",
+          "description": "Skip MOFA (R method)"
+        },
+        "skip_goat": {
+          "type": "boolean",
+          "default": true,
+          "description": "Skip GOAT (Python method)"
+        },
+        "skip_sgmr": {
+          "type": "boolean",
+          "default": true,
+          "description": "Skip SGMR  (R method)"
+        }
+      }
+    },
+    "diablo_options": {
+      "title": "DIABLO options",
+      "type": "object",
+      "description": "Options and parameters for DIABLO",
+      "default": "",
+      "properties": {
+        "diablo_design_connection": {
+          "type": "string",
+          "default": "['full', 'null']",
+          "hidden": true
+        }
+      }
+    },
+    "simulation_options": {
+      "title": "Simulation options",
+      "type": "object",
+      "description": "Options to control data generation from simulation workflow",
+      "default": "",
+      "properties": {
+        "num_obs": {
+          "type": "string",
+          "default": "[30, 50, 100]",
+          "description": "Number of observation",
+          "help_text": "Number of observations, could supply it as [n1,n2,n3, ...]",
+          "hidden": true
+        },
+        "num_predictors": {
+          "type": "string",
+          "default": "[500, 1000, 2500]",
+          "description": "Base number of predictors , whereas it gets added sp standard deviation for each block",
+          "hidden": true
+        },
+        "block_num": {
+          "type": "string",
+          "default": "[3, 4, 5]",
+          "description": "Number of block/view/omics to generate",
+          "hidden": true
+        },
+        "latent_predictors": {
+          "type": "string",
+          "default": "[30]",
+          "description": "Number of latent predictors",
+          "hidden": true
+        },
+        "sigma": {
+          "type": "string",
+          "default": "[39]",
+          "description": "Noise in data",
+          "hidden": true
+        },
+        "sy": {
+          "type": "string",
+          "default": "[1]",
+          "description": "Standard deviation of y",
+          "hidden": true
+        },
+        "sp": {
+          "type": "string",
+          "default": "[3]",
+          "description": "Standard deviation of each block's predictors, combined use with num_predictors",
+          "hidden": true
+        },
+        "u_std": {
+          "type": "string",
+          "default": "[1]",
+          "description": "Standard deviation of vector u",
+          "hidden": true
+        },
+        "fct_str": {
+          "type": "string",
+          "default": "[7]",
+          "description": "Strength of the latent predictor to y",
+          "hidden": true
+        },
+        "task": {
+          "type": "string",
+          "default": "['categorical']",
+          "description": "Task of dataset to generate. One of categorical, numerical",
+          "hidden": true
+        },
+        "tr": {
+          "type": "string",
+          "default": "['sigmoid']",
+          "description": "Transformation to apply on response",
+          "hidden": true
+        },
+        "output_formats": {
+          "type": "string",
+          "default": "['MAE', 'MuData']",
+          "description": "Format of output data to write. One of MultiAssayExperiment (MAE) or MuData",
+          "hidden": true
+        },
+        "y_name": {
+          "type": "string",
+          "default": "response",
+          "description": "Column name of the response",
+          "hidden": true
+        },
+        "dataset_base_name": {
+          "type": "string",
+          "default": "multiomics-sim",
+          "description": "Base name of the simulated dataset",
+          "hidden": true
+        }
+      }
+    },
+    "run_workflow_options": {
+      "title": "Run workflow options",
+      "type": "object",
+      "description": "Options to trigger/not run a workflow",
+      "default": "",
+      "properties": {
+        "runSimulation": {
+          "type": "boolean",
+          "description": "Run simulation workflow or not"
+        },
+        "runInnerCV": {
+          "type": "boolean",
+          "description": "Perform inner cross validation in available methods to find hyper parameters"
+        },
+        "runAllMethods": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run methods in all language"
+        },
+        "runPython": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run methods implemented in python language only"
+        },
+        "runR": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run methods implemented R language only"
+        },
+        "runDownstreamAnalysis": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run downstream analysis in available methods including plotting"
+        },
+        "runPerformanceEvaluation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run the cross validation in methods"
+        },
+        "runSimple": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "feature_selection_options": {
+      "title": "Feature Selection options",
+      "type": "object",
+      "description": "Options to control feature selection",
+      "default": "",
+      "properties": {
+        "selectFeature": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run feature selection or not",
+          "hidden": true
+        },
+        "n_percent": {
+          "type": "integer",
+          "default": 10,
+          "description": "Number of percent to select top features from each view. Ranges from 1-100",
+          "hidden": true
+        }
+      }
+    },
+    "max_job_request_options": {
+      "title": "Max job request options",
+      "type": "object",
+      "fa_icon": "fab fa-acquisitions-incorporated",
+      "description": "Set the top limit for requested resources for any single job.",
+      "help_text": "If you are running on a smaller system, a pipeline step requesting more resources than are available may cause the Nextflow to stop the run with an error. These options allow you to cap the maximum resources requested by any single job so that the pipeline will run on your system.\n\nNote that you can not _increase_ the resources requested by any job using these options. For that you will need your own configuration file. See [the nf-core website](https://nf-co.re/usage/configuration) for details.",
+      "properties": {
+        "max_cpus": {
+          "type": "integer",
+          "description": "Maximum number of CPUs that can be requested for any single job.",
+          "default": 8,
+          "fa_icon": "fas fa-microchip",
+          "hidden": true,
+          "help_text": "Use to set an upper-limit for the CPU requirement for each process. Should be an integer e.g. `--max_cpus 1`"
+        },
+        "max_memory": {
+          "type": "string",
+          "description": "Maximum amount of memory that can be requested for any single job.",
+          "default": "128.GB",
+          "fa_icon": "fas fa-memory",
+          "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
+          "hidden": true,
+          "help_text": "Use to set an upper-limit for the memory requirement for each process. Should be a string in the format integer-unit e.g. `--max_memory '8.GB'`"
+        },
+        "max_time": {
+          "type": "string",
+          "description": "Maximum amount of time that can be requested for any single job.",
+          "default": "240.h",
+          "fa_icon": "far fa-clock",
+          "pattern": "^(\\d+\\.?\\s*(s|m|h|d|day)\\s*)+$",
+          "hidden": true,
+          "help_text": "Use to set an upper-limit for the time requirement for each process. Should be a string in the format integer-unit e.g. `--max_time '2.h'`"
+        }
+      }
+    },
+    "splitting_options": {
+      "title": "Splitting options",
+      "type": "object",
+      "description": "Options related to splitting data",
+      "default": "",
+      "properties": {
+        "k_fold_number": {
+          "type": "integer",
+          "default": 5,
+          "description": "Numbers of fold in K-fold cross validation",
+          "hidden": true
+        },
+        "split_dir": {
+          "type": "string",
+          "default": "splits",
+          "hidden": true
+        }
+      }
+    },
+    "generic_options": {
+      "title": "Generic options",
+      "type": "object",
+      "fa_icon": "fas fa-file-import",
+      "description": "Less common options for the pipeline, typically set in a config file.",
+      "help_text": "These options are common to all nf-core pipelines and allow you to customise some of the core preferences for how the pipeline runs.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
+      "properties": {
+        "help": {
+          "type": "boolean",
+          "description": "Display help text.",
+          "fa_icon": "fas fa-question-circle",
+          "hidden": true
+        },
+        "data_dir": {
+          "type": "string",
+          "default": "data/",
+          "description": "Deprecated",
+          "hidden": true
+        },
+        "verbose": {
+          "type": "boolean",
+          "description": "Make more verbose ouput or not",
+          "hidden": true
+        },
+        "debug": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run debug mode to keep work directory",
+          "hidden": true
+        },
+        "apptainer_cache_dir": {
+          "type": "string",
+          "description": "Directory to find the cache of apptainer images",
+          "hidden": true
+        },
+        "train": {
+          "type": "boolean",
+          "default": true,
+          "description": "Deprecated",
+          "hidden": true
+        },
+        "threshold": {
+          "type": "number",
+          "default": 0.5,
+          "description": "Threshold to classify response in binary setting",
+          "hidden": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/defs/input_output_options"
+    },
+    {
+      "$ref": "#/defs/skip_method_options"
+    },
+    {
+      "$ref": "#/defs/diablo_options"
+    },
+    {
+      "$ref": "#/defs/simulation_options"
+    },
+    {
+      "$ref": "#/defs/run_workflow_options"
+    },
+    {
+      "$ref": "#/defs/feature_selection_options"
+    },
+    {
+      "$ref": "#/defs/max_job_request_options"
+    },
+    {
+      "$ref": "#/defs/splitting_options"
+    },
+    {
+      "$ref": "#/defs/generic_options"
+    }
+  ]
+}
