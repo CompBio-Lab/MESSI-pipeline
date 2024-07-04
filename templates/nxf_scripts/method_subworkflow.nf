@@ -19,7 +19,7 @@ include { METHOD_TRAIN }        from "${method_dir}/train"
 include { METHOD_PREDICT }      from "${method_dir}/predict"
 // This one could be optional and not implement for now
 // so make sure to leave it comment out
-// include { METHOD_SELECT_FEATURE }      from "${method_dir}}/select_feature" 
+// include { METHOD_SELECT_FEATURE }      from "${method_dir}/select_feature" 
 include { MERGE_RESULT_TABLE }  from "${modulesDir}/merge_result_table"
 
 // Workflow related params
