@@ -1,0 +1,182 @@
+---
+title: "Guide to add a R method"
+author: "Tony Liang"
+date: "2024-07-03"
+output: 
+  - github_document
+  - html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Intro
+
+This document ilustrate step by step of adding a multiomics integration method implemented in `R` into the MESSI-pipeline running on nextflow.
+
+In order to add such method, you need the following steps:
+
+1. Prepare a dockerfile that describes all relevant software dependencies required by a method, with using a templated provided [here](../containers/README.md) at `r_method_base_dev.Dockerfile`. It provides important dependencies `MultiAssayExperiment`, `here` , and `docopt`.
+
+   **Note**: If your method is too old, which requires older version of R, then you might need to create everything from scratch and not use the provided template.
+   
+2. Implement a preprocessing script, training script, and testing script. The inputs and output are specified down below sections
+
+3. Declare the inputs/outputs, container used in nextflow scripts
+
+4. Test it 
+
+
+## Toy Example
+
+We will use logistic regression (LR) as an example to act as a new method to add into MESSI. First, we need to create such dockerfile that includes packages that has LR in it, which is alredy in base R accessed by `stats::glm()`. Just for the sake of demonstration, I included a snippet of Dockefile.
+
+
+```{bash, eval=FALSE}
+# This is the dockerfile for logistic regression
+# 
+# This let us use the template docker image as base
+# to skip over installation/compilation of important deps
+# like docopt, here, and MultiAssayExperiment
+FROM tonyliang19/r_method_base_dev
+
+# Then install the stats pkg just for demo purpose
+# normally, it is automatically included in baseR
+# NOTE: The "" and '' quotation marks are needed
+RUN Rscript -e "install.packages('stats')"
+```
+
+### Implementing the Nextflow workflow for the method
+
+Create a new `main.nf` under `~/subworkflows/methods/<method_name>/`, where `<method>_name` is a directory named after the method inteded to use, and `~` is the root directory of this repository. In this example, we will named it `logistic_reg`
+
+In here, we created the file named `~/subworkflows/methods/logistic_reg/main.nf`. This subworkflow handles the high level logic of data flow through preprocess, train, predict stesp. We provided a template located at `~/templates/nxf_scripts/method_subworkflow.nf`:
+
+```{java, eval=TRUE}
+// Include all relevant modules of a method
+
+// This modulesDir is built in the config file, dont need to worry it
+def method_dir = "${modulesDir}/logistic_reg"
+// These modules are to be implemented later, uses capital case since convention
+include { LOGISTIC_REG_PREPROCESS }   from "${method_dir}/preprocess"
+include { LOGISTIC_REG_TRAIN }        from "${method_dir}/train"
+include { LOGISTIC_REG_PREDICT }      from "${method_dir}/predict"
+
+// NOTE: select feature could be optional, if your method not provided
+// include { METHOD_SELECT_FEATURE }      from "${method_dir}/select_feature" 
+include { MERGE_RESULT_TABLE }  from "${modulesDir}/merge_result_table"
+
+// These are other parameters, the def is required
+def method_name = "logistic_reg"
+def saveMode = "method"
+
+workflow LOGISTIC_REG {
+  take:
+
+  data_copy // ch of tuple dataset, path of mae/mu data, 
+          // directories of fold, containing all txts
+          // So total of three args [dataset, path, directories]
+          // The third arg are the indices for each fold,
+          // i.e. dir/fold1.txt, dir/fold2.txt, ...
+
+  main:
+      if (params.selectFeature == true) {
+        // TODO: This bit sounds very redundant
+        // Note this runs preprocess step inside
+        METHOD_SELECT_FEATURE ( data_copy )
+      } 
+      */
+
+      // ======================================================================
+      /* 
+      1. Go through a specific preprocess step to get data ready for training
+        TODO: Need to turn output of this to 'train_input'
+      */
+          
+      METHOD_PREPROCESS ( data_copy )
+      // Then join the original copy with actual folds after split
+      data_copy.join(  METHOD_PREPROCESS.out.fold_splits, by:0 )
+              .multiMap { it ->
+                  input_data: [ it[0], it[1] ]              // [dataset_name, mae/mu_data]
+                  // TODO: rename data_folds to mu_folds or mae_folds depending on language
+                  data_folds:  [ it[0], it[3].flatten() ]   // [fold1, fold2, ... , foldk] 
+                                                            // where each fold contains fold_i_tr and fold_i_te data
+                }.set{ interm }
+      // Transform output of preprocess to one channel input only
+      interm.input_data
+                    .combine(interm.mae_folds.transpose(), by: 0)
+                    .set {  train_input }
+      // ======================================================================
+      
+      /*
+        2.  Training for each fold created through previous preprocessed data
+            saved as `train_input`. With option of inner cross validation in  
+            each  fold data.
+      */
+
+      // TODO: implement inner fold cross-validation in each method's train
+      METHOD_TRAIN ( train_input )
+
+      // Do some transformation to make a multiMap that has two branches for predict
+      METHOD_TRAIN.out.model
+                  .join(METHOD_TRAIN.out.test_data, by: [0, 1])
+                  .multiMap { it ->
+                    model:      [ it[0], it[1], it[2] ] // [ dataset_name, fold_name, model ]
+                    test_data:  [ it[0], it[1], it[3] ] // [ dataset_name, fold_name, test_data]
+                  }.set { predict_input }
+
+      // ======================================================================
+      
+      /*
+        3. Predict for each fold of data throught their model and get 
+        fold specific outupts. With option of inner cross validation in each 
+        fold data.
+      */
+
+      METHOD_PREDICT (  
+        predict_input.model,
+        predict_input.test_data,
+        Channel.value(method_name)
+        )
+
+      // ======================================================================
+      
+      /* 
+        4. Collect results of predicted folds for each data and group dataset
+          name.
+      */
+
+      // Transform output of the predictions for merging now   
+      METHOD_PREDICT.out.result_table
+                    .groupTuple(by: 2)
+                    // Get the dataset name and path of these result table only
+                    .map {it -> 
+                      [ it[2], it[3] ] // Channel of method name and all folds (of all data)
+                    }
+                    .set { result_table }
+      // Lastly merge it, this would be quite fast
+      MERGE_RESULT_TABLE ( result_table, saveMode )
+
+      // =====================================================================
+    }
+    // And emit the result back to upstream (which is another merge of different method)
+    // sort of like a recursive manner?
+    emit:
+    csv_results = MERGE_RESULT_TABLE.out.csv_results
+}
+
+
+```
+### Implementing the preprocessing step
+
+Now, this comes a bit of hard part, since it relates with Nextflow logic and making concepts complicated. 
+
+First, we define the input to be a path to MultiAssayExperiment data directory, which it contains a file of `experiments.h5` and `mae.rds`. 
+
+> TODO: Add verbose explanation later
+
+
+
+> TODO: Need to explain better here? and introduce the nextflow concept earlier
+

@@ -1,17 +1,24 @@
 # Flow of methods and instructions
 
 
-Each method has cross-validation from Nextflow, such that the folds are created priorly, and each mtehod use same folds to ensure same
-comparisons carried. And, each fold is being handled parallely with very few times as batch mode (one complete chunk).
+Each method has cross-validation from Nextflow, such that the folds are created priorly, and each mtehod use same folds to ensure same comparisons carried. And, each fold is being handled parallely with very few times as batch mode (one complete chunk).
 
-So each method would be like this:
+To see detailed step by step instructions, you could see this [guide](adding_r-based_method/adding_r-based_method.md)
 
-1. Preprocess (takes all folds and split the data up), so you would have all folds as independent files now, and each of them could be treated
-separately in a process.
 
-2. Train (With option of inner cross-validation), this takes each individual chunk of data from previous preprocessed step and fit fold-specific model on train-portion of the data. Its test-portion would then be outputted to downstream step along with its fitted model
+Here, we breakdown the high level steps of each method flow:
 
-3. Test, this takes in a fold specific fitted model and test portion of data and it would predict based on the labels inside the test portion, lastly it would output a table of summary and metadata info. With strictly this format, order of columns matte
+1. Preprocess (takes all folds and split the data up), so you would have all folds as independent files (txt) now, then they're treated as single batch job to make the actual splitting and saved them into smaller MAE or MuData.
+
+  - For detailed explanation for R method see this [guide](preprocessing/R/preprocesing.md)
+
+
+2. Train (With option of inner cross-validation for available method), this takes each individual chunk of data from previous preprocessed step and fit fold-specific model on train-portion of the data. Its test-portion would then be outputted to downstream step along with its fitted model.
+
+3. Test, this takes in a fold specific fitted model  and test portion of data from previous step 2 and it would predict based on the labels inside the test portion, lastly it would output a table of summary and metadata info like true label, sample name, method name, etc.
+
+> [!NOTE]  
+> It should contain these columns in the table of summary: **sample_name**, **y**, **phat**, **method_name**, **dataset**
 
 For example, if method was on `diablo`, and on both ROSMAP and Breast TCGA dataset. Values here are just for demonstration purpose.
 
@@ -28,8 +35,8 @@ For example, if method was on `diablo`, and on both ROSMAP and Breast TCGA datas
 
 Some explantions:
 
-- sample_name: Patient identifier inside the dataset, as if like each row id of a dataframe
-- y: The class label, either 1 or 0 in binary classification
-- phat:        Predicted proability of y == 1, so P(Y=1)
-- method_name: Name of the method ran (DIABLO, MOGONET, ...)
-- dataset:     Name of the dataset of study (TCGA, ROSMAP, ...)
+- sample_name:  Patient identifier inside the dataset, as if like each row id of a dataframe
+- y:            The class label, either 1 or 0 in binary classification
+- phat:         Predicted proability of y == 1, so P(Y=1)
+- method_name:  Name of the method ran (DIABLO, MOGONET, ...)
+- dataset:      Name of the dataset of study (TCGA, ROSMAP, ...)

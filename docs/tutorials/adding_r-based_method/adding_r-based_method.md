@@ -1,37 +1,41 @@
----
-title: "Guide to add a R method"
-author: "Tony Liang"
-date: "2024-07-03"
-output: html_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+Guide to add a R method
+================
+Tony Liang
+2024-07-03
 
 ## Intro
 
-This document ilustrate step by step of adding a multiomics integration method implemented in `R` into the MESSI-pipeline running on nextflow.
+This document ilustrate step by step of adding a multiomics integration
+method implemented in `R` into the MESSI-pipeline running on nextflow.
 
 In order to add such method, you need the following steps:
 
-1. Prepare a dockerfile that describes all relevant software dependencies required by a method, with using a templated provided [here](../containers/README.md) at `r_method_base_dev.Dockerfile`. It provides important dependencies `MultiAssayExperiment`, `here` , and `docopt`.
+1.  Prepare a dockerfile that describes all relevant software
+    dependencies required by a method, with using a templated provided
+    [here](../containers/README.md) at `r_method_base_dev.Dockerfile`.
+    It provides important dependencies `MultiAssayExperiment`, `here` ,
+    and `docopt`.
 
-   **Note**: If your method is too old, which requires older version of R, then you might need to create everything from scratch and not use the provided template.
-   
-2. Implement a preprocessing script, training script, and testing script. The inputs and output are specified down below sections
+    **Note**: If your method is too old, which requires older version of
+    R, then you might need to create everything from scratch and not use
+    the provided template.
 
-3. Declare the inputs/outputs, container used in nextflow scripts
+2.  Implement a preprocessing script, training script, and testing
+    script. The inputs and output are specified down below sections
 
-4. Test it 
+3.  Declare the inputs/outputs, container used in nextflow scripts
 
+4.  Test it
 
 ## Toy Example
 
-We will use logistic regression (LR) as an example to act as a new method to add into MESSI. First, we need to create such dockerfile that includes packages that has LR in it, which is alredy in base R accessed by `stats::glm()`. Just for the sake of demonstration, I included a snippet of Dockefile.
+We will use logistic regression (LR) as an example to act as a new
+method to add into MESSI. First, we need to create such dockerfile that
+includes packages that has LR in it, which is alredy in base R accessed
+by `stats::glm()`. Just for the sake of demonstration, I included a
+snippet of Dockefile.
 
-
-```{bash, eval=FALSE}
+``` bash
 # This is the dockerfile for logistic regression
 # 
 # This let us use the template docker image as base
@@ -47,11 +51,18 @@ RUN Rscript -e "install.packages('stats')"
 
 ### Implementing the Nextflow workflow for the method
 
-Create a new `main.nf` under `~/subworkflows/methods/<method_name>/`, where `<method>_name` is a directory named after the method inteded to use, and `~` is the root directory of this repository. In this example, we will named it `logistic_reg`
+Create a new `main.nf` under `~/subworkflows/methods/<method_name>/`,
+where `<method>_name` is a directory named after the method inteded to
+use, and `~` is the root directory of this repository. In this example,
+we will named it `logistic_reg`
 
-In here, we created the file named `~/subworkflows/methods/logistic_reg/main.nf`. This subworkflow handles the high level logic of data flow through preprocess, train, predict stesp. We provided a template located at `~/templates/nxf_scripts/method_subworkflow.nf`:
+In here, we created the file named
+`~/subworkflows/methods/logistic_reg/main.nf`. This subworkflow handles
+the high level logic of data flow through preprocess, train, predict
+stesp. We provided a template located at
+`~/templates/nxf_scripts/method_subworkflow.nf`:
 
-```{java, eval=TRUE}
+``` java
 // Include all relevant modules of a method
 
 // This modulesDir is built in the config file, dont need to worry it
@@ -163,18 +174,17 @@ workflow LOGISTIC_REG {
     emit:
     csv_results = MERGE_RESULT_TABLE.out.csv_results
 }
-
-
 ```
+
 ### Implementing the preprocessing step
 
-Now, this comes a bit of hard part, since it relates with Nextflow logic and making concepts complicated. 
+Now, this comes a bit of hard part, since it relates with Nextflow logic
+and making concepts complicated.
 
-First, we define the input to be a path to MultiAssayExperiment data directory, which it contains a file of `experiments.h5` and `mae.rds`. 
+First, we define the input to be a path to MultiAssayExperiment data
+directory, which it contains a file of `experiments.h5` and `mae.rds`.
 
 > TODO: Add verbose explanation later
 
-
-
-> TODO: Need to explain better here? and introduce the nextflow concept earlier
-
+> TODO: Need to explain better here? and introduce the nextflow concept
+> earlier
