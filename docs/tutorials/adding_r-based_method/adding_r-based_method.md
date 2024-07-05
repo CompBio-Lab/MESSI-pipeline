@@ -62,7 +62,7 @@ the high level logic of data flow through preprocess, train, predict
 stesp. We provided a template located at
 `~/templates/nxf_scripts/method_subworkflow.nf`:
 
-``` java
+``` groovy
 // Include all relevant modules of a method
 
 // This modulesDir is built in the config file, dont need to worry it
@@ -73,7 +73,7 @@ include { LOGISTIC_REG_TRAIN }        from "${method_dir}/train"
 include { LOGISTIC_REG_PREDICT }      from "${method_dir}/predict"
 
 // NOTE: select feature could be optional, if your method not provided
-// include { METHOD_SELECT_FEATURE }      from "${method_dir}/select_feature" 
+// include { LOGISTIC_REG_SELECT_FEATURE }      from "${method_dir}/select_feature" 
 include { MERGE_RESULT_TABLE }  from "${modulesDir}/merge_result_table"
 
 // These are other parameters, the def is required
@@ -93,9 +93,8 @@ workflow LOGISTIC_REG {
       if (params.selectFeature == true) {
         // TODO: This bit sounds very redundant
         // Note this runs preprocess step inside
-        METHOD_SELECT_FEATURE ( data_copy )
+        LOGISTIC_REG_SELECT_FEATURE ( data_copy )
       } 
-      */
 
       // ======================================================================
       /* 
@@ -103,9 +102,9 @@ workflow LOGISTIC_REG {
         TODO: Need to turn output of this to 'train_input'
       */
           
-      METHOD_PREPROCESS ( data_copy )
+      LOGISTIC_REG_PREPROCESS ( data_copy )
       // Then join the original copy with actual folds after split
-      data_copy.join(  METHOD_PREPROCESS.out.fold_splits, by:0 )
+      data_copy.join(  LOGISTIC_REG_PREPROCESS.out.fold_splits, by:0 )
               .multiMap { it ->
                   input_data: [ it[0], it[1] ]              // [dataset_name, mae/mu_data]
                   // TODO: rename data_folds to mu_folds or mae_folds depending on language
@@ -124,12 +123,12 @@ workflow LOGISTIC_REG {
             each  fold data.
       */
 
-      // TODO: implement inner fold cross-validation in each method's train
-      METHOD_TRAIN ( train_input )
+      // TODO: implement inner fold cross-validation in each LOGISTIC_REG's train
+      LOGISTIC_REG_TRAIN ( train_input )
 
       // Do some transformation to make a multiMap that has two branches for predict
-      METHOD_TRAIN.out.model
-                  .join(METHOD_TRAIN.out.test_data, by: [0, 1])
+      LOGISTIC_REG_TRAIN.out.model
+                  .join(LOGISTIC_REG_TRAIN.out.test_data, by: [0, 1])
                   .multiMap { it ->
                     model:      [ it[0], it[1], it[2] ] // [ dataset_name, fold_name, model ]
                     test_data:  [ it[0], it[1], it[3] ] // [ dataset_name, fold_name, test_data]
@@ -143,7 +142,7 @@ workflow LOGISTIC_REG {
         fold data.
       */
 
-      METHOD_PREDICT (  
+      LOGISTIC_REG_PREDICT (  
         predict_input.model,
         predict_input.test_data,
         Channel.value(method_name)
@@ -157,7 +156,7 @@ workflow LOGISTIC_REG {
       */
 
       // Transform output of the predictions for merging now   
-      METHOD_PREDICT.out.result_table
+      LOGISTIC_REG_PREDICT.out.result_table
                     .groupTuple(by: 2)
                     // Get the dataset name and path of these result table only
                     .map {it -> 
@@ -174,15 +173,38 @@ workflow LOGISTIC_REG {
     emit:
     csv_results = MERGE_RESULT_TABLE.out.csv_results
 }
+
 ```
+
+Theres a lot going on here, but the most important steps or things to
+note are here:
+
+``` groovy
+include { LOGISTIC_REG_PREPROCESS }   from "${method_dir}/preprocess"
+include { LOGISTIC_REG_TRAIN }        from "${method_dir}/train"
+include { LOGISTIC_REG_PREDICT }      from "${method_dir}/predict"
+```
+
+These are groovy statements to tell nextflow to find `main.nf` files
+under specified directory like `${method_dir}/preprocess`, whereas we
+defined `method_dir` to be `logistic_reg` earlier.
+
+> \[! TIP\] For now on, every of the paths that ends with a directory
+> name and not file name indicating theres should be a main.nf within
+> that directory.
+
+So, this means we only have to implement these three steps: preprocess,
+train, and predict under right directory structure using the provided
+templates under `~/templates/nxf_scripts/`. Then, the workflow would
+work expectedly.
 
 ### Implementing the preprocessing step
 
 Now, this comes a bit of hard part, since it relates with Nextflow logic
 and making concepts complicated.
 
-First, we define the input to be a path to MultiAssayExperiment data
-directory, which it contains a file of `experiments.h5` and `mae.rds`.
+We first create the preprocess script under
+`~/logistic_reg/preprocess/main.nf`
 
 > TODO: Add verbose explanation later
 
