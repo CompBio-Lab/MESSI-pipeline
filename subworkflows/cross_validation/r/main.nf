@@ -1,11 +1,12 @@
-// This module to collect results
-include { MERGE_RESULT_TABLE }    from "${modulesDir}/merge_result_table"
 // Methods to include
 include { COOPERATIVE_LEARNING }  from "${subworkflowDir}/methods/cooperative_learning"
 include { DIABLO }                from "${subworkflowDir}/methods/diablo"
 include { MOFA }                  from "${subworkflowDir}/methods/mofa"
 include { RGCCA }                 from "${subworkflowDir}/methods/rgcca"
 include { SGMR }	                from "${subworkflowDir}/methods/sgmr"
+// This module to collect results
+include { MERGE_RESULT_TABLE }    from "${modulesDir}/merge_result_table"
+// Helper fun
 include { printBanner }           from "${modulesDir}/functions"
 
 params.full_mode = false

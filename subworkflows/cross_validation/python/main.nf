@@ -1,14 +1,18 @@
-// Include relevant python methods here
+// Methods to include
 include { MOGONET } 						from "${subworkflowDir}/methods/mogonet"
 include { GOAT } 								from "${subworkflowDir}/methods/goat"
+// This module to collect results
 include { MERGE_RESULT_TABLE }  from "${modulesDir}/merge_result_table"
+// Helper fun
 include { printBanner } 				from "${modulesDir}/functions"
+
+
 // Workflow specific params to use
 def language_name = "Python"
 def saveMode = "language"
 
 workflow CV_PYTHON {
-	// Steps to skip or trigger method
+	// Skip or trigger method to run
 	skip_mogonet	= params.skip_mogonet	// boolean: true/false
 	skip_goat 		= params.skip_goat		// boolean: true/false
   take:
