@@ -3,10 +3,10 @@
 // INCLUDE SUBWORKFLOWS (each methos is a subworkflow)
 // =================================================================================
 
-include { CV_PYTHON } 			from "$subworkflowDir/cross_validation/python"
-include { CV_R } 				from "$subworkflowDir/cross_validation/r"
+include { CV_PYTHON } 					from "${subworkflowDir}/cross_validation/python"
+include { CV_R } 								from "${subworkflowDir}/cross_validation/r"
 include { MERGE_RESULT_TABLE }	from "${modulesDir}/merge_result_table"
-include { printBanner } 		from "${modulesDir}/functions"
+include { printBanner } 				from "${modulesDir}/functions"
 
 
 // Check if should run any of one language or not run at all (for debug)
