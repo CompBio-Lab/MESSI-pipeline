@@ -76,6 +76,7 @@ workflow CV_R {
     // ========================================================================  
     // Collect all result and mix it to merge it more
     Channel.empty()
+            // Then these are outputs of methods
             .mix( cooperative_learning_results )
             .mix( diablo_results )
             .mix( mofa_results )

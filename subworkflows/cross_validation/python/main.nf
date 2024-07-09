@@ -46,6 +46,7 @@ workflow CV_PYTHON {
 		// ======================================================================== 
 		// Collect all result and mix it to merge it more
 		Channel.empty()
+						// Then these are outputs of methods
 						.mix( mogonet_results )
 						.mix( goat_results )
 						.map { it ->
