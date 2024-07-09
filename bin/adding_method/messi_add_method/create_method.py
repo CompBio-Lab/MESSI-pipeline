@@ -48,11 +48,27 @@ class MethodCreate:
       """
       Creates the method relevant files
       """
+      # Check if method exists
+      self.check_method_exists()
       # Create files from templates using jinja
-      #self.render_template()
+      self.render_template()
       # also modify the subworkflow language specific file
       self.modify_subworkflow_lang()
       return None
+  
+  def check_method_exists(self):
+      """
+      Check if the method already exists as a subworkflow
+      """
+
+      method = self.params_dict["method"]
+      subworkflow_file = f"subworkflows/methods/{method}/main.nf"
+      exists = os.path.isfile(subworkflow_file)
+      if not exists:
+          return
+      else:
+        raise FileExistsError(f"Found the subworkflow for '{method}', please change a name for the method")
+      # TODO: also checks if files already in the modules/<method>/...
 
   def modify_subworkflow_lang(self):
     """Modifies an existing file by adding a new line for a method after a specific line.
@@ -82,14 +98,14 @@ class MethodCreate:
     # 2. Initialize and declare boolean to not skip method
     skip_method_line   = f"skip_{method.lower()} = false // boolean: true/false"
     # 3. Initialize results and store to var
-    result_lines = textwrap.dedent(f"""\
+    result_lines = f"""
     // {method.upper()}
     {method.lower()}_results = Channel.empty()
     if (!skip_{method.lower()}) {{
         {method.upper()} ( {data_copy} )
         {method.lower()}_results = {method.upper()}.out.csv_results
     }}
-    """)
+    """
     # 4. Declare output to mix
     output_line = f".mix( {method.lower()}_results )"
 
@@ -100,7 +116,7 @@ class MethodCreate:
         "// Methods to include", # For 1.
         "// Skip or trigger method to run" , # For 2.
         "// Instantiation of method subworkflows", # For 3.
-        "Channel.empty()" # For 4.
+        "// Then these are outputs of methods" # For 4.
     ]
 
     # Read the existing file
@@ -108,19 +124,18 @@ class MethodCreate:
         lines = file.readlines()
     # Insert new lines into the script
     for insertion_point, new_line in zip(insertion_points, new_lines):
-        # Find the index of the insertion point
         index = next((i for i, line in enumerate(lines) if insertion_point in line), -1)
-        # Check if the new line already exists after the insertion point
-        if any(new_line.strip() == line.strip() for line in lines[index:]):
+        # Skip if already added to the file
+        existing_lines = lines[index:]
+        if any(new_line.strip() in line.strip() for line in existing_lines):
             continue
-        if index == -1:
-            print(f"Insertion point '{insertion_point}' not found in '{file_to_modify}'. Appending at the end.")
-            lines.append(new_line)
-        else:
+        try:
             # Determine the indentation of the previous line
             previous_indent = len(lines[index]) - len(lines[index].lstrip())
             # Add the new line with the same indentation
             lines.insert(index + 1, ' ' * previous_indent + new_line.lstrip() + "\n")
+        except Exception as e:
+            print(f"Could not append to '{file_to_modify}' due to {e}")
 
     # Write back the modified content
     with open(file_to_modify, 'w') as file:

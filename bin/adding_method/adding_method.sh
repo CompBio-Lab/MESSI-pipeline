@@ -18,9 +18,9 @@ PROJECT_ROOT_DIR=$(dirname $(dirname $SCRIPT_DIR))
 # Python binary
 PYTHON_BIN=python
 # ARGS for the script
-NAME="logit_abc"
+NAME="logit_demo"
 LANGUAGE="R"
-DOCKER_USER="abcdef"
+DOCKER_USER="tonyliang19"
 
 # Then execute the command
 echo "Adding ${NAME} into MESSI"
