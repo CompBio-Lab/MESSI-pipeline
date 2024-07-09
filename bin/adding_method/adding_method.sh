@@ -10,17 +10,22 @@ SRC_NAME="adding_method.py"
 SCRIPT_PATH=$(realpath $0)
 # Get the directory of the script
 SCRIPT_DIR=$(dirname $SCRIPT_PATH)
+# Parse the python script that holds actual logic of creating files from template
+PYTHON_SRC="${SCRIPT_DIR}/adding_method.py"
+
 # Navigate up to the PROJECT ROOT
 PROJECT_ROOT_DIR=$(dirname $(dirname $SCRIPT_DIR))
 # Python binary
 PYTHON_BIN=python
 # ARGS for the script
-NAME="logit_git"
+NAME="logit_abc"
 LANGUAGE="R"
 DOCKER_USER="abcdef"
 
 # Then execute the command
-${PYTHON_BIN} "${SRC_NAME}" --method=${NAME}  \
+echo "Adding ${NAME} into MESSI"
+
+${PYTHON_BIN} "${PYTHON_SRC}" --method=${NAME}  \
   --language=${LANGUAGE} \
   --outdir=${PROJECT_ROOT_DIR} \
   --docker_user=${DOCKER_USER}

@@ -2,6 +2,7 @@ import logging
 import yaml
 import os
 import sys
+import textwrap
 import jinja2
 import shutil
 from pathlib import Path
@@ -40,7 +41,7 @@ class MethodCreate:
                         "outdir": outdir,
                         "docker_user": self.docker_user
                         }
-  
+
 
 
   def init_method(self):
@@ -48,8 +49,84 @@ class MethodCreate:
       Creates the method relevant files
       """
       # Create files from templates using jinja
-      self.render_template()
+      #self.render_template()
+      # also modify the subworkflow language specific file
+      self.modify_subworkflow_lang()
       return None
+
+  def modify_subworkflow_lang(self):
+    """Modifies an existing file by adding a new line for a method after a specific line.
+
+    Args:
+        file_path (str): Path to the file to be modified
+        method (str): Name of the method to add
+    """
+    # Convenient vars
+    method = self.params_dict["method"]
+    try:
+      if self.params_dict["language"].lower() == 'r':
+          file_to_modify = self.outdir / "subworkflows/cross_validation/r/main.nf"
+          data_copy = "mae_copy"
+      elif self.params_dict["language"].lower() == 'python':
+          file_to_modify = self.outdir / "subworkflows/cross_validation/python/main.nf"
+          data_copy = "mu_copy"
+      else:
+          raise NotImplementedError
+      print(f"writing to '{file_to_modify}'")
+    except Exception as e:
+        log.error("Something went wrong: e")
+
+    # Need to include few lines:
+    # 1. include statement
+    include_line = f'include {{ {method.upper()} }} from "${{subworkflowDir}}/methods/{method.lower()}"'
+    # 2. Initialize and declare boolean to not skip method
+    skip_method_line   = f"skip_{method.lower()} = false // boolean: true/false"
+    # 3. Initialize results and store to var
+    result_lines = textwrap.dedent(f"""\
+    // {method.upper()}
+    {method.lower()}_results = Channel.empty()
+    if (!skip_{method.lower()}) {{
+        {method.upper()} ( {data_copy} )
+        {method.lower()}_results = {method.upper()}.out.csv_results
+    }}
+    """)
+    # 4. Declare output to mix
+    output_line = f".mix( {method.lower()}_results )"
+
+    new_lines = [include_line, skip_method_line, result_lines, output_line]
+
+    # And the insertion point of lines
+    insertion_points = [
+        "// Methods to include", # For 1.
+        "// Skip or trigger method to run" , # For 2.
+        "// Instantiation of method subworkflows", # For 3.
+        "Channel.empty()" # For 4.
+    ]
+
+    # Read the existing file
+    with open(file_to_modify, 'r') as file:
+        lines = file.readlines()
+    # Insert new lines into the script
+    for insertion_point, new_line in zip(insertion_points, new_lines):
+        # Find the index of the insertion point
+        index = next((i for i, line in enumerate(lines) if insertion_point in line), -1)
+        # Check if the new line already exists after the insertion point
+        if any(new_line.strip() == line.strip() for line in lines[index:]):
+            continue
+        if index == -1:
+            print(f"Insertion point '{insertion_point}' not found in '{file_to_modify}'. Appending at the end.")
+            lines.append(new_line)
+        else:
+            # Determine the indentation of the previous line
+            previous_indent = len(lines[index]) - len(lines[index].lstrip())
+            # Add the new line with the same indentation
+            lines.insert(index + 1, ' ' * previous_indent + new_line.lstrip() + "\n")
+
+    # Write back the modified content
+    with open(file_to_modify, 'w') as file:
+        file.writelines(lines)
+    return None
+
   def render_template(self):
     """Runs jinja to create all relevant files for the method"""
     log.info(f"Creating relevant files for: '{self.method}'")
@@ -102,7 +179,7 @@ class MethodCreate:
       f"modules/method/predict/{resource_prefix}/method_predict.{ext}":                 f"modules/{method}/predict/{resource_prefix}/{method}_predict.{ext}",
       f"modules/method/select_feature/{resource_prefix}/method_select_feature.{ext}":   f"modules/{method}/select_feature/{resource_prefix}/{method}_select_feature.{ext}"
     }
-    
+
     # Then loop through all template files
     for template_fn_path_obj in template_files:
         template_fn_path = str(template_fn_path_obj)
@@ -113,14 +190,14 @@ class MethodCreate:
         is_right_ext = template_fn_path.__contains__(ext)
         if is_resource_script and not is_right_ext:
           continue
-        
+
         if any([s in template_fn_path for s in ignore_strs]):
           log.debug(f"Ignoring '{template_fn_path}' in jinja2 template creation")
           continue
         # Set up vars and directories
         template_fn = os.path.relpath(template_fn_path, template_dir)
         output_path = self.outdir / template_fn
-  
+
         if template_fn in rename_files:
             output_path = self.outdir / rename_files[template_fn]
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
