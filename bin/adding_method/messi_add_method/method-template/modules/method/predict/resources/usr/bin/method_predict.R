@@ -10,11 +10,11 @@ Usage:
   {{ method|lower }}_predict.R [options]
 
 Options:
-  --model_path=MODEL_PATH   Path to read the model [default: null]
-  --test_path=TEST_PATH     Path containing test data [default: null]
-  --label=LABEL             Label of id and fold of data [default: data-fold_i]
-  --method=METHOD           Method name input from upstream [default: empty]
-  --output_ext=EXT          Extension of output table to save [default: csv]
+  --model_path=MODEL_PATH     Path to read the model [default: null]
+  --test_path=TEST_PATH       Path containing test data [default: null]
+  --label=LABEL               Label of id and fold of data [default: data-fold_i]
+  --method_name=METHOD_NAME   Method name input from upstream [default: {{ method|lower }}]
+  --output_ext=EXT            Extension of output table to save [default: csv]
 "
 # Load libraries
 library(tibble)

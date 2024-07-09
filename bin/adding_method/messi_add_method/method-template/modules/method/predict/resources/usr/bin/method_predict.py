@@ -13,7 +13,7 @@ Options:
   --test_path=TEST_PATH       Path that contains the input for testing [default: empty]
   --metadata_path=META        Path to the additional metadata like sample name, response [default: empty]
   --label=LABEL               Label of dataset and fold iteration [default: empty]
-  --method_name=METHOD_NAME   Method name ran [default: {{ method|lower }} ]
+  --method_name=METHOD_NAME   Method name ran [default: {{ method|lower }}]
 """
 
 # TODO: The docopt help message above can be better described or reformatted
