@@ -26,6 +26,9 @@ workflow CV_PYTHON {
 			Need to first allocate empty output for each of the methods
 			TODO: need a smarter way to do it
 		*/
+
+		// Instantiation of method subworkflows
+
 		// MOGONET
 		mogonet_results = Channel.empty()
 		if (!skip_mogonet) {
@@ -40,7 +43,7 @@ workflow CV_PYTHON {
 			goat_results = GOAT.out.csv_results
 		}
 
-		// Lastly merge all results
+		// ======================================================================== 
 		// Collect all result and mix it to merge it more
 		Channel.empty()
 						.mix( mogonet_results )
@@ -51,6 +54,7 @@ workflow CV_PYTHON {
 						.groupTuple(by: 0)
 						.map { lang, methods, list_csvs -> [lang, list_csvs]} // Ch [R, list of summary table only]
 						.set { csv_results }
+		// ======================================================================== 
 		// Merge result tables together
 		MERGE_RESULT_TABLE ( csv_results, saveMode )
 	emit:
