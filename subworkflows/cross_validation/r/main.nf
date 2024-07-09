@@ -1,5 +1,4 @@
 // Methods to include
-include { LOGIT_ABC } from "${subworkflowDir}/methods/logit_abc"
 include { COOPERATIVE_LEARNING }  from "${subworkflowDir}/methods/cooperative_learning"
 include { DIABLO }                from "${subworkflowDir}/methods/diablo"
 include { MOFA }                  from "${subworkflowDir}/methods/mofa"
@@ -7,22 +6,14 @@ include { RGCCA }                 from "${subworkflowDir}/methods/rgcca"
 include { SGMR }	                from "${subworkflowDir}/methods/sgmr"
 // This module to collect results
 include { MERGE_RESULT_TABLE }    from "${modulesDir}/merge_result_table"
-// Helper fun
-// LOGIT_ABC
-logit_abc_results = Channel.empty()
-if (!skip_logit_abc) {
-    LOGIT_ABC ( mae_copy )
-    logit_abc_results = LOGIT_ABC.out.csv_results
-}
 
-.mix( logit_abc_results )include { printBanner }           from "${modulesDir}/functions"
+
 
 params.full_mode = false
 def language_name = "R"
 def saveMode = "language"
 workflow CV_R {
   // Skip or trigger method to run
-params.skip_logit_abc ? true : false // boolean: true/false  skip_cplr   = params.skip_cplr    // boolean: true/false
   skip_diablo = params.skip_diablo  // boolean: true/false
   skip_rgcca  = params.skip_rgcca   // boolean: true/false
   skip_sgmr   = params.skip_sgmr    // boolean: true/false
