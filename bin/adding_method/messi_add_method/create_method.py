@@ -1,0 +1,148 @@
+import logging
+import yaml
+import os
+import sys
+import jinja2
+import shutil
+from pathlib import Path
+from docopt import docopt
+
+
+log = logging.getLogger(__name__)
+
+class MethodCreate:
+  """Creates relevant nextflow modules or subworkflows and their corresponding
+  scripts that a method should inherit and have from template
+
+  Args:
+    method (str): Name of the method
+    language (str): Language that the method was implemented in
+    outdir (str): Path to local output directory
+    docker_user (str): Username of the dockerhub to retreive image
+  """
+
+  def __init__(
+      self,
+      method,
+      language,
+      outdir,
+      docker_user=None
+  ):
+
+    # Setting convenient vars
+    self.method = method
+    self.language = language
+    self.outdir = Path(outdir)
+    self.docker_user = docker_user if docker_user is not None else "tonyliang19"
+    # Then have another param dict for jinja2 to use
+    self.params_dict = {"method": method,
+                        "language": language,
+                        "outdir": outdir,
+                        "docker_user": self.docker_user
+                        }
+  
+
+
+  def init_method(self):
+      """
+      Creates the method relevant files
+      """
+      # Create files from templates using jinja
+      self.render_template()
+      return None
+  def render_template(self):
+    """Runs jinja to create all relevant files for the method"""
+    log.info(f"Creating relevant files for: '{self.method}'")
+
+    # current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # # Navigate to the parent directory (root)
+    # root_dir = os.path.dirname(current_dir)
+    # template_dir = os.path.join(root_dir, "method-template")
+    # Run jinja2 for each file in the template folder
+    template_dir = os.path.join(os.path.dirname(__file__), "method-template")
+    env = jinja2.Environment(
+      loader=jinja2.FileSystemLoader(searchpath=template_dir),
+      keep_trailing_newline=True
+    )
+
+    # TODO: need to better handle this path using os
+    object_attrs = self.params_dict
+    method = object_attrs["method"]
+    try:
+      if object_attrs["language"].lower() == 'r':
+        ext = "R"
+      elif object_attrs["language"].lower() == 'python':
+        ext = "py"
+      object_attrs["ext"] = ext
+    except Exception:
+      raise NotImplementedError
+
+    # Then glob the template files
+    # POSIX might not work on windows
+    template_files = list(Path(template_dir).glob("**/*"))
+    template_files += list(Path(template_dir).glob("*"))
+    # files to ignore
+    ignore_strs = [".pyc", "__pycache__", ".pyo", ".pyd", ".DS_Store", ".egg", ".yaml"]
+    # Then rename some templates to the one using method name
+    resource_prefix = "resources/usr/bin"
+    # TODO: this is very ugly now .....
+    rename_files = {
+      # The main workflow of the method
+      "subworkflows/methods/method/main.nf": f"subworkflows/methods/{method}/main.nf",
+      # And for each action in preprocess, train, predict, select_feature, and their resource script
+      # PREPROCESS
+      "modules/method/preprocess/main.nf" :     f"modules/{method}/preprocess/main.nf",
+      "modules/method/train/main.nf" :          f"modules/{method}/train/main.nf",
+      "modules/method/predict/main.nf" :        f"modules/{method}/predict/main.nf",
+      "modules/method/select_feature/main.nf" : f"modules/{method}/select_feature/main.nf",
+      # And the resources scripts
+      f"modules/method/preprocess/{resource_prefix}/method_preprocess.{ext}":           f"modules/{method}/preprocess/{resource_prefix}/{method}_preprocess.{ext}",
+      f"modules/method/train/{resource_prefix}/method_train.{ext}":                     f"modules/{method}/train/{resource_prefix}/{method}_train.{ext}",
+      f"modules/method/predict/{resource_prefix}/method_predict.{ext}":                 f"modules/{method}/predict/{resource_prefix}/{method}_predict.{ext}",
+      f"modules/method/select_feature/{resource_prefix}/method_select_feature.{ext}":   f"modules/{method}/select_feature/{resource_prefix}/{method}_select_feature.{ext}"
+    }
+    
+    # Then loop through all template files
+    for template_fn_path_obj in template_files:
+        template_fn_path = str(template_fn_path_obj)
+        if os.path.isdir(template_fn_path):
+          continue
+        # Given we have both scripts from R and Python, only populate the one matches language
+        is_resource_script = template_fn_path.__contains__(resource_prefix)
+        is_right_ext = template_fn_path.__contains__(ext)
+        if is_resource_script and not is_right_ext:
+          continue
+        
+        if any([s in template_fn_path for s in ignore_strs]):
+          log.debug(f"Ignoring '{template_fn_path}' in jinja2 template creation")
+          continue
+        # Set up vars and directories
+        template_fn = os.path.relpath(template_fn_path, template_dir)
+        output_path = self.outdir / template_fn
+  
+        if template_fn in rename_files:
+            output_path = self.outdir / rename_files[template_fn]
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        # Then rest should just do this:
+        try:
+          log.debug(f"Rendering template file: '{template_fn}'")
+          j_template = env.get_template(template_fn)
+          rendered_output = j_template.render(object_attrs)
+          # Write to the output file
+          with open(output_path, "w") as fh:
+            log.debug(f"Writing to output file: '{output_path}'")
+            fh.write(rendered_output)
+        # Copy the file directly instead of using Jinja
+        except (AttributeError, UnicodeDecodeError) as e:
+          log.debug(f"Copying file without Jinja: '{output_path}' - {e}")
+          shutil.copy(template_fn_path, output_path)
+        # Something else went wrong
+        except Exception as e:
+          print(f"Template could not be copied: '{template_fn_path}'")
+          #log.error(f"Copying raw file as error rendering with Jinja: '{output_path}' - {e}")
+          #shutil.copy(template_fn_path, output_path)
+        template_stat = os.stat(template_fn_path)
+        os.chmod(output_path, template_stat.st_mode)
+    # DONE the for loop
+    return None
