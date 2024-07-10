@@ -28,6 +28,7 @@ process {{ method|upper }}_PREDICT {
 	input:
     tuple val(dataset_name), val(fold_name), path(model)
 		tuple val(dataset_name), val(fold_name), path(test_path)
+    val(method_name)
 	/*
     Minimal requierd output are the path to predicted results in a csv format
     and the log file
