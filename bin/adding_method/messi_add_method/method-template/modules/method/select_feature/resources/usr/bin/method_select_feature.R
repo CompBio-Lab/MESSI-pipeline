@@ -31,9 +31,12 @@ load_utils(here("bin/logging"))
 load_utils(here("bin/misc_utils"))
 load_utils(here("bin/plotting"))
 
-
-# TODO: Need to re-implement the main function
 # Main entrance of the script
+# TODO: You need to re-implement the main logic
+# 1. Perform some kind of cv to find hyperparameters
+# 2. Use those found optimal hyperparams to fit final model
+# 3. Then select top weights from the final model
+# 4. Take top H percent of each view (omic) features from the dataset input
 main <- function(mae_path, dataset_name, n_percent, design) {
   # ---------------------------------------------------------------------------
   # PARAMS
