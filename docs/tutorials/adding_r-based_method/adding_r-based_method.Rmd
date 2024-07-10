@@ -101,7 +101,7 @@ workflow LOGISTIC_REG {
               .multiMap { it ->
                   input_data: [ it[0], it[1] ]              // [dataset_name, mae/mu_data]
                   // TODO: rename data_folds to mu_folds or mae_folds depending on language
-                  data_folds:  [ it[0], it[3].flatten() ]   // [fold1, fold2, ... , foldk] 
+                  mae_folds:  [ it[0], it[3].flatten() ]   // [fold1, fold2, ... , foldk] 
                                                             // where each fold contains fold_i_tr and fold_i_te data
                 }.set{ interm }
       // Transform output of preprocess to one channel input only
@@ -160,7 +160,7 @@ workflow LOGISTIC_REG {
       MERGE_RESULT_TABLE ( result_table, saveMode )
 
       // =====================================================================
-    }
+
     // And emit the result back to upstream (which is another merge of different method)
     // sort of like a recursive manner?
     emit:
@@ -189,6 +189,9 @@ So, this means we only have to implement these three steps: preprocess, train, a
 ### Implementing the preprocessing step
 
 Now, this comes a bit of hard part, since it relates with Nextflow logic and making concepts complicated. 
+
+
+#### Nextflow preprocess script
 
 We first create the preprocess script under `~/modules/logistic_reg/preprocess/main.nf` with the contents filled up from our template at `~/templates/nxf_scripts/method_preprocess.nf`:
 
@@ -276,6 +279,10 @@ It provides an abstract layer without user to worry about how scripts should run
  - Add a shebang on top of this non-interactive script its corresponding interpreter
 - Implementing an apptainer image, and declare it on this nextflow script.
 
+
+#### Command Line Script in R using docopt for preprocessing
+
+Given these are high dimensional data with n << p, hence we taking randomly 25 predictors on each omics. And, we will provide the data tranposed back as n x p_i format.
 
 So, we provided a `preprocess_logistic_reg.R` script following template at `~/templates/cli_scripts/r_cli.R` placing it under `~/modules/logistic_reg/preprocess/resources/usr/bin` and giving it executable permission with `chmod +x preprocess_logistic_reg.R`:
 
@@ -384,6 +391,7 @@ reconstruct_mae <- function(mae) {
   # Given an mae with delayed matrices, we could load it into
   # memory and make it of HDF5 arrays instead
   X <- mae@ExperimentList |> lapply(as.matrix)
+  # For each matr
   col_data <- colData(mae)
   # Construct MAE
   new_mae <- MultiAssayExperiment::MultiAssayExperiment(experiments = X, 
@@ -422,10 +430,10 @@ preprocess_logistic_reg <- function(mae_path, split_dir, dataset_name) {
       te_path <- file.path(fold_name, paste0(fold_name, "_te"))
       # The train portion
       MultiAssayExperiment::saveHDF5MultiAssayExperiment(tr_mae, dir=tr_path,
-                                                        prefix="train")
+                                                        prefix="train", replace = T)
       # The test portion
       MultiAssayExperiment::saveHDF5MultiAssayExperiment(te_mae, dir=te_path,
-                                                        prefix="test")
+                                                        prefix="test", replace = T)
       message("\nSaved for", fold_name, "\n")                                                      
     }
 }
@@ -475,3 +483,122 @@ preprocess_logistic_reg(mae_path = mae_path, split_dir = split_dir, dataset_name
 
 > TODO: Need to explain better here? and introduce the nextflow concept earlier
 
+
+### Implementing the training step
+
+The input of this training step is being transformed under nextflow's operators like `join` and `multiMap` in the subworkflow in the following format:
+
+- First arg is dataset name
+- Second arg is the full mae path
+- Third arg is the fold path (The earlier directories that we created after splitting the MAE)
+
+Thefore, we follow a similar step earlier to create a nextflow script and its corresponding cli script.
+
+#### Nextflow train script
+
+We could again use a template at `~/templates/nxf_scripts/method_train.nf` and create the train nextflow script at `~/modules/logistic_reg/train/main.nf`. Some important things to do:
+
+- Declare the apptainer image used and the docker URI
+- Implement the non-interactive R script that hold actual logic of training model using the training data
+  - Write out the test data, so that its passed to downstream process use
+  - Change the cli script to executable permission with `chmod +x`
+
+
+```Groovy
+// Nextflow process
+// Author: Tony Liang
+
+
+// Handles the METHOD  listed the Reference section of top-level README
+/*
+  You could have scripts that proces takes under this structure:
+    - method/resources/usr/bin/script1.py
+    - method/resources/usr/bin/script2.R
+    - And so on
+  This process is supposed be triggered from the subworkflow level of the method
+  see templates/method_subworkflow.nf
+
+  Author: Tony Liang
+*/
+
+include { getPublishPath } from "${modulesDir}/functions"
+
+process LOGISTIC_REG_TRAIN {
+	// Vars stuff
+	def onSockeye = workflow.projectDir.toString().contains('/scratch')
+	// Identifier for each dataset and fold combination
+	tag "${dataset_name}-${fold_path.name}"
+	// TODO: rename to the actual image name used
+	container "${ onSockeye  ?
+		'codia.sif' :
+		'tonyliang19/codia:latest' }"
+	// Parse the output directory to migrate results to
+	publishDir (
+		path: "${params.outdir}/${getPublishPath(task.process)}/${dataset_name}/${fold_path.name}",
+		mode: 'copy', 
+		overwrite: true
+	)
+	// TODO: add your custom labels to tell if process
+	// consumes large RAM/ROM and gpu access or not
+	// label 'low_or_high_mem'
+	// label 'cpu_or_gpu'
+  label 'process_single'
+
+	input:
+		tuple val(dataset_name), path(mae_path), path(fold_path)
+	/* 
+		TODO: this part needs to be defined by user,
+		mostly required is the template
+		======
+		You could add the extension of your model or rename those, but it needs to match
+		from the one you generate from your script
+
+		Example:
+		sample_script.R outputs model.rds, then define path('model.rds') in nextflow
+		sample_script.py outputs my_model.pkl, then define path('my_model.pkl') in nextflow
+	*/
+	output:
+		tuple val(dataset_name), val(fold_path.name), path('*model*'),			 	emit: model
+		tuple val(dataset_name), val(fold_path.name), path('*test_data*'),	 	emit: test_data
+		tuple val(dataset_name), val(fold_path.name), path('*log*'), 					emit: log
+	script:
+  	/* 
+			The script here should be found under method/resources/usr/bin/ , 
+			and executable  by chmod +x method/resources/usr/bin/run_method.ext
+			More infor see cli_scripts
+			TODO: rename the extension to the script you write
+		*/
+		def data_label = "${dataset_name}-${fold_path.name}"
+		// TODO: rename the extension to the script you write
+		// TODO: rename arg name mae_or_mu_path to mae_path or mu_path accordingly
+		"""
+		run_logistic_reg.R \
+				--mae_path=${mae_path} \
+				--label=${data_label} \
+				--fold_path=${fold_path} > \
+				${data_label}-${getPublishPath(task.process).tokenize('/')[-1].toLowerCase()}.log
+		echo ${data_label} > ${data_label}
+		"""
+}
+
+```
+
+After having the nextflow script ready, we could then proceed to the non-interactive cli R script that handles training logic of our data per fold.
+
+
+#### Command Line Script in R using docopt for training
+
+
+Now, the main input of the script is `fold_path`, which is the directories of folds we created earlier of the following format:
+
+```bash
+fold_path1/
+ |_________ fold_path1_train_mae/
+ |_________ fold_path1_test_mae/
+...
+fold_pathK/
+```
+
+We need to load those training portions and apply logistic regression on it. Given these are high dimensional data with n << p, hence we taking randomly 25 predictors on each omics, and made sure this is applied to both 
+
+We could use the template at `~/templates/cli_scripts/r_cli.R` to start off and write out the rest logics

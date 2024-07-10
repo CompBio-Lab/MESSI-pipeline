@@ -167,7 +167,7 @@ workflow LOGISTIC_REG {
       MERGE_RESULT_TABLE ( result_table, saveMode )
 
       // =====================================================================
-    }
+
     // And emit the result back to upstream (which is another merge of different method)
     // sort of like a recursive manner?
     emit:
@@ -437,7 +437,7 @@ preprocess_logistic_reg <- function(mae_path, split_dir, dataset_name) {
       tr_mae <- mae[, -split, drop=TRUE] |> reconstruct_mae()
       te_mae <- mae[, split, drop=TRUE] |> reconstruct_mae()
       # Then save each fold's train and test portion as subdirectory of fold name
-      message("\nSaving for", fold_name, "\n")
+      message("\nSaving for ", fold_name, "\n")
       if (!dir.exists(fold_name)) {
         dir.create(fold_name)
       }
@@ -529,6 +529,37 @@ load_test_splits(split_dir)
     ## [127] 241 242 243 244 245 248 249 256 257 260 264 266 267 270 273 275 276 280
     ## [145] 281 283 288 290 291 292 293 298 300 301 305 310 312 313 316 317 320 321
     ## [163] 324 325 326 333 335 338 339 341 342 344 348 349 351
+
+Lastly, we could just use the `preprocess_logistic_reg` function which
+writes folds of MAE into disk:
+
+``` r
+# Since we running interactively here, we replaced the original opt['--arg_name']
+preprocess_logistic_reg(mae_path = mae_path, split_dir = split_dir, dataset_name = "rosmap")
+```
+
+    ## 
+    ## Index founded to be 0 based, shift by 1 for all
+
+    ## Splitting data forrosmap
+
+    ## 
+    ## The data is located in:/scratch/st-singha53-1/tliang19/MESSI-pipeline/data/tutorial_data/rosmap_mae_data
+
+    ## 
+    ## The splits are located in:/scratch/st-singha53-1/tliang19/MESSI-pipeline/data/tutorial_data/splits
+
+    ## 
+    ## Saving for fold_1
+
+    ## 
+    ## Saved forfold_1
+
+    ## 
+    ## Saving for fold_2
+
+    ## 
+    ## Saved forfold_2
 
 > TODO: Need to explain better here? and introduce the nextflow concept
 > earlier
