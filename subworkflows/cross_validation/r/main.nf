@@ -6,7 +6,7 @@ include { RGCCA }                 from "${subworkflowDir}/methods/rgcca"
 include { SGMR }	                from "${subworkflowDir}/methods/sgmr"
 // This module to collect results
 include { MERGE_RESULT_TABLE }    from "${modulesDir}/merge_result_table"
-
+include { printBanner }           from "${modulesDir}/functions"
 
 
 params.full_mode = false
@@ -14,6 +14,7 @@ def language_name = "R"
 def saveMode = "language"
 workflow CV_R {
   // Skip or trigger method to run
+  skip_cplr   = params.skip_cplr    // boolean: true/false
   skip_diablo = params.skip_diablo  // boolean: true/false
   skip_rgcca  = params.skip_rgcca   // boolean: true/false
   skip_sgmr   = params.skip_sgmr    // boolean: true/false
