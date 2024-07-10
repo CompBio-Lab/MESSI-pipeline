@@ -17,7 +17,7 @@ Usage:
   {{ method|lower }}_preprocess.R [options]
 
 Options:
-  --mae_path=MAE_PATH       Path to read full mae data
+  --data_path=DATA_PATH     Path to read full mae data
   --split_dir=SPLIT_DIR     Directory containing list of txt file [default: splits]
   --dataset_name=NAME       Name of dataset that is splitting     [default: empty]
 "
@@ -113,4 +113,4 @@ main <- function(mae_path, split_dir, dataset_name) {
 }
 
 # Then execute the main function here
-main(mae_path=opt$mae_path, split_dir=opt$split_dir, dataset_name=opt$dataset_name)
+main(mae_path=opt$data_path, split_dir=opt$split_dir, dataset_name=opt$dataset_name)

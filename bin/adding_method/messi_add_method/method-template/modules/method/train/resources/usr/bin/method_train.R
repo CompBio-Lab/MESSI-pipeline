@@ -8,10 +8,9 @@ Usage:
   {{ method|lower }}_train.R [options]
 
 Options:
-  --mae_path=MAE_PATH       Path to read full mae data
-  --label=LABEL             Label of id and fold of data [default: data]
-  --fold_path=FOLD_PATH     Path to read current test fold
-  --prefix=PREFIX           Prefix to read HDF5 [default: pre]
+  --fold_path=FOLD_PATH       Path to read current test fold
+  --label=LABEL               Label of id and fold of data [default: data]
+  --prefix=PREFIX             Prefix to read HDF5 [default: pre]
   --run_inner_cv              Run inner cv with train data or not [default: false]
   --method_name=METHOD_NAME   Name of the method [default: {{ method|lower }}]
 "

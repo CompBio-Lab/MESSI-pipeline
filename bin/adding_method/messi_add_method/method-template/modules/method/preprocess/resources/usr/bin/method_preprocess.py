@@ -9,7 +9,7 @@ Usage:
 
 Options:
   --help                          Display this help message
-  --mdata_path=MDATA              Path to MuData [default: empty]
+  --data_path=DATA_PATH           Path to MuData [default: empty]
   --splits_dir=SPLITS_DIR         Path to all the splits [default: splits]
 """
 
@@ -111,7 +111,7 @@ if __name__ == '__main__':
   args = docopt(__doc__)
   # Execute runner
   main(
-    mdata_path      = args["--mdata_path"],
+    mdata_path      = args["--data_path"],
     splits_dir      = args["--splits_dir"],
     base_dir        = args["--base_dir"]
   )

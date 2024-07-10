@@ -8,7 +8,7 @@ Usage:
   {{ method|lower }}_select_feature.R [options]
 
 Options:
-  --mae_path=MAE_PATH       Path to read the full data in
+  --data_path=DATA_PATH     Path to read the full data in
   --dataset_name=DNAME      Dataset name used as identification
   --output_ext=EXT          Extension of output table to save [default: csv]
   --n_percent=N_PER         N percent of features per view to select [default: 10]
@@ -93,7 +93,7 @@ main <- function(mae_path, dataset_name, n_percent, design) {
 
 # Then call the function above
 main(
-  mae_path=opt$mae_path, 
+  mae_path=opt$data_path, 
   dataset_name=opt$dataset_name, 
   n_percent=as.numeric(opt$n_percent)
 )

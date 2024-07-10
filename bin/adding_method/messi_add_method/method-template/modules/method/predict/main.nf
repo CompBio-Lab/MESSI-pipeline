@@ -26,7 +26,7 @@ process {{ method|upper }}_PREDICT {
     to trained model and test data for current fold
   */
 	input:
-    tuple val(dataset_name), val(fold_name), path(model)
+    tuple val(dataset_name), val(fold_name), path(model_path)
 		tuple val(dataset_name), val(fold_name), path(test_path)
     val(method_name)
 	/*
@@ -47,7 +47,7 @@ process {{ method|upper }}_PREDICT {
 		def data_label = "${dataset_name}-${fold_name}"
 		"""
     {{ method|lower }}_predict.{{ ext }} \
-      --model=${model} \
+      --model_path=${model_path} \
       --test_path=${test_path} \
 			--label=${data_label} > \
 			${data_label}-${getPublishPath(task.process).tokenize('/')[-1]}.log

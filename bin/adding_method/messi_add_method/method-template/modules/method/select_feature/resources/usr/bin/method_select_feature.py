@@ -9,7 +9,7 @@ Usage:
 
 Options:
   -h --help                   Show this message
-  --mu_path=MU_PATH           Path that contains full portion of MuData [default: empty]
+  --data_path=DATA_PATH       Path that contains full portion of MuData [default: empty]
   --dataset_name=DNAME        Label of the dataset [default: empty]
   --n_percent=N_PER           N percent of features selected from each view [default: 10]
   --method_name=METHOD_NAME   Name of the method [default: {{ method|lower }}]
@@ -109,7 +109,7 @@ if __name__ == '__main__':
   # Parse docopt
   args = docopt(__doc__)
   # Execute the main function
-  main(mu_path=args['--mu_path'], 
+  main(mu_path=args['--data_path'], 
   dataset_name=args['--dataset_name'],
   n_percent=int(args['--n_percent']),
   method=args['--method_name']
