@@ -14,10 +14,6 @@ Options:
 """
 
 from docopt import docopt
-from mogonet.train_mogonet import train_mogonet
-from mogonet.utils import save_model_dict
-import os
-import glob
 import pandas as pd
 import pickle
 
