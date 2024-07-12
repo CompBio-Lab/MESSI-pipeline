@@ -10,7 +10,7 @@ Options:
   --language=LANG             Language used to implement the method
   --outdir=OUTDIR             Output directory 
   --docker_user=DOCKER_USER   User of the dockerhub to retrieve image from
-  --force_update=FORCE_UPT    Force to rewrite/update existing method contents from template [default: False]
+  --force_update              Force to rewrite/update existing method contents from template [default: False]
 """
 
 from docopt import docopt
