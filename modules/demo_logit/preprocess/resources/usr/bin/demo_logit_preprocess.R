@@ -69,7 +69,16 @@ reconstruct_mae <- function(mae) {
   # memory and make it of HDF5 arrays instead
   # TODO: You could add more transformations inside this lapply
   # The as.matrix is required so it do not becomes DelayedMatrix (buggy)
-  X <- mae@ExperimentList |> lapply(as.matrix)
+  exp_list <- mae@ExperimentList
+  view_names <- names(exp_list)
+  X <- lapply(view_names, function(omics){
+      # For each omics, we are going to take first 25 features only
+      view <- exp_list[[omics]] |> as.matrix()
+      random_25_feats <- rownames(view) |> head(25)
+      view_reduced <- view[random_25_feats, ]
+      return(view_reduced)
+    })
+  names(X) <- view_names
   col_data <- colData(mae)
   # Construct MAE
   new_mae <- MultiAssayExperiment::MultiAssayExperiment(experiments = X, colData=col_data)
