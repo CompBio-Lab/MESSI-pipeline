@@ -33,6 +33,23 @@ load_utils(here("bin/misc_utils"))
 opt <- docopt::docopt(doc)
 
 
+list2df <- function(data) {
+  sample_name <- data$X[[1]] |> rownames()
+  # Then we merge the X and y back for glm 
+  X_df <- do.call(cbind, data$X) |>
+          as.data.frame() |>
+          tibble::rownames_to_column(var="sample_name")
+  y <- data$Y
+  names(y) <- sample_name
+  y_df <- y |> 
+          as.data.frame() |>
+          tibble::rownames_to_column(var="sample_name")
+  # Use this instead for modelling
+  merged_df <- left_join(X_df, y_df, by = "sample_name")
+  return(merged_df)
+}
+
+
 # TODO: You might need to re-implement the main logic
 # Main function to run
 main <- function(fold_path, label, prefix, method_name) {
@@ -46,17 +63,20 @@ main <- function(fold_path, label, prefix, method_name) {
   test_path <- d[str_detect(d, pattern = "_te")]
   # Then should read in the MAE and convert it to list of X and Y
   # This converts usual MAE format of p_i x N to N x p_i
-  train_data <- load_MAE(train_path, prefix="train") |> extract_Xy()
-  test_data <- load_MAE(test_path, prefix="test") |> extract_Xy()
-  sample_names <- check_common_samples(train_data)
+  train_data_list <- load_MAE(train_path, prefix="train") |> extract_Xy()
+  test_data_list <- load_MAE(test_path, prefix="test") |> extract_Xy()
+  sample_names <- check_common_samples(train_data_list)
+  # Since we using glm, we provide another layer of transforming data
+  train_data <- list2df(train_data_list)
+  test_data <- list2df(test_data_list)
+  
   # Sanity check for debugging
   cat("\nTotal of", length(sample_names), "samples:\n", sample_names)
   
   # TODO: You need to implement your training logic here
   # Train a model
   # Recommended to use default settings
-  model <- "TODO"
-
+  model <- glm(formula=y~. , family="binomial", data = train_data |> select_if(is.numeric))
   # Filenames to write out
   model_file  <-  paste(label, paste(method_name, "model.rds", sep="_"), sep="-")
   test_file   <-  paste(label, "test_data.rds", sep="-")
