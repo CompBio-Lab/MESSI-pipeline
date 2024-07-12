@@ -27,6 +27,5 @@ echo "Adding ${NAME} into MESSI"
 ${PYTHON_BIN} "${PYTHON_SRC}" --method=${NAME}  \
   --language=${LANGUAGE} \
   --outdir=${PROJECT_ROOT_DIR} \
-  --docker_user=${DOCKER_USER} \
-  --force_update
+  --docker_user=${DOCKER_USER}
 #echo ${PROJECT_ROOT_DIR}
