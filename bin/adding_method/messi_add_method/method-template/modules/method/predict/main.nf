@@ -34,8 +34,8 @@ process {{ method|upper }}_PREDICT {
     and the log file
   */
   output:
-    tuple val(dataset_name), val(fold_name), path("*result*"),  emit: result_table
-		tuple val(dataset_name), val(fold_name), path('*log*'),     emit: log
+    tuple val(dataset_name), val(fold_name), val(method_name), path("*result*"),  emit: result_table
+		tuple val(dataset_name), val(fold_name), val(method_name), path('*log*'),     emit: log
 	
   /*
   TODO:

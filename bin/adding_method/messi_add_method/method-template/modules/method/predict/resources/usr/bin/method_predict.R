@@ -38,7 +38,7 @@ main <- function(model_path, test_path, label, output_ext, method) {
   # TODO: Implement your logic of getting predicted probabilities of positive class in
   # a binary classification problem
   # Predict and get result
-  pred_probs <- predict(model, test_data) # THIS WILL YOU ERROR, so implement this
+  pred_probs <- predict(model, newdata=test_data, type="response") # THIS WILL YOU ERROR, so implement this
 
   # Make sure you could have rownames for identifying different observations/patients
   probs_df <- pred_probs %>%
