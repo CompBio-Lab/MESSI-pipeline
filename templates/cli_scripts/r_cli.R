@@ -37,7 +37,8 @@ algorithm?. For more information read above's comments
 
 Author: Tony Liang
 
-Usage: rcli.R [options]
+Usage: 
+  rcli.R [options]
 
 Options:
   -p --path=<data_path> Path to read data

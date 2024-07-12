@@ -39,6 +39,10 @@ PROJECT_ROOT_DIR=$$(eval pwd)
 setup:
 	@bash bin/setup_environment.sh ${PROJECT_ROOT_DIR}
 
+# Adding method
+add_method:
+	@bash bin/adding_method/adding_method.sh
+
 # Config checks ##################################
 NXF_CONFIG_F=MESSI.config
 

@@ -3,7 +3,7 @@
 # This arg is directly provided from the Makefile
 PROJECT_ROOT_DIR=$1
 ENV_FILE="${PROJECT_ROOT_DIR}/.env"
-DEF_VAL="FILL_IN"
+DEF_VAL="REPLACE"
 # This loads the .env file under the root dir of the project
 if [ ! -f ${ENV_FILE} ]; then
   echo "You have not created the .env file yet!"
@@ -17,6 +17,13 @@ fi
 # Check if ALLOCATION CODE is provided or not
 if [ ${ALLOCATION_CODE} == ${DEF_VAL} ]; then
   echo "Allocation code have not provided yet in the .env file"
+  echo "Please update it!"
+  exit 1
+fi
+
+# Check if MAIL user has provided or not
+if [ ${MAIL_USER} == ${DEF_VAL} ]; then
+  echo "Mail user have not provided yet in the .env file"
   echo "Please update it!"
   exit 1
 fi

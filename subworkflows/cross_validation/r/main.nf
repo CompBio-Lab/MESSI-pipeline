@@ -1,18 +1,21 @@
-// This module to collect results
-include { MERGE_RESULT_TABLE }    from "${modulesDir}/merge_result_table"
 // Methods to include
+include { LOGIT_DEMO } from "${subworkflowDir}/methods/logit_demo"
 include { COOPERATIVE_LEARNING }  from "${subworkflowDir}/methods/cooperative_learning"
 include { DIABLO }                from "${subworkflowDir}/methods/diablo"
 include { MOFA }                  from "${subworkflowDir}/methods/mofa"
 include { RGCCA }                 from "${subworkflowDir}/methods/rgcca"
 include { SGMR }	                from "${subworkflowDir}/methods/sgmr"
+// This module to collect results
+include { MERGE_RESULT_TABLE }    from "${modulesDir}/merge_result_table"
 include { printBanner }           from "${modulesDir}/functions"
+
 
 params.full_mode = false
 def language_name = "R"
 def saveMode = "language"
 workflow CV_R {
   // Skip or trigger method to run
+  skip_logit_demo = false // boolean: true/false
   skip_cplr   = params.skip_cplr    // boolean: true/false
   skip_diablo = params.skip_diablo  // boolean: true/false
   skip_rgcca  = params.skip_rgcca   // boolean: true/false
@@ -35,6 +38,15 @@ workflow CV_R {
       skipping
       TODO: find a better way to do this
     */
+
+    // Instantiation of method subworkflows
+    // LOGIT_DEMO
+    logit_demo_results = Channel.empty()
+    if (!skip_logit_demo) {
+        LOGIT_DEMO ( mae_copy )
+        logit_demo_results = LOGIT_DEMO.out.csv_results
+    }
+    
 
     // Cooperative Learning
     cooperative_learning_results = Channel.empty()
@@ -74,6 +86,8 @@ workflow CV_R {
     // ========================================================================  
     // Collect all result and mix it to merge it more
     Channel.empty()
+            // Then these are outputs of methods
+            .mix( logit_demo_results )
             .mix( cooperative_learning_results )
             .mix( diablo_results )
             .mix( mofa_results )

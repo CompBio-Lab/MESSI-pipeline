@@ -1,14 +1,18 @@
-// Include relevant python methods here
+// Methods to include
 include { MOGONET } 						from "${subworkflowDir}/methods/mogonet"
 include { GOAT } 								from "${subworkflowDir}/methods/goat"
+// This module to collect results
 include { MERGE_RESULT_TABLE }  from "${modulesDir}/merge_result_table"
+// Helper fun
 include { printBanner } 				from "${modulesDir}/functions"
+
+
 // Workflow specific params to use
 def language_name = "Python"
 def saveMode = "language"
 
 workflow CV_PYTHON {
-	// Steps to skip or trigger method
+	// Skip or trigger method to run
 	skip_mogonet	= params.skip_mogonet	// boolean: true/false
 	skip_goat 		= params.skip_goat		// boolean: true/false
   take:
@@ -22,6 +26,9 @@ workflow CV_PYTHON {
 			Need to first allocate empty output for each of the methods
 			TODO: need a smarter way to do it
 		*/
+
+		// Instantiation of method subworkflows
+
 		// MOGONET
 		mogonet_results = Channel.empty()
 		if (!skip_mogonet) {
@@ -36,9 +43,10 @@ workflow CV_PYTHON {
 			goat_results = GOAT.out.csv_results
 		}
 
-		// Lastly merge all results
+		// ======================================================================== 
 		// Collect all result and mix it to merge it more
 		Channel.empty()
+						// Then these are outputs of methods
 						.mix( mogonet_results )
 						.mix( goat_results )
 						.map { it ->
@@ -47,6 +55,7 @@ workflow CV_PYTHON {
 						.groupTuple(by: 0)
 						.map { lang, methods, list_csvs -> [lang, list_csvs]} // Ch [R, list of summary table only]
 						.set { csv_results }
+		// ======================================================================== 
 		// Merge result tables together
 		MERGE_RESULT_TABLE ( csv_results, saveMode )
 	emit:
