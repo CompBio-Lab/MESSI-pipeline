@@ -108,22 +108,20 @@ class MethodCreate:
     """
     # 4. Declare output to mix
     output_line = f".mix( {method.lower()}_results )"
+    # Put these together with their insertion point
+    inserction_dict = {
+      "// Methods to include": include_line, # For 1.
+      "// Skip or trigger method to run": skip_method_line, # For 2.
+      "// Instantiation of method subworkflows": result_lines # For 3.,
+      "// Then these are outputs of methods": output_line # For 4.
 
-    new_lines = [include_line, skip_method_line, result_lines, output_line]
-
-    # And the insertion point of lines
-    insertion_points = [
-        "// Methods to include", # For 1.
-        "// Skip or trigger method to run" , # For 2.
-        "// Instantiation of method subworkflows", # For 3.
-        "// Then these are outputs of methods" # For 4.
-    ]
+    }
 
     # Read the existing file
     with open(file_to_modify, 'r') as file:
         lines = file.readlines()
     # Insert new lines into the script
-    for insertion_point, new_line in zip(insertion_points, new_lines):
+    for insertion_point, new_line in inserction_dict.items():
         index = next((i for i, line in enumerate(lines) if insertion_point in line), -1)
         # Skip if already added to the file
         existing_lines = lines[index:]

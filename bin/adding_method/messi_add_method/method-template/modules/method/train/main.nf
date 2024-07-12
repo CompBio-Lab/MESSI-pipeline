@@ -66,9 +66,8 @@ process {{ method|upper }}_TRAIN {
 		// TODO: rename arg name mae_or_mu_path to mae_path or mu_path accordingly
 		"""
 		{{ method|lower }}_train.{{ ext }} \
-				--data_path=${data_path} \
-				--label=${data_label} \
-				--fold_path=${fold_path} > \
+				--fold_path=${fold_path} \
+				--label=${data_label} > \
 				${data_label}-${getPublishPath(task.process).tokenize('/')[-1].toLowerCase()}.log
 		echo ${data_label} > ${data_label}
 		"""

@@ -85,7 +85,7 @@ main <- function(mae_path, split_dir, dataset_name) {
   cat("\nThe data is located in:", mae_path, "\n")
   cat("\nThe splits are located in:", split_dir, "\n")
   # Read in the MAE
-  raw_mae <- loadHDF5MultiAssayExperiment(dir=mae_path, prefix="")
+  mae <- loadHDF5MultiAssayExperiment(dir=mae_path, prefix="")
   # Then load splits and divide it up into sub MAEs
   test_splits <- load_test_splits(split_dir=split_dir)
   fold_names <- names(test_splits)
