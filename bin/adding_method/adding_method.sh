@@ -21,12 +21,13 @@ PYTHON_BIN=python
 NAME="logit_demo"
 LANGUAGE="R"
 DOCKER_USER="tonyliang19"
-
+FORCE_UPDATE="True"
 # Then execute the command
 echo "Adding ${NAME} into MESSI"
 
 ${PYTHON_BIN} "${PYTHON_SRC}" --method=${NAME}  \
   --language=${LANGUAGE} \
   --outdir=${PROJECT_ROOT_DIR} \
-  --docker_user=${DOCKER_USER}
+  --docker_user=${DOCKER_USER} \
+  --force_update=${FORCE_UPDATE}
 #echo ${PROJECT_ROOT_DIR}

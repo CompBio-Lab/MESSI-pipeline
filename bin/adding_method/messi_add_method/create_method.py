@@ -20,6 +20,7 @@ class MethodCreate:
     language (str): Language that the method was implemented in
     outdir (str): Path to local output directory
     docker_user (str): Username of the dockerhub to retreive image
+    force_update (bool): Force to update/rewrite the contents of a modules/subworkflows
   """
 
   def __init__(
@@ -27,7 +28,8 @@ class MethodCreate:
       method,
       language,
       outdir,
-      docker_user=None
+      docker_user=None,
+      force_update=False
   ):
 
     # Setting convenient vars
@@ -35,11 +37,13 @@ class MethodCreate:
     self.language = language
     self.outdir = Path(outdir)
     self.docker_user = docker_user if docker_user is not None else "tonyliang19"
+    self.force_update = force_update
     # Then have another param dict for jinja2 to use
     self.params_dict = {"method": method,
                         "language": language,
                         "outdir": outdir,
-                        "docker_user": self.docker_user
+                        "docker_user": self.docker_user,
+                        "force_update": force_update
                         }
 
 
@@ -64,7 +68,12 @@ class MethodCreate:
       method = self.params_dict["method"]
       subworkflow_file = f"subworkflows/methods/{method}/main.nf"
       exists = os.path.isfile(subworkflow_file)
+      # Another is flag option to see if wanting to force update
+      force_update = self.params_dict["force_update"]
       if not exists:
+          return
+      if force_update:
+          print("Force update contents from template, could be dangerous")
           return
       else:
         raise FileExistsError(f"Found the subworkflow for '{method}', please change a name for the method")
@@ -112,7 +121,7 @@ class MethodCreate:
     inserction_dict = {
       "// Methods to include": include_line, # For 1.
       "// Skip or trigger method to run": skip_method_line, # For 2.
-      "// Instantiation of method subworkflows": result_lines # For 3.,
+      "// Instantiation of method subworkflows": result_lines, # For 3.,
       "// Then these are outputs of methods": output_line # For 4.
 
     }
@@ -123,21 +132,21 @@ class MethodCreate:
     # Insert new lines into the script
     for insertion_point, new_line in inserction_dict.items():
         index = next((i for i, line in enumerate(lines) if insertion_point in line), -1)
-        # Skip if already added to the file
-        existing_lines = lines[index:]
-        if any(new_line.strip() in line.strip() for line in existing_lines):
+        existing_line = lines[index + 1]
+        if existing_line.strip() in new_line.strip():
+            # If already written, then skip tp avoid duplicates
             continue
         try:
-            # Determine the indentation of the previous line
-            previous_indent = len(lines[index]) - len(lines[index].lstrip())
-            # Add the new line with the same indentation
-            lines.insert(index + 1, ' ' * previous_indent + new_line.lstrip() + "\n")
+           # Determine the indentation of the previous line
+           previous_indent = len(lines[index]) - len(lines[index].lstrip())
+           # Add the new line with the same indentation
+           lines.insert(index + 1, ' ' * previous_indent + new_line.lstrip() + "\n")
         except Exception as e:
-            print(f"Could not append to '{file_to_modify}' due to {e}")
+           print(f"Could not append to '{file_to_modify}' due to {e}")
 
     # Write back the modified content
     with open(file_to_modify, 'w') as file:
-        file.writelines(lines)
+       file.writelines(lines)
     return None
 
   def render_template(self):
