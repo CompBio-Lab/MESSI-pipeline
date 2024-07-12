@@ -43,7 +43,7 @@ main <- function(model_path, test_path, label, output_ext, method) {
   # Make sure you could have rownames for identifying different observations/patients
   probs_df <- pred_probs %>%
               as.data.frame() %>%
-              rownames_to_column(var="sample_name") 
+              rownames_to_column(var="sample_name") %>%
               as_tibble()
   # TODO: might need to transform your output a little to suit this helper function
   # that wrangles and makes it ready for downsteram comparison
