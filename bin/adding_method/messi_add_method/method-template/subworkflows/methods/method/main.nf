@@ -77,6 +77,9 @@ workflow {{ method|upper }} {
                   .multiMap { it ->
                     model:      [ it[0], it[1], it[2] ] // [ dataset_name, fold_name, model ]
                     test_data:  [ it[0], it[1], it[3] ] // [ dataset_name, fold_name, test_data]
+                    {% if ext == 'py' -%}
+                    metadata:   [ it[0], it[1], it[4] ] // [ dataset_anme, fold_name, metadata_path]
+                    {%- endif %}
                   }.set { predict_input }
 
       // ======================================================================
@@ -90,6 +93,9 @@ workflow {{ method|upper }} {
       {{ method|upper }}_PREDICT (  
         predict_input.model,
         predict_input.test_data,
+        {% if ext == 'py' -%}
+        predict_input.metadata,
+        {%- endif %}
         Channel.value(method_name)
         )
 
