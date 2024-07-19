@@ -52,8 +52,8 @@ process {{ method|upper }}_PREDICT {
     {{ method|lower }}_predict.{{ ext }} \
       --model_path=${model_path} \
       --test_path=${test_path} \
-      {% if ext == 'py' -%}
-      --metadata_path=${metadata_path}
+      {%- if ext == 'py' %}
+      --metadata_path=${metadata_path} \
       {%- endif %}
 			--label=${data_label} > \
 			${data_label}-${getPublishPath(task.process).tokenize('/')[-1]}.log
