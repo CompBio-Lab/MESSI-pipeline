@@ -35,7 +35,7 @@ library(here)
 # Loading scripts
 source(here("bin/rhelpers.R")) # This is included in nextflow bin path
 # Load utils specific to simulation data
-rp <- resource_helper_path("modules/simulate_data")
+rp <- resource_helper_path("modules/simulation/simulate_mvn_data")
 source(here(rp, "gen_simul_metadata.R"))
 source(here(rp, "unique_matrices.R"))
 # Loading generic utils
@@ -130,8 +130,8 @@ main <- function(number, num_predictors, blocks_num,
 }
 
 # Set seed to guarantee reproducible result (DELETE Later)
-SEED = opt$seed
-set.seed(SEED)
+#SEED = opt$seed
+#set.seed(SEED)
 dat <- main(
     number          = opt$number, 
     num_predictors  = opt$num_predictors,

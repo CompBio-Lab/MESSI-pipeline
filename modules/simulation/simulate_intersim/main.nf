@@ -28,9 +28,8 @@ process SIMULATE_INTERSIM {
 	tag "${grid.dataset_name}-${output_format}"
 	label 'process_medium'
 	container "${ onSockeye ? 
-		'save_simulate.sif' : 
-		'tonyliang19/save_simulate:latest' }"
-	label 'mae_mu'
+		'intersim.sif' : 
+		'tonyliang19/intersim:latest' }"
 	publishDir (
 		path: "${params.outdir}/${task.process.tokenize(':')[-1].toLowerCase()}/${grid.dataset_name}",
 		saveAS: { file },
@@ -44,31 +43,19 @@ process SIMULATE_INTERSIM {
 	// Possible output for downstream
 	output:
 		// The optional MUST be true here, since it should output one of MAE or MuData at a time
-		tuple val(grid.dataset_name), val(grid.seed), path('*mae*'), 	optional: true, emit: sim_mae
-		tuple val(grid.dataset_name), val(grid.seed), path('*.h5mu'), optional: true, emit: sim_mu
-		tuple val(grid.dataset_name), val(grid.seed), path('*.log'),									emit: sim_log
+		tuple val(grid.dataset_name), path('*mae*'), 	optional: true, emit: sim_mae
+		tuple val(grid.dataset_name), path('*.h5mu'), optional: true, emit: sim_mu
+		tuple val(grid.dataset_name), path('*.log'),									emit: sim_log
 	
 	script:
 		"""
-		echo -e "\nThis is try ${grid.dataset_name}"
-		simulate_data.R	--dataset_name=${grid.dataset_name} \
+		simulate_InterSIM.R	--dataset_name=${grid.dataset_name} \
 			--number=${grid.num_obs} \
-			--num_predictors=${grid.num_predictors} \
-			--block_num=${grid.block_num} \
-			--latent_predictors=${grid.latent_predictors} \
+			--effect=${grid.effect} \
 			--sigma=${grid.sigma} \
-			--sy=${grid.sy} \
-			--sp=${grid.sp} \
-			--u_std=${grid.u_std} \
-			--fct_str=${grid.fct_str} \
-			--task=${grid.task} \
-			--tr=${grid.tr} \
-			--seed=${grid.seed} \
-			--y_name=${grid.y_name} \
+			--corr=${grid.corr} \
 			--output_format=${output_format} > \
 			${grid.dataset_name}_${task.process.tokenize(':')[-1].toLowerCase()}.log
-		echo -e "\nDone with ${grid.dataset_name}"
-		echo -e "\nSeed is ${grid.seed}"
 		"""
 	// You need extra param to run stub like -stub
 	stub:

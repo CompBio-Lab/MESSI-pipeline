@@ -10,11 +10,14 @@ Usage:
   simulate_InterSIM.R [options]
 
 Options:
-  --help                Display this help message
-  --number_obs=N        Number of observations to generate [default: 2]
-  --sigma=SIGMA         Covariance structure in the each omics's data, one of def, indep [default: indep]
-  --corr=CORR           Correlation between each omics, one of: low, med, high, def. [default: low]
-  --transformation=TR   Transformation to apply of the generated X to derive the response variable [default: rev_logit]
+  --help                  Display this help message
+  --dataset_name=DNAME    Name of the dataset [default: empty]
+  --output_format=OUT_F   Format of the output data, one of MAE or MuData [default: empty]
+  --number_obs=N          Number of observations to generate [default: 30]
+  --effect=EFFECT         Cluster mean shift on each view [default: 2]
+  --sigma=SIGMA           Covariance structure in the each omics's data, one of def, indep [default: indep]
+  --corr=CORR             Correlation between each omics, one of: 0, 0.5, 1 . [default: 0]
+  --transformation=TR     Transformation to apply of the generated X to derive the response variable [default: rev_logit]
 "
 # ==============================================================================
 # Parse cli arguments
@@ -22,6 +25,21 @@ opt <- docopt::docopt(doc)
 # Load library
 library(InterSIM)
 library(dplyr)
+
+
+# Helper to convert mae to h5mu on mudata
+save_h5mu <- function(mae, dataset_name) {
+  # Takes the MAE experiment and save this as MuData
+  exps <- mae@ExperimentList |> lapply(t)
+  col_data <- mae@colData |> as.data.frame()
+  feat_names <- mae@ExperimentList |> lapply(rownames)
+  # Then calls python code here
+  reticulate::use_python("/usr/bin/python")
+  reticulate::source_python(here::here("modules/simulation/simulate_intersim/resources/usr/bin/save_mudata.py"))
+  # Save it to mudata
+  save_mudata(exps, col_data, feat_names, dataset_name)
+}
+
 
 # Helper fun to generate the bernoulli distributed response variable from the 
 # counts X using certain criteria
@@ -45,6 +63,13 @@ generate_Y <- function(X, transformation=c("rev_logit", "composite_score"), tol=
   message("Using transformation: ", transformation)
   # NOTE: Always using row here, since InterSim output row as subject, col as
   # feature
+  
+  
+  # =======================
+  # THIS IS FOR DEBUG
+  #X <- dd@ExperimentList |> lapply(t)
+  # =======================
+  
   if (transformation == "composite_score") {
     z <- rowSums(do.call(cbind, lapply(X, rowSums)))
     # Calculate a avg score of either mean or median
@@ -83,31 +108,26 @@ generate_Y <- function(X, transformation=c("rev_logit", "composite_score"), tol=
 }
 
 
+
+
 # Main entrace of the function
-main <- function(n=40, effect = 2.0,
+main <- function(dataset_name, output_format, n, effect, 
                  p.DMP=0.2, p.DEG=NULL, p.DEP=NULL, 
                  sigma=c("indep", "def"), 
-                 corr=c("low", "med", "high", "def"),
-                 transformation="rev_logit") {
+                 corr=0,
+                 transformation="rev_logit",
+                 output_) {
   
-  # Match args of sigma and corr
+  # Stop when no custom dataset name is provided
+  if (dataset_name == "empty") stop("Did not provided a custom dataset for simulation of intersim")
+  if (output_format == "empty") stop("Did not provided the format of data to write out for simulation of intersim")
+  # Match args of sigma
   sigma <- match.arg(sigma)
-  corr <- match.arg(corr)
-  
   if (sigma == "def") {
     sigma <- NULL
   }
-  
-  if (corr == "low") {
-    corr <- 0.2
-  } else if (corr == "med") {
-    corr <- 0.5
-  } else if (corr == "high") {
-    corr <- 0.7
-  } else {
-    corr <- NULL
-  }
 
+  
   # First generate the count data from InterSIM
   # TODO: The interSIM pkg doesnt have a way to change number of features in each omics
   # fixed to their defaults ....
@@ -116,7 +136,7 @@ main <- function(n=40, effect = 2.0,
                   p.DMP=p.DMP,p.DEG=p.DEG, p.DEP=p.DEP, 
                   sigma.methyl=sigma, sigma.expr=sigma, sigma.protein=sigma,
                   cor.methyl.expr=corr, cor.expr.protein=corr)
-
+  
   # Ignore its cluster assignment for now
   # NOTE: this gives a non scaled data
   X_raw <- dat[1:length(dat) - 1] # Since last element is the cluster assignment
@@ -127,15 +147,34 @@ main <- function(n=40, effect = 2.0,
   # And transpose the X to MultiAssayExperiment format, then construct the MAE
   mae <- MultiAssayExperiment::MultiAssayExperiment(
     experiments = lapply(X_raw, t),
-    colData = Y)
+    colData = Y
+  )
+  
+  
+  # Then should convert mae to mudata h5mu
+  if (tolower(output_format) == "mudata") {
+      save_h5mu(mae, dataset_name)
+  }
+
+  if (tolower(output_format) == "mae") {
+      # Also saving it as mae
+      MultiAssayExperiment::saveHDF5MultiAssayExperiment(mae, 
+                                  dir=paste0(dataset_name, "_", "mae_data"),
+                                  replace = T)
+  }
   return(mae)
 }
 
 
 # Call the main function
-main(
-  n=as.numeric(opt$number_obs),
-  sigma= opt$sigma,
-  corr = opt$corr,
+
+
+dd <- main(
+  dataset_name = opt$dataset_name,
+  output_format = opt$output_format,
+  n = as.numeric(opt$number_obs),
+  effect = as.numeric(opt$effect),
+  sigma = opt$sigma,
+  corr = as.numeric(opt$corr),
   transformation = opt$transformation
 )

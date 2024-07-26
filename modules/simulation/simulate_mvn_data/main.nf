@@ -44,9 +44,9 @@ process SIMULATE_MVN_DATA {
 	// Possible output for downstream
 	output:
 		// The optional MUST be true here, since it should output one of MAE or MuData at a time
-		tuple val(grid.dataset_name), val(grid.seed), path('*mae*'), 	optional: true, emit: sim_mae
-		tuple val(grid.dataset_name), val(grid.seed), path('*.h5mu'), optional: true, emit: sim_mu
-		tuple val(grid.dataset_name), val(grid.seed), path('*.log'),									emit: sim_log
+		tuple val(grid.dataset_name), path('*mae*'), 	optional: true, emit: sim_mae
+		tuple val(grid.dataset_name), path('*.h5mu'), optional: true, emit: sim_mu
+		tuple val(grid.dataset_name), path('*.log'),									emit: sim_log
 	
 	script:
 		"""
@@ -63,12 +63,10 @@ process SIMULATE_MVN_DATA {
 			--fct_str=${grid.fct_str} \
 			--task=${grid.task} \
 			--tr=${grid.tr} \
-			--seed=${grid.seed} \
 			--y_name=${grid.y_name} \
 			--output_format=${output_format} > \
 			${grid.dataset_name}_${task.process.tokenize(':')[-1].toLowerCase()}.log
 		echo -e "\nDone with ${grid.dataset_name}"
-		echo -e "\nSeed is ${grid.seed}"
 		"""
 	// You need extra param to run stub like -stub
 	stub:
