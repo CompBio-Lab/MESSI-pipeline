@@ -1,6 +1,8 @@
+// Include simulation workflow
+include { SIMULATION } from "${subworkflowDir}/simulation"
+
 // Include modules here
 def prepare_dir = "${modulesDir}/prepare_data"
-include { SIMULATE_MVN_DATA }     from "${prepare_dir}/simulate_mvn_data"
 include { PREPARE_MAE_DATA  }     from "${prepare_dir}/prepare_mae_data"
 include { PREPARE_MU_DATA   }     from "${prepare_dir}/prepare_mu_data"
 include { PARSE_METADATA }        from "${prepare_dir}/parse_metadata"
@@ -9,8 +11,8 @@ include { UNCOMPRESS_RECORD }     from "${prepare_dir}/uncompress_record"
 def funScript = "${modulesDir}/functions"
 include { printBanner }           from "${funScript}"
 include { createSimCombination }  from "${funScript}"
-include { calculateSeed }         from "${funScript}"
-include { parseDataDirs }         from "${funScript}"
+// include { calculateSeed }         from "${funScript}"
+// include { parseDataDirs }         from "${funScript}"
 // Logging helpers
 def logRunSimple(boolean runSimple) {
   if (runSimple) {
@@ -26,11 +28,11 @@ def logRunSimple(boolean runSimple) {
 // either treating real data parsing, or simulating data
 workflow PREPARE_DATA {
     // Load parameters used for the workflow
-    ch_sim_params_comb  = createSimCombination(params)    // Will determine if giving large grid or small grid
-                                                          // Combination of parameters of simulation
-    ch_output           = Channel.fromList(               // Output format MAE and MuData
-                            params.output_formats
-                          )
+    // ch_sim_params_comb  = createSimCombination(params)    // Will determine if giving large grid or small grid
+    //                                                       // Combination of parameters of simulation
+    // ch_output           = Channel.fromList(               // Output format MAE and MuData
+    //                         params.output_formats
+    //                       )
     runSimulation       = params.runSimulation               // Run simulations or not (default: false)
     runSimple           = params.runSimple
   /* Workflow starts here */
@@ -53,6 +55,8 @@ workflow PREPARE_DATA {
       log.info "Running simulation workflow now"
       logRunSimple(runSimple)
       (mae_data, mu_data, ch_logs) = SIMULATE_MVN_DATA ( ch_sim_params_comb, ch_output)
+
+      
       // TODO: Why this joined stuff go to 4? instead of 3
       sim_data	= mae_data.join(mu_data, by: 0) // Join by the dataset name
                           .map {it ->
