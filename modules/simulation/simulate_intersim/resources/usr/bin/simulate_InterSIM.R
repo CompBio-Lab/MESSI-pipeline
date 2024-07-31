@@ -57,57 +57,89 @@ save_h5mu <- function(mae, dataset_name) {
 #             entry of the cbinded matrices M = [m1 m2 m3, ...] then take
 #             Bern( 1 - rowMeans(M) ) 
 #   tol: tolerance of comparing difference of sample var and population of the response
-generate_Y <- function(X, transformation=c("rev_logit", "composite_score"), tol=0.01, id_name="sample_name") {
-  # SHOULD not create the y by clustering it, otherwise method will catch it 100%?
-  transformation <- match.arg(transformation)
-  message("Using transformation: ", transformation)
-  # NOTE: Always using row here, since InterSim output row as subject, col as
-  # feature
+# generate_Y <- function(X, transformation=c("rev_logit", "composite_score"), tol=0.01, id_name="sample_name") {
+#   # SHOULD not create the y by clustering it, otherwise method will catch it 100%?
+#   transformation <- match.arg(transformation)
+#   message("Using transformation: ", transformation)
+#   # NOTE: Always using row here, since InterSim output row as subject, col as
+#   # feature
   
   
-  # =======================
-  # THIS IS FOR DEBUG
-  #X <- dd@ExperimentList |> lapply(t)
-  # =======================
+#   # =======================
+#   # THIS IS FOR DEBUG
+#   #X <- dd@ExperimentList |> lapply(t)
+#   # =======================
   
-  if (transformation == "composite_score") {
-    z <- rowSums(do.call(cbind, lapply(X, rowSums)))
-    # Calculate a avg score of either mean or median
-    median_score <- median(z)
-    # Named vector of 1 and 0s
-    response <- ifelse(z >= median_score, 1, 0)
-  }
+#   if (transformation == "composite_score") {
+#     z <- rowSums(do.call(cbind, lapply(X, rowSums)))
+#     # Calculate a avg score of either mean or median
+#     median_score <- median(z)
+#     # Named vector of 1 and 0s
+#     response <- ifelse(z >= median_score, 1, 0)
+#   }
   
-  if (transformation == "rev_logit") {
-    # TODO: the rowmeans could be bad, since its almost always > 0
-    # resulting in a not so fair bernoulli random variable
-    z <- InterSIM::rev.logit(do.call(cbind, X)) |>
-      rowMeans() 
-    # TODO: try z (more positives) or 1 - z (more negative) in prob
-    response  <- rbinom(n = length(z) , size = 1 , prob = 1 - z)
-    # Named vector of 1 and 0s
-    names(response) <- names(z)
-  }
-  # Check if the response follows bernoulli distribution with some tolerance
-  sample_var <- var(response)
-  phat <- mean(response)
-  pop_var <- phat * (1 - phat)
-  diff <- abs(pop_var - sample_var)
-  is_bernoulli <- diff <= tol
-  if (!is_bernoulli) warning("Difference of population and sample variance: ", round(diff, 3), " which exceeded tolerance of ", tol)
+#   if (transformation == "rev_logit") {
+#     # TODO: the rowmeans could be bad, since its almost always > 0
+#     # resulting in a not so fair bernoulli random variable
+#     z <- InterSIM::rev.logit(do.call(cbind, X)) |>
+#       rowMeans() 
+#     # TODO: try z (more positives) or 1 - z (more negative) in prob
+#     response  <- rbinom(n = length(z) , size = 1 , prob = 1 - z)
+#     # Named vector of 1 and 0s
+#     names(response) <- names(z)
+#   }
+#   # Check if the response follows bernoulli distribution with some tolerance
+#   sample_var <- var(response)
+#   phat <- mean(response)
+#   pop_var <- phat * (1 - phat)
+#   diff <- abs(pop_var - sample_var)
+#   is_bernoulli <- diff <= tol
+#   if (!is_bernoulli) warning("Difference of population and sample variance: ", round(diff, 3), " which exceeded tolerance of ", tol)
   
-  # Lastly assign the rownames to df as well
+#   # Lastly assign the rownames to df as well
+#   meta_df <- response |>
+#     as.data.frame() |>
+#     tibble::rownames_to_column(var={{ id_name }}) |>
+#     select({{ id_name }}, response)
+#   # Manually assign the rownames back, since MAE uses rownames of colData to
+#   # match those colnames of the X matrix (P_j x n)
+#   rownames(meta_df) <- meta_df |> pull( {{ id_name }} )
+#   return(meta_df)
+# }
+
+
+generate_Y <- function(response, id_name="sample_name") {
+  # Maybe should not create the y by clustering it, otherwise method will catch it 100%?
   meta_df <- response |>
-    as.data.frame() |>
-    tibble::rownames_to_column(var={{ id_name }}) |>
-    select({{ id_name }}, response)
+            rename( 
+              {{ id_name }} := subjects ,
+              "response" = cluster.id
+            ) |>
+            # INTERSIM gives 3 clusters, so we only keep the first two 1 and 2
+            filter(response != 3) |>
+            # This makes it to binary 1 and 0
+            mutate(response = as.numeric(as.factor(response)) - 1)
   # Manually assign the rownames back, since MAE uses rownames of colData to
   # match those colnames of the X matrix (P_j x n)
   rownames(meta_df) <- meta_df |> pull( {{ id_name }} )
   return(meta_df)
 }
 
-
+# Process something on the X counts and filter by those subject names in Y
+generate_X <- function(X_raw, meta_df) {
+  # Rename its prefix of dat.<view_name>
+  X_names <- gsub("dat.", "", names(X_raw))
+  # The sample names in clusters 1 and 2
+  keep_samples <- rownames(meta_df)
+  # And transpose the X to MultiAssayExperiment format
+  X <- lapply(X_raw, function(omic) {
+    # Only keep those subjects in clusters 1 and 2
+    x <- omic[ keep_samples, ]
+    return(t(x))
+  })
+  names(X) <- X_names
+  return(X)
+}
 
 
 # Main entrace of the function
@@ -138,16 +170,15 @@ main <- function(dataset_name, output_format, n, effect,
                   cor.methyl.expr=corr, cor.expr.protein=corr)
   
   # Ignore its cluster assignment for now
-  # NOTE: this gives a non scaled data
-  X_raw <- dat[1:length(dat) - 1] # Since last element is the cluster assignment
-  # Rename its prefix of dat.<view_name>
-  names(X_raw) <- gsub("dat.", "", names(X_raw))
-  # Call the helper fun to generate Y variable which follows Bernoulli distribution
-  Y <- generate_Y(X=X_raw, transformation = transformation)
-  # And transpose the X to MultiAssayExperiment format, then construct the MAE
+  n_list <- length(dat)
+  # We retaining only cluster 1 and 2 subjects, so need to first process meta then on X
+  Y_df <- generate_Y(response=dat[[n_list]])
+  # Process the X as well
+  X <- generate_X(X_raw = dat[1:n_list - 1], meta_df=Y_df)
+  # Construct the X and Y here
   mae <- MultiAssayExperiment::MultiAssayExperiment(
-    experiments = lapply(X_raw, t),
-    colData = Y
+    experiments = X,
+    colData = Y_df
   )
   
   
@@ -158,7 +189,7 @@ main <- function(dataset_name, output_format, n, effect,
 
   if (tolower(output_format) == "mae") {
       # Also saving it as mae
-      MultiAssayExperiment::saveHDF5MultiAssayExperiment(mae, 
+      MultiAssayExperiment::saveHDF5MultiAssayExperiment(mae, prefix="",
                                   dir=paste0(dataset_name, "_", "mae_data"),
                                   replace = T)
   }
@@ -167,9 +198,7 @@ main <- function(dataset_name, output_format, n, effect,
 
 
 # Call the main function
-
-
-dd <- main(
+main(
   dataset_name = opt$dataset_name,
   output_format = opt$output_format,
   n = as.numeric(opt$number_obs),
