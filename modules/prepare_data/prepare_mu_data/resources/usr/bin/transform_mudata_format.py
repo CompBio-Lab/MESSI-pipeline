@@ -40,17 +40,17 @@ def transform_mudata_format(mu_path, dataset_name, identifier_col="sample_names"
     data = raw_data.copy() 
     # Mudata has stricter format, so only need to check if each obs contain the
     # required columns
-    must_cols = ["response", "sample_names"]
+    accepted_cols = set(["response", "sample_names", "sample_name"])
     new_mu_dict = {}
     for modality in data.mod:
         # get each modality's obs metadata and the measurements
         omic_obs = data[modality].obs
         obs_cols = set(omic_obs.columns)
-        omic_df = data[modality].to_df()
-        # Check if overlap needs to be two
-        cols_contained = len(obs_cols & set(must_cols)) == len(must_cols)
+        # Check if at least contains response or sample_name/s in accepted cols
+        cols_contained = len(accepted_cols & obs_cols) >= 2
         if not cols_contained:
-            raise Exception("Did not have the contained columns: response, sample_names")
+            raise Exception("Did not have the contained columns: response, sample_name")
+        omic_df = data[modality].to_df()
         # Then start the preprocess steps
         # Remove those of near zero variance
         # And replace nas with 0
