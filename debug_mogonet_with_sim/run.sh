@@ -1,0 +1,1 @@
+preprocess_mogonet.py       --mdata_path=sim-data_n-50_effect-2_sigma-indep_corr-0.5.h5mu       --splits_dir=splits       --base_dir=fold >       sim-data_n-50_effect-2_sigma-indep_corr-0.5-preprocess.log

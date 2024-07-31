@@ -1,0 +1,2 @@
+INFO:    squashfuse not found, will not be able to use gocryptfs
+INFO:    gocryptfs not found, will not be able to use gocryptfs

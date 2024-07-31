@@ -20,7 +20,7 @@ library(MultiAssayExperiment)
 library(here)
 library(dplyr)
 
-parseMeta2df <- function(mae, dataset_name=NULL) {
+parseMeta2df <- function(mae, dataset_name=NULL, simulated_dname="sim_data") {
   if (is.null(dataset_name)) stop("Did not provide a dataset name for current mae data")
   # Create the dataframe
   # Each row should be a dataset
@@ -29,6 +29,9 @@ parseMeta2df <- function(mae, dataset_name=NULL) {
   omics_names <- names(mae@ExperimentList) |> paste(collapse=",")
   row_dims <- sapply(mae@ExperimentList, nrow) |> paste(collapse = ",")
   col_dims <- sapply(mae@ExperimentList, ncol) |> paste(collapse = ",")
+  # Also parse based on the dataset name to see if it was a simulated
+  is_simulated <- ifelse(stringr::str_detect(dataset_name, pattern=simulated_dname), 1 , 0)
+
   # TODO: need a more robust code on parsing the metadata
   response <- mae@metadata$response
   is_binary_chr_factor <- is.factor(response) && length(levels(response)) == 2
@@ -46,7 +49,8 @@ parseMeta2df <- function(mae, dataset_name=NULL) {
                  omics_names = omics_names,
                  row_dimensions = row_dims,
                  col_dimensions = col_dims,
-                 positive_prop = positive_prop
+                 positive_prop = positive_prop,
+                 is_simulated = is_simulated
                )
   return(output_df)
 }

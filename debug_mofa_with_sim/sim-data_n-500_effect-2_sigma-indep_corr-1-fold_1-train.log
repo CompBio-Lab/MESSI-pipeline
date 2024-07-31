@@ -1,0 +1,16 @@
+
+Using the following parameters: 
+{mae_path = sim-data_n-500_effect-2_sigma-indep_corr-1_mae_data, label = sim-data_n-500_effect-2_sigma-indep_corr-1-fold_1, fold_path = fold_1, run_inner_cv = FALSE, prefix = pre}
+
+Looking at this fold: fold_1 
+
+Converting delayed matrix to matrix
+
+Converting response to binary
+
+Converting delayed matrix to matrix
+
+Converting response to binary
+
+Total of 150 samples:
+ subject3 subject9 subject13 subject14 subject16 subject18 subject19 subject20 subject25 subject26 subject40 subject44 subject45 subject47 subject50 subject53 subject54 subject55 subject57 subject60 subject62 subject65 subject66 subject68 subject72 subject76 subject79 subject84 subject86 subject94 subject101 subject102 subject106 subject113 subject117 subject122 subject124 subject129 subject131 subject132 subject139 subject153 subject155 subject158 subject161 subject166 subject169 subject171 subject174 subject175 subject176 subject178 subject182 subject185 subject189 subject192 subject194 subject196 subject200 subject201 subject202 subject203 subject206 subject208 subject210 subject216 subject217 subject220 subject224 subject226 subject227 subject230 subject234 subject235 subject236 subject242 subject245 subject250 subject252 subject254 subject255 subject256 subject261 subject265 subject276 subject277 subject290 subject292 subject293 subject296 subject306 subject307 subject317 subject318 subject319 subject320 subject325 subject328 subject330 subject332 subject337 subject339 subject344 subject346 subject354 subject355 subject356 subject361 subject366 subject367 subject370 subject373 subject376 subject378 subject380 subject386 subject389 subject392 subject397 subject398 subject400 subject406 subject407 subject418 subject423 subject428 subject434 subject436 subject439 subject441 subject444 subject445 subject447 subject448 subject455 subject458 subject462 subject464 subject465 subject467 subject468 subject473 subject476 subject478 subject479 subject482 subject486 subject494 subject496 subject498
