@@ -18,7 +18,7 @@ PROJECT_ROOT_DIR=$(dirname $(dirname $SCRIPT_DIR))
 # Python binary
 PYTHON_BIN=python
 # ARGS for the script
-NAME="logit_demo"
+NAME="run_logit_demo2"
 LANGUAGE="R"
 DOCKER_USER="tonyliang19"
 # Then execute the command
@@ -27,5 +27,6 @@ echo "Adding ${NAME} into MESSI"
 ${PYTHON_BIN} "${PYTHON_SRC}" --method=${NAME}  \
   --language=${LANGUAGE} \
   --outdir=${PROJECT_ROOT_DIR} \
-  --docker_user=${DOCKER_USER}
+  --docker_user=${DOCKER_USER} \
+  --force
 #echo ${PROJECT_ROOT_DIR}
