@@ -29,6 +29,10 @@ process COMPRESS_DATA_GZ {
 		overwrite: true
 	)
 
+  // These are required to handle to symlink from MAE data
+  stageInMode 'copy'
+  stageOutMode 'copy'
+
   input:
     tuple val(dataset_name), path(mae_path), path(mu_path)
   output:
@@ -47,6 +51,7 @@ process COMPRESS_DATA_GZ {
 
 workflow SIMULATION {
   // WORKFLOW PARAMS
+  dataset_base_name   = params.dataset_base_name
   // Strategy of simulation
   skip_sim_MVN        = params.skip_sim_MVN
   skip_sim_intersim   = params.skip_sim_intersim
@@ -77,7 +82,7 @@ workflow SIMULATION {
     intersim_corr = Channel.fromList([0,0.5,1])
     intersim_effect = Channel.fromList([2])
 
-    Channel.fromList(["sim_data"])
+    Channel.of(dataset_base_name)
       .combine(intersim_num_obs)
       .combine(intersim_effect)
       .combine(intersim_sigma)
