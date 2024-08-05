@@ -63,6 +63,8 @@ main <- function(mae_path, label, fold_path, run_inner_cv, prefix) {
     message("\nNot running inner cv per fold\n")
   
     train_x <- train_data$X$embeddings
+    # Print head of embeddings
+    cat( train_x |> head() )
     train_y <- train_data$Y
     # Glmnet model (ACTUALLY using this to predict)
     model <- glmnet(
