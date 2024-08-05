@@ -28,6 +28,9 @@ process {{ method|upper }}_PREDICT {
 	input:
     tuple val(dataset_name), val(fold_name), path(model_path)
 		tuple val(dataset_name), val(fold_name), path(test_path)
+    {% if ext == 'py' -%}
+    tuple val(dataset_name), val(fold_name), path(metadata_path)
+    {%- endif %}
     val(method_name)
 	/*
     Minimal requierd output are the path to predicted results in a csv format
@@ -49,6 +52,9 @@ process {{ method|upper }}_PREDICT {
     {{ method|lower }}_predict.{{ ext }} \
       --model_path=${model_path} \
       --test_path=${test_path} \
+      {%- if ext == 'py' %}
+      --metadata_path=${metadata_path} \
+      {%- endif %}
 			--label=${data_label} > \
 			${data_label}-${getPublishPath(task.process).tokenize('/')[-1]}.log
 		"""

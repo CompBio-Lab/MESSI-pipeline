@@ -1,6 +1,5 @@
 // Methods to include
 include { DEMO_LOGIT } from "${subworkflowDir}/methods/demo_logit"
-include { LOGIT_DEMO } from "${subworkflowDir}/methods/logit_demo"
 include { COOPERATIVE_LEARNING }  from "${subworkflowDir}/methods/cooperative_learning"
 include { DIABLO }                from "${subworkflowDir}/methods/diablo"
 include { MOFA }                  from "${subworkflowDir}/methods/mofa"
@@ -16,8 +15,7 @@ def language_name = "R"
 def saveMode = "language"
 workflow CV_R {
   // Skip or trigger method to run
-  skip_demo_logit = false // boolean: true/false
-  skip_logit_demo = false // boolean: true/false
+  skip_demo_logit = params.skip_demo_logit // boolean: true/false
   skip_cplr   = params.skip_cplr    // boolean: true/false
   skip_diablo = params.skip_diablo  // boolean: true/false
   skip_rgcca  = params.skip_rgcca   // boolean: true/false
@@ -47,13 +45,6 @@ workflow CV_R {
     if (!skip_demo_logit) {
         DEMO_LOGIT ( mae_copy )
         demo_logit_results = DEMO_LOGIT.out.csv_results
-    }
-    
-    // LOGIT_DEMO
-    logit_demo_results = Channel.empty()
-    if (!skip_logit_demo) {
-        LOGIT_DEMO ( mae_copy )
-        logit_demo_results = LOGIT_DEMO.out.csv_results
     }
     
 
@@ -97,7 +88,6 @@ workflow CV_R {
     Channel.empty()
             // Then these are outputs of methods
             .mix( demo_logit_results )
-            .mix( logit_demo_results )
             .mix( cooperative_learning_results )
             .mix( diablo_results )
             .mix( mofa_results )

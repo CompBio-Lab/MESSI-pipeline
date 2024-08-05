@@ -3,8 +3,8 @@ process CALCULATE_METRICS {
 	debug true
 	label 'process_single'
 	container "${ onSockeye  ?
-		'codia.sif' :
-		'tonyliang19/codia:latest' }"
+		'mogonet.sif' :
+		'tonyliang19/mogonet:latest' }"
 
 	publishDir (
 		path: "${params.outdir}/${task.process.tokenize(':').join('/').toLowerCase()}",
@@ -13,8 +13,6 @@ process CALCULATE_METRICS {
 	)
 	// Labels
 	label 'low_mem'
-	label 'cpu'
-	label 'codia'
 	// Input output blocks
   input:
     tuple val(method_name), path(result_table)
@@ -23,7 +21,7 @@ process CALCULATE_METRICS {
 		tuple val(method_name), path('*.csv'),  emit: metric_table
 		path('*log*'),                          emit: log
 	script:
-    def script_name = "calculate_metrics.R" // Execute this script in resources/usr/bin
+    def script_name = "calculate_metrics.py" // Execute this script in resources/usr/bin
     """
     ${script_name} \
       --result_path=${result_table} \

@@ -10,7 +10,8 @@ Usage:
 Options:
   --help                          Display this help message
   --data_path=DATA_PATH           Path to MuData [default: empty]
-  --splits_dir=SPLITS_DIR         Path to all the splits [default: splits]
+  --split_dir=SPLIT_DIR           Path to all the splits [default: splits]
+  --dataset_name=DNAME            Name of the dataset
 """
 
 # TODO: You might need to add more args into your docopt message above
@@ -25,10 +26,10 @@ import mudata
 
 
 # Helper to run the splits from list of txts files
-def load_test_splits(splits_dir, pattern="*fold*"):
+def load_test_splits(split_dir, pattern="*fold*"):
   """
   Parameters:
-    splits_dir:   Directory containing test indices pre splitted earlier
+    split_dir:   Directory containing test indices pre splitted earlier
 
   Return:
     out_df: a dataframe, with index being test_fold_i for i to k
@@ -36,7 +37,7 @@ def load_test_splits(splits_dir, pattern="*fold*"):
             row of data was "test" data
   """
   # Requires pattern to match multiple files
-  files = glob.glob(os.path.join(splits_dir, pattern))
+  files = glob.glob(os.path.join(split_dir, pattern))
   split_dict = {}
   for index, file in enumerate(files):
       # Note we need to shift these back to 0 index
@@ -88,10 +89,10 @@ def tr_te_mdata(mdata, splits_df, meta, split):
 
 # This is the main logic
 # TODO: You likely need to implement this main function
-def main(mdata_path, splits_dir, base_dir="fold"):
+def main(mdata_path, split_dir, dataset_name, base_dir="fold"):
     mdata = mudata.read(mdata_path)
     # Notice index here is 0-based (read in txts)
-    test_splits_df  =  load_test_splits(splits_dir=splits_dir)
+    test_splits_df  =  load_test_splits(split_dir=split_dir)
     metadata_df     =  merge_obs_metadata(mdata.obs)
     for i, split in enumerate(test_splits_df.index):
         # Create output folder first
@@ -112,6 +113,6 @@ if __name__ == '__main__':
   # Execute runner
   main(
     mdata_path      = args["--data_path"],
-    splits_dir      = args["--splits_dir"],
-    base_dir        = args["--base_dir"]
+    split_dir       = args["--split_dir"],
+    dataset_name    = args['--dataset_name']
   )

@@ -54,12 +54,11 @@ def calculateSeed(String dataset_name) {
   Default only varies numbers and number of predictors
 */
 def createSimCombination(params) {
-  def dNum 	= 0 // Init this as 0 to be identifier of dataset
   /* 
     Assign to simpler list when running in simpler grid, 
     otherwise use those in config/params.config
   */
-  def num_obs         = (params.runSimple) ? [50, 100]  : params.num_obs
+  def num_obs         = (params.runSimple) ? [50]  : params.num_obs
   def num_predictors  = (params.runSimple) ? [200]      : params.num_predictors
   def block_num       = (params.runSimple) ? [3]        : params.block_num
   ch_sim_params_comb = Channel.fromList(num_obs)
@@ -76,9 +75,9 @@ def createSimCombination(params) {
     .combine(Channel.of(params.dataset_base_name))
     .combine(Channel.of(params.y_name))
     .map { num, np, block_n, lat_p, sigma, sy, sp, u_std, fct_str, task, tr, base_name, y_name -> 
-          dNum++ // Increment the sample number
           [
-            dataset_name: "${base_name}${dNum}", 
+            // Make a base name with the params in the dataset name
+            dataset_name: "${base_name}_n-${num}_p-${np}_j-${block_n}_beta-${lat_p}_s-${sigma}", 
             num_obs: num,
             num_predictors: np,
             block_num: block_n,
@@ -91,7 +90,6 @@ def createSimCombination(params) {
             task: task,
             tr: tr,
             y_name: y_name,
-            seed: calculateSeed("${base_name}${dNum}")
           ] // Map with key-value pair
     }
     .flatten()
