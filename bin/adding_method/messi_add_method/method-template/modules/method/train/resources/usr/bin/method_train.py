@@ -5,7 +5,7 @@ This is script to train model from {{ method|lower }} method. Output is a fitted
 processed train MuData, and previously processed test MuData from specific fold.
 
 Usage:
-  {{ method_lower }}_train.py [options]
+  {{ method|lower }}_train.py [options]
 
 Options:
   -h --help                   Show this message
