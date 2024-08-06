@@ -25,20 +25,21 @@ convert_table_format <- function(table) {
   if (!match_first_col) {
     stop("First column is not sample_name, wrong naming or missed somewhere")
   }
-  # Should at least contain sample name, phat, method_name, dataset
-  relevant_cols <- c("sample_name", "y",  "phat", "method_name", "dataset")
+  # TODO: Should at least contain sample name, phat, method_name, dataset
+  # TODO: allow this extra column of fold
+  relevant_cols <- c("sample_name", "y",  "phat", "method_name", "dataset", "fold")
   contains_relevant_cols <- cols %in% relevant_cols
-  # Renaming those not containing right one
   if(!all(contains_relevant_cols)) {
-    cat("\nRenaming columns to right order or right names\n")
-    colnames(table) <- relevant_cols
+    warning("\nResult table might not contain all relevant columns\n")
+    # TODO: Find a better way for this?
+    table <- table[, relevant_cols]
   }
   
   # Also check if has right column types
   bv <- c(1, 0)
   is_binary_y <- all(is.element(table$y, bv))
   if (!is_binary_y) {
-    cat("\nConverting y to binary output\n")
+    message("\nConverting y to binary output\n")
     table$y <- ifelse(table$y == "yes", 1, 0)
   }
   return(table)
@@ -63,7 +64,7 @@ main <- function(tables, method_name, methodMode, readMode="csv", pattern="-resu
     # TODO: need to make this label and identifier better
     # Get everything before last hypen - to retrieve unique label
     label <- gsub(pattern, "", table_path)
-    cat("\nThis is label:", label, "\n")
+    message("\nThis is label:", label, "\n")
     #table <- switch(
     #            readMode,
     #            "table" = read.table(table_path, header=TRUE),
@@ -74,7 +75,7 @@ main <- function(tables, method_name, methodMode, readMode="csv", pattern="-resu
     # Check the format of each table aligns before adding into list
     to_bind[[label]] <- convert_table_format(table) # Add it to list
   }
-  cat("\nMerging", length(to_bind), "tables\n")
+  message("\nMerging", length(to_bind), "tables\n")
   # Flatten these tables by merging rows
   merged_table <- dplyr::bind_rows(to_bind)
   # Writing to files both csv and txt for now

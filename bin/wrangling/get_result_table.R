@@ -1,6 +1,11 @@
 library(dplyr)
 library(magrittr)
 # Use this script to get result table
+extract_fold_name <- function(label, pattern="fold_\\d+") {
+  matches <- regmatches(label, gregexpr(pattern, label))
+  return(unlist(matches))
+}
+
 get_result_table <- function(probs, label, method_name, test_data, digit=3) {
   # Label is usually dataset_name-fold_i
   # matching by sample names inside the data
@@ -12,9 +17,12 @@ get_result_table <- function(probs, label, method_name, test_data, digit=3) {
         full_join(probs,  by = "sample_name") %>%
         mutate_if(is.numeric, round, digit) %>%
         # add labels for grouping later
-        mutate(method_name = method_name,
-              dataset = gsub(pattern, "", label)
-              #dataset = sapply(strsplit(label, "-"), head, 1)
-              )
+        mutate(
+          method_name = method_name,
+          dataset = gsub(pattern, "", label),
+          # Add column to identify which fold was on
+          fold = extract_fold_name(label)
+          #dataset = sapply(strsplit(label, "-"), head, 1)
+        )
   return(df)
 }
