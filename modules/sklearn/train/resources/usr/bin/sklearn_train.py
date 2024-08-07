@@ -11,6 +11,7 @@ Options:
   -h --help                   Show this message
   --fold_path=FOLD_PATH       Directory containing one split directory of relevant input [default: empty] 
   --label=LABEL               Label of dataset and fold iteration [default: empty]
+  --model_name=MOD            Name of the classifier to run from sklearn [default: empty]
 """
 
 from docopt import docopt
@@ -76,7 +77,8 @@ if __name__ == '__main__':
   # Parse docopt
   args = docopt(__doc__)
   main(
-    fold_path = args["--fold_path"],
-    label     = args["--label"]
+    fold_path  = args["--fold_path"],
+    label      = args["--label"],
+    model_name = args["--model_name"]
   )
 
