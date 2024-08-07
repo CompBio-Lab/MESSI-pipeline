@@ -39,18 +39,21 @@ import pickle
         # ^^ safe to call this function even if cuda is not available
 
 # TODO: Implement here
-def train(fold_path):
+def load_tr_te(fold_path):
   return NotImplementedError
 
 # TODO: Implement here
-def get_test_data(fold_path):
+def train(train_data):
   return NotImplementedError
+
 
 # from upstream process
 def main(fold_path, label):
+  # Load train and test data from fold_path
+  train_data, test_data = load_tr_te(fold_path)
+
   # TODO: Implement your logic of training model
-  model = train(fold_path)
-  test_data = get_test_data(fold_path)
+  model = train(train_data)
 
   # Parse label and choose output file to write
   model_file = f"{label}-model.pt"
