@@ -1,10 +1,9 @@
 import mudata
 import pandas as pd
 
-def mudata2df(path):
-    # Loads a mudata from path (one of train/test)
-    mdata = mudata.read(path)
-    # Then get the Xs as a dataframe of combining all modality together columnwise
+def mudata2df(mdata):
+    # Takes in a mudata and extract X and y components
+    # Get the Xs as a dataframe of combining all modality together columnwise
     mod_names = list(mdata.mod.keys())
     X_df = pd.concat( [mdata[k].to_df() for k in mod_names], axis=1 )
     # Also extract the observation df
