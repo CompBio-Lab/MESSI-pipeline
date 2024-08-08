@@ -11,6 +11,7 @@ Options:
   -h --help                   Show this message
   --fold_path=FOLD_PATH       Directory containing one split directory of relevant input [default: empty] 
   --label=LABEL               Label of dataset and fold iteration [default: empty]
+  --model_name=MOD            Name of the classifier to run from sklearn [default: empty]
 """
 
 from docopt import docopt
@@ -45,7 +46,7 @@ def train(train_data, model_name):
     clf = make_pipeline(StandardScaler(), clf)
     # Fitting model
     clf.fit(X_df, y_df["response"])
-  return clf
+    return clf
 
 
 # from upstream process
@@ -64,9 +65,8 @@ def main(fold_path, label, model_name):
     # TODO: Decide to use pickle or joblib to write the trained model?
     joblib.dump(model, model_file)
     # Also write the test mudata to file so that it is passed to downstream
-    test_file = f"{label}-test_data.pkl"
-    with open(test_file, 'wb') as tf:
-        pickle.dump(test_data, tf)
+    test_file = f"{label}-test_data.h5mu"
+    test_data.write(test_file)
 
     # And writing the metadata file for downstream
     return model
@@ -76,7 +76,8 @@ if __name__ == '__main__':
   # Parse docopt
   args = docopt(__doc__)
   main(
-    fold_path = args["--fold_path"],
-    label     = args["--label"]
+    fold_path  = args["--fold_path"],
+    label      = args["--label"],
+    model_name = args["--model_name"]
   )
 

@@ -4,14 +4,14 @@ include { getPublishPath } from "${modulesDir}/functions"
 process SKLEARN_PREDICT {
 	// Vars stuff
 	def onSockeye = workflow.projectDir.toString().contains('/scratch')
-	tag "${dataset_name}-${fold_name}"
+	tag "${dataset_name}-${fold_name}-${model_name}"
 	debug "${params.debug}"
 	container "${ onSockeye  ?
 		'sklearn.sif' :
 		'tonyliang19/sklearn:latest' }"
 
 	publishDir (
-		path: "${params.outdir}/${getPublishPath(task.process)}/${dataset_name}/${fold_name}",
+		path: "${params.outdir}/${getPublishPath(task.process)}/${dataset_name}/${fold_name}/${model_name}",
 		mode: 'copy',
 		overwrite: true
 	)
@@ -26,8 +26,8 @@ process SKLEARN_PREDICT {
     to trained model and test data for current fold
   */
 	input:
-    tuple val(dataset_name), val(fold_name), path(model_path)
-		tuple val(dataset_name), val(fold_name), path(test_path)
+    tuple val(dataset_name), val(fold_name), val(model_name), path(model_path)
+		tuple val(dataset_name), val(fold_name), val(model_name), path(test_path)
     //tuple val(dataset_name), val(fold_name), path(metadata_path)
     val(method_name)
 	/*
@@ -50,8 +50,9 @@ process SKLEARN_PREDICT {
     sklearn_predict.py \
       --model_path=${model_path} \
       --test_path=${test_path} \
-			--label=${data_label} > \
-			${data_label}-${getPublishPath(task.process).tokenize('/')[-1]}.log
+			--label=${data_label} \
+      --method_name=${method_name}-${model_name} > \
+			${data_label}-${model_name}-${getPublishPath(task.process).tokenize('/')[-1]}.log
 		"""
   stub:
     """

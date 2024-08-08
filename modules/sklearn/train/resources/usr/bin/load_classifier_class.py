@@ -5,29 +5,29 @@ def load_classifier_class(model_name, random_state=42, probability=True):
     # Adopted from https://scikit-learn.org/stable/auto_examples/classification/plot_classifier_comparison.html
     # Storing path of each classifier's class
     model_classes = {
-    "Nearest Neighbors": "sklearn.neighbors.KNeighborsClassifier",
-    "Linear SVM": "sklearn.svm.SVC",
-    "RBF SVM": "sklearn.svm.SVC",
-    "Gaussian Process": "sklearn.gaussian_process.GaussianProcessClassifier",
-    "Decision Tree": "sklearn.tree.DecisionTreeClassifier",
-    "Random Forest": "sklearn.ensemble.RandomForestClassifier",
-    "Neural Net": "sklearn.neural_network.MLPClassifier",
+    "Nearest_Neighbors": "sklearn.neighbors.KNeighborsClassifier",
+    "Linear_SVM": "sklearn.svm.SVC",
+    "RBF_SVM": "sklearn.svm.SVC",
+    "Gaussian_Process": "sklearn.gaussian_process.GaussianProcessClassifier",
+    "Decision_Tree": "sklearn.tree.DecisionTreeClassifier",
+    "Random_Forest": "sklearn.ensemble.RandomForestClassifier",
+    "Neural_Net": "sklearn.neural_network.MLPClassifier",
     "AdaBoost": "sklearn.ensemble.AdaBoostClassifier",
-    "Naive Bayes": "sklearn.naive_bayes.GaussianNB",
+    "Naive_Bayes": "sklearn.naive_bayes.GaussianNB",
     "QDA": "sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis",
     }
     # Storing default params of the classifier
     default_params = {
-        "Nearest Neighbors": {"n_neighbors": 3},
-        "Linear SVM": {"C": 0.025, "kernel": "linear", "random_state": random_state, "probability": probability},
-        "RBF SVM": {"C": 1.0, "kernel": "rbf", "gamma": 2.0, "random_state": random_state, "probability": probability},
-        "Gaussian Process": {"random_state": random_state},
-        "Decision Tree": {"max_depth": 10, "random_state": random_state},
-        "Random Forest": {"n_estimators": 100, "max_features": "sqrt", "max_depth": 10, "random_state": random_state},
-        "Neural Net": {"alpha": 1.0, "max_iter": 1000, "random_state": random_state},
+        "Nearest_Neighbors": {"n_neighbors": 3},
+        "Linear_SVM": {"C": 0.025, "kernel": "linear", "random_state": random_state, "probability": probability},
+        "RBF_SVM": {"C": 1.0, "kernel": "rbf", "gamma": 2.0, "random_state": random_state, "probability": probability},
+        "Gaussian_Process": {"random_state": random_state},
+        "Decision_Tree": {"max_depth": 10, "random_state": random_state},
+        "Random_Forest": {"n_estimators": 100, "max_features": "sqrt", "max_depth": 10, "random_state": random_state},
+        "Neural_Net": {"alpha": 1.0, "max_iter": 1000, "random_state": random_state},
         "AdaBoost": {"algorithm": "SAMME", "random_state": random_state},
         # Empty params for naive bayes and qda for now, use their default
-        "Naive Bayes": {},
+        "Naive_Bayes": {},
         "QDA": {},
     }
     
