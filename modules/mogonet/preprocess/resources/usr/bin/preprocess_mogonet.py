@@ -32,7 +32,10 @@ def prepare_mogonet_input(mdata_path, splits_dir, base_dir):
     mdata = mudata.read(mdata_path)
     # Notice index here is 0-based (read in txts)
     test_splits_df = load_test_splits(splits_dir=splits_dir)
-    obs_df = merge_obs_metadata(mdata.obs)
+    # TODO: this approach is not stable? always using the first modality for now
+    #obs_df = merge_obs_metadata(mdata.obs)
+    first_mod = list(mdata.mod.keys())[0]
+    obs_df = mdata.mod[first_mod].obs
     for i, split in enumerate(test_splits_df.index):
         # Create output folder first
         outdir = f"{base_dir}_{i+1}"

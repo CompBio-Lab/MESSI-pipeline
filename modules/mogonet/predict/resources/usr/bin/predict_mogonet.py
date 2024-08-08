@@ -36,7 +36,7 @@ def main(model, test_path, metadata_path, label, method_name):
   phat = test_mogonet(model_dict=model_dict, test_input=test_input)
   # Now wrap it to make summary table of the following format:
   # sample_name, y, phat, method_name, dataset
-  result_table = generate_result_table(metadata_path=metadata_path, phat=phat, method_name=method_name)
+  result_table = generate_result_table(metadata_path=metadata_path, phat=phat, method_name=method_name, label=label)
   # Write to csv
   result_file = f"{label}-result.csv"
   result_table.to_csv(result_file, index=False, header=True)

@@ -38,12 +38,11 @@ main <- function(model_path, test_path, label, output_ext, method) {
   # TODO: Implement your logic of getting predicted probabilities of positive class in
   # a binary classification problem
   # Predict and get result
-  pred_probs <- predict(model, newdata=test_data, type="response")
-  names(pred_probs) <- test_data$sample_name
+  pred_probs <- data.frame(phat = predict(model, newdata=test_data, type="response"))
+  rownames(pred_probs) <- test_data$sample_name
 
   # Make sure you could have rownames for identifying different observations/patients
   probs_df <- pred_probs %>%
-              as.data.frame() %>%
               rownames_to_column(var="sample_name") |>
               as_tibble()
   # TODO: might need to transform your output a little to suit this helper function
@@ -62,7 +61,8 @@ main <- function(model_path, test_path, label, output_ext, method) {
         # add labels for grouping later
         mutate(
           method_name = method,
-          dataset = gsub(pattern, "", label)
+          dataset = gsub(pattern, "", label),
+          fold = extract_fold_name(label)
         )
   # Write to files
   message("\nSaving as ", output_ext, " format\n")
