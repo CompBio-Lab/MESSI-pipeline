@@ -1,5 +1,7 @@
 import mudata
 import pandas as pd
+import numpy as np
+
 
 def mudata2df(mdata):
     # Takes in a mudata and extract X and y components
@@ -11,5 +13,5 @@ def mudata2df(mdata):
     # Should contain response column and is of string yes or no
     assert y_df["response"].isin(['yes', 'no']).all(), "Column contains values other than 'yes' or 'no'"
     # Converting to numeric binary
-    y_df["response"] = y_df["response"].map({"no": 0, "yes": 1})
+    y_df.loc[:, "response"] = np.where(y_df["response"] == "yes", 1, 0)
     return X_df, y_df

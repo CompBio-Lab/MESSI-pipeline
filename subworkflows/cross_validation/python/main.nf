@@ -1,4 +1,5 @@
 // Methods to include
+include { SKLEARN } from "${subworkflowDir}/methods/sklearn"
 include { MOGONET } 						from "${subworkflowDir}/methods/mogonet"
 include { GOAT } 								from "${subworkflowDir}/methods/goat"
 // This module to collect results
@@ -13,6 +14,7 @@ def saveMode = "language"
 
 workflow CV_PYTHON {
   // Skip or trigger method to run
+  skip_sklearn  = params.skip_sklearn // boolean: true/false
   skip_mogonet	= params.skip_mogonet	// boolean: true/false
   skip_goat 		= params.skip_goat		// boolean: true/false
   take:
@@ -28,6 +30,13 @@ workflow CV_PYTHON {
     */
 
     // Instantiation of method subworkflows
+    // SKLEARN
+    sklearn_results = Channel.empty()
+    if (!skip_sklearn) {
+        SKLEARN ( mu_copy )
+        sklearn_results = SKLEARN.out.csv_results
+    }
+    
     // MOGONET
     mogonet_results = Channel.empty()
     if (!skip_mogonet) {
@@ -46,6 +55,7 @@ workflow CV_PYTHON {
     // Collect all result and mix it to merge it more
     Channel.empty()
             // Then these are outputs of methods
+            .mix( sklearn_results )
             .mix( mogonet_results )
             .mix( goat_results )
             .map { it ->

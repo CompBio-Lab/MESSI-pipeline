@@ -20,18 +20,19 @@ Options:
 from docopt import docopt
 import joblib
 import pickle
+import mudata
 import pandas as pd
 
 # Custom import
 from generate_result_table import generate_result_table
+from mudata2df import mudata2df
 
 # Main entrance of the testing script
 def main(model_path, test_path, label, method_name):
   # Load model
   model = joblib.load(model_path)
   # Load test mudata
-  with open(test_path, 'rb') as tf:
-      test_data = pickle.load(tf)
+  test_data = mudata.read(test_path)
   # Partion the mudata to x df and y df (which contains response and other metadata)
   test_X_df, test_y_df = mudata2df(test_data)
   # Get predicted probabilities
@@ -40,7 +41,7 @@ def main(model_path, test_path, label, method_name):
   predicted = predicted_df[[1]].to_numpy().ravel()
   result_table = generate_result_table(predicted=predicted, meta_df=test_y_df, method_name=method_name, label=label)
   # Write the result table to csv
-  result_file = f"{label}-result.csv"
+  result_file = f"{label}-{method_name}-result.csv"
   result_table.to_csv(result_file, index=False, header=True)
   return result_table
 
@@ -50,7 +51,7 @@ if __name__ == '__main__':
   args = docopt(__doc__)
   # Execute the main function
   main(
-    model_path=args['--mode_path'], 
+    model_path=args['--model_path'], 
     test_path=args['--test_path'], 
     label=args['--label'],
     method_name=args['--method_name']

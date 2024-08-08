@@ -50,8 +50,9 @@ process SKLEARN_PREDICT {
     sklearn_predict.py \
       --model_path=${model_path} \
       --test_path=${test_path} \
-			--label=${data_label} > \
-			${data_label}-${getPublishPath(task.process).tokenize('/')[-1]}.log
+			--label=${data_label} \
+      --method_name=${method_name}-${model_name} > \
+			${data_label}-${model_name}-${getPublishPath(task.process).tokenize('/')[-1]}.log
 		"""
   stub:
     """

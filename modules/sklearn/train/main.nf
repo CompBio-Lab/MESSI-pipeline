@@ -70,7 +70,7 @@ process SKLEARN_TRAIN {
 				--fold_path=${fold_path} \
 				--label=${data_label} \
 				--model_name=${model_name} > \
-				${data_label}-${getPublishPath(task.process).tokenize('/')[-1].toLowerCase()}.log
+				${data_label}-${model_name}-${getPublishPath(task.process).tokenize('/')[-1].toLowerCase()}.log
 		echo ${data_label} > ${data_label}
 		"""
 
