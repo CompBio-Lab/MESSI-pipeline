@@ -60,13 +60,22 @@ main <- function(model_path, test_path, label, design, output_ext, method_name="
   # TODO: this bit is very bad and hardcoded .....
   if (rename_chr) {
     pred_probs <- pred_probs %>%
-      dplyr::rename(phat = yes) %>%
-      dplyr::select(-no)
+      dplyr::rename(
+        phat = yes,
+        phat_no = no
+      )
+      #dplyr::select(-no)
   } else {
     pred_probs <- pred_probs %>%
-      dplyr::rename(phat = "1") %>%
-      dplyr::select(-"0")
+      dplyr::rename(
+        phat = "1",
+        phat_no = "0"
+      )
+      #dplyr::select(-"0")
   }
+  # TODO: This might not be a good fix, make sure to update the phat to use a absolute value
+  # since it might give you negative value sometimes?
+
   # The coefficient weights
   weights <- pred_obj$weights %>% round(digits = digit)
   # Merge to summary table
