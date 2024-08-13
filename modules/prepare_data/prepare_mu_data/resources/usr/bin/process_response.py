@@ -1,5 +1,6 @@
 import pandas as pd
 
+import pandas as pd
 
 def process_response(y_series, convert_to="numeric"):
     """
@@ -19,34 +20,44 @@ def process_response(y_series, convert_to="numeric"):
 
     # Define mappings for conversions
     # TODO: This could be optimized?, right now is like a brute force
-    label_mappings = {
-        "numeric": {"yes": 1, "no": 0, "1": 1, "0": 0, "1.0": 1, "0.0": 0, 1: 1, 0: 0, 1.0: 1, 0.0: 0},
-        "categorical": {1: "yes", 0: "no", 1.0: "yes", 0.0: "no", "1": "yes", "0": "no", "1.0": "yes", "0.0": "no"}
+    numeric_mapping = {
+        "yes": 1, "no": 0,
+        "1": 1, "0": 0,
+        "1.0": 1, "0.0": 0,
+        1: 1, 0: 0,
+        1.0: 1, 0.0: 0
     }
 
-    # Validate the conversion type
-    if convert_to not in label_mappings:
-        raise ValueError("Invalid convert_to value. Use 'numeric' or 'categorical'.")
-
-    # Ensure all labels are recognized binary formats
-    if not all(label in label_mappings[convert_to] for label in unique_labels):
-        raise ValueError(f"Unrecognized labels in response: {unique_labels}")
-
+    categorical_mapping = {
+        1: "yes", 0: "no",
+        1.0: "yes", 0.0: "no",
+        "1": "yes", "0": "no",
+        "1.0": "yes", "0.0": "no"
+    }
 
     # TODO: this part here below have a lot of redundant stuff
     # Replace values based on the desired conversion
-    y_series_new = y_series.replace(label_mappings[convert_to])
-
-     # Convert the data type
+    # Determine the appropriate mapping based on the conversion type
     if convert_to == "numeric":
-        y_series_new = y_series_new.astype(int)
+        mapping = numeric_mapping
         expected_values = {1, 0}
     elif convert_to == "categorical":
-        y_series_new = y_series_new.astype(str)
+        mapping = categorical_mapping
         expected_values = {"yes", "no"}
+    else:
+        raise ValueError("Invalid conversion type specified. Use 'numeric' or 'categorical'.")
 
-    # Ensure correct final mapping
-    if set(y_series_new.unique()) != expected_values:
-        raise ValueError("Final mapped values are incorrect.")
+    # Check if the series is already in the expected format
+    if set(y_series) == expected_values:
+        return y_series.astype(int) if convert_to == "numeric" else y_series.astype(str)
 
+    # Validate that all labels are recognized
+    if not all(label in mapping for label in unique_labels):
+        raise ValueError(f"Unrecognized labels in response: {unique_labels}")
+
+    # Map labels to the desired format
+    y_series_new = y_series.replace(mapping)
+
+    # Ensure the conversion results in the expected values
+    assert set(y_series_new.unique()) == expected_values
     return y_series_new
