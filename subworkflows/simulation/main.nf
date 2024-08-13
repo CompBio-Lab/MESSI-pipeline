@@ -77,10 +77,10 @@ workflow SIMULATION {
                                                           // Combination of parameters of simulation
 
     //ch_sim_params_comb.view()
-    intersim_num_obs = Channel.fromList(params.num_obs)
+    intersim_num_obs = Channel.fromList([50])
     intersim_sigma = Channel.fromList(["def", "indep"])
     intersim_corr = Channel.fromList([0,0.5,1])
-    intersim_effect = Channel.fromList([2])
+    intersim_effect = Channel.fromList([0, 0.5, 1])
 
     Channel.of(dataset_base_name)
       .combine(intersim_num_obs)
@@ -88,7 +88,7 @@ workflow SIMULATION {
       .combine(intersim_sigma)
       .combine(intersim_corr)
       .map { m -> 
-        [ dataset_name: "${m[0]}_n-${m[1]}_effect-${m[2]}_sigma-${m[3]}_corr-${m[4]}", num_obs: m[1], effect: m[2], sigma: m[3], corr: m[4] ]
+        [ dataset_name: "${m[0]}_strategy-intersim_n-${m[1]}_effect-${m[2]}_sigma-${m[3]}_corr-${m[4]}", num_obs: m[1], effect: m[2], sigma: m[3], corr: m[4] ]
       }
       .set { intersim_grid }
     
