@@ -22,7 +22,8 @@ import mudata as mdata
 import anndata as ad
 # Custom import fun
 from preprocess_view import preprocess_view
-from convert_binary_str import convert_binary_str
+#from convert_binary_str import convert_binary_str
+from process_response import process_response
 
 # Main function here
 # Requirements of the MuData
@@ -33,7 +34,11 @@ from convert_binary_str import convert_binary_str
 # TODO: NOT scaling now, since it might introduce negative numbers and cause problem
 
 
-def transform_mudata_format(mu_path, dataset_name, identifier_col="sample_name", var_threshold=0.16, replace_na_val=0, scale=False):
+def transform_mudata_format(
+  mu_path, dataset_name, identifier_col="sample_name", 
+  var_threshold=0.16, replace_na_val=0, 
+  scale=False, convert_to="categorical"
+  ):
     # Read data here
     raw_data = mdata.read(mu_path)
     # Use a deeper copy of it
@@ -70,7 +75,7 @@ def transform_mudata_format(mu_path, dataset_name, identifier_col="sample_name",
         # And coerce the index of this to sample name as well
         omic_obs.index.name = identifier_col
         # Then check type of the reponse and convert it string only
-        omic_obs["response"] = convert_binary_str(omic_obs["response"])
+        omic_obs["response"] = process_response(omic_obs["response"], convert_to=convert_to)
         # Then start the preprocess steps
         omic_df = data[modality].to_df()
         # Remove those of near zero variance

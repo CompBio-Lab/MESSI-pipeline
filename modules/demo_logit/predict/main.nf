@@ -44,7 +44,7 @@ process DEMO_LOGIT_PREDICT {
       - Then chmod +x predict_<method>.<ext>, after renamed and created the script
   */
   script:
-		def data_label = "${dataset_name}-${fold_name}"
+		def data_label = "${dataset_name}-${fold_name}-${method_name}"
 		"""
     demo_logit_predict.R \
       --model_path=${model_path} \

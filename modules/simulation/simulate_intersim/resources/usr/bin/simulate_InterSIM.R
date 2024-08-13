@@ -144,6 +144,7 @@ generate_X <- function(X_raw, meta_df) {
 
 # Main entrace of the function
 main <- function(dataset_name, output_format, n, effect, 
+                 cluster.sample.prop = c(0.45,0.45,0.1),
                  p.DMP=0.2, p.DEG=NULL, p.DEP=NULL, 
                  sigma=c("indep", "def"), 
                  corr=0,
@@ -164,6 +165,7 @@ main <- function(dataset_name, output_format, n, effect,
   # TODO: The interSIM pkg doesnt have a way to change number of features in each omics
   # fixed to their defaults ....
   dat <- InterSIM(n.sample=n,
+                  cluster.sample.prop=cluster.sample.prop,
                   delta.methyl = effect, delta.expr = effect, delta.protein = effect,
                   p.DMP=p.DMP,p.DEG=p.DEG, p.DEP=p.DEP, 
                   sigma.methyl=sigma, sigma.expr=sigma, sigma.protein=sigma,

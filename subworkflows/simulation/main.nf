@@ -13,7 +13,7 @@ def simulate_dir = "${modulesDir}/simulation"
 include { SIMULATE_MVN_DATA }     from "${simulate_dir}/simulate_mvn_data"
 include { SIMULATE_INTERSIM }     from "${simulate_dir}/simulate_intersim"
 // Include functions
-include { createSimCombination }  from "${modulesDir}/functions"
+// include { createSimCombination }  from "${modulesDir}/functions"
 
 
 process COMPRESS_DATA_GZ {
@@ -52,11 +52,14 @@ process COMPRESS_DATA_GZ {
 workflow SIMULATION {
   // WORKFLOW PARAMS
   dataset_base_name   = params.dataset_base_name
+  output_format       = params.output_formats
+  num_obs             = params.num_obs
+  y_name              = params.y_name
   // Strategy of simulation
   skip_sim_MVN        = params.skip_sim_MVN
   skip_sim_intersim   = params.skip_sim_intersim
-  output_format       = params.output_formats
 
+  // Main code entrance
   main:
     // The simulation relies on a grid of parameters to simulate represented a groovy map
     /*
@@ -73,24 +76,80 @@ workflow SIMULATION {
       small_grid = [ n: n1 , ... , s = 1]
     */
     // Create simulation grids from default parameters
-    mvn_sim_grid  = createSimCombination(params)    // Will determine if giving large grid or small grid
+    // mvn_sim_grid  = createSimCombination(params)    // Will determine if giving large grid or small grid
                                                           // Combination of parameters of simulation
 
     //ch_sim_params_comb.view()
-    intersim_num_obs = Channel.fromList(params.num_obs)
-    intersim_sigma = Channel.fromList(["def", "indep"])
-    intersim_corr = Channel.fromList([0,0.5,1])
-    intersim_effect = Channel.fromList([2])
 
+
+    /*
+      ========================================================================
+      Setup the grid of exploitable params of simulation
+      ========================================================================
+
+    */
+    
+    // Common params
+    ch_num_obs      = Channel.fromList(num_obs)
+    ch_y_name   = Channel.of(y_name)
+
+    // =====================================================================
+    // Make up the grid for InterSIM
+    // =====================================================================
+    ch_intersim_sigma = Channel.fromList(params.intersim_sigma)
+    ch_intersim_corr = Channel.fromList(params.intersim_corr)
+    ch_intersim_effect = Channel.fromList(params.intersim_effect)
+
+    // Assign to map for easy access later
     Channel.of(dataset_base_name)
-      .combine(intersim_num_obs)
-      .combine(intersim_effect)
-      .combine(intersim_sigma)
-      .combine(intersim_corr)
+      .combine(ch_num_obs)
+      .combine(ch_intersim_effect)
+      .combine(ch_intersim_sigma)
+      .combine(ch_intersim_corr)
       .map { m -> 
-        [ dataset_name: "${m[0]}_n-${m[1]}_effect-${m[2]}_sigma-${m[3]}_corr-${m[4]}", num_obs: m[1], effect: m[2], sigma: m[3], corr: m[4] ]
+        [ dataset_name: "${m[0]}_strategy-intersim_n-${m[1]}_effect-${m[2]}_sigma-${m[3]}_corr-${m[4]}", 
+          num_obs: m[1], effect: m[2], sigma: m[3], corr: m[4] ]
       }
       .set { intersim_grid }
+    
+    // =====================================================================
+    // Make up the grid for cplr mvn
+    // =====================================================================
+    ch_mvn_num_predictors = Channel.fromList(params.num_predictors)
+    ch_mvn_block_num      = Channel.fromList(params.block_num)
+    ch_mvn_latent_pred    = Channel.fromList(params.latent_predictors)
+    ch_mvn_sigma          = Channel.fromList(params.mvn_sigma)
+    ch_mvn_sy             = Channel.fromList(params.sy)
+    ch_mvn_sp             = Channel.fromList(params.sp)
+    ch_mvn_u_std          = Channel.fromList(params.u_std)
+    ch_mvn_fct_str        = Channel.fromList(params.fct_str)
+
+    // Assign to map for easy access later
+    // 
+    Channel.of(dataset_base_name)
+      .combine(ch_num_obs)
+      .combine(ch_mvn_num_predictors)
+      .combine(ch_mvn_sigma)
+      .combine(ch_mvn_block_num)
+      .combine(ch_mvn_latent_pred)
+      .combine(ch_mvn_sy)
+      .combine(ch_mvn_sp)
+      .combine(ch_mvn_u_std)
+      .combine(ch_mvn_fct_str)
+      .map { m -> 
+          [ dataset_name: "${m[0]}_strategy-mvn_n-${m[1]}_p-${m[2]}_sigma-${m[3]}_j-${m[4]}_latp-${m[5]}_sy-${m[6]}_sp-${m[7]}_ustd-${m[8]}_fctstr-${m[9]}", 
+            num_obs: m[1], num_predictors: m[2], sigma: m[3], block_num: m[4], latent_predictors: m[5], sy: m[6], sp: m[7], u_std: m[8], fct_str: m[9]
+          ]
+      }
+      .set { mvn_sim_grid }
+    
+    // Assign to map for easy access later
+
+    /* 
+      ========================================================================
+      ACTUAL RUNNERS
+      ========================================================================
+    */
     
     // 1. When strategy is intersim pkg of simulation
     ch_intersim = Channel.empty()
@@ -123,24 +182,3 @@ workflow SIMULATION {
   emit:
     ch_sim_datasets = COMPRESS_DATA_GZ.out.ch_sim_datasets
 }
-
-
-// if (!runSimulation) {
-    //   sim_data = Channel.empty()
-    // } else {
-    //   log.info "Running simulation workflow now"
-    //   logRunSimple(runSimple)
-    //   (mae_data, mu_data, ch_logs) = SIMULATE_MVN_DATA ( ch_sim_params_comb, ch_output)
-
-      
-    //   // TODO: Why this joined stuff go to 4? instead of 3
-    //   sim_data	= mae_data.join(mu_data, by: 0) // Join by the dataset name
-    //                       .map {it ->
-    //                         [
-    //                           dataset_name: it[0],
-    //                           mae_path: it[2],
-    //                           mu_path: it[4],
-    //                           seed: it[1]
-    //                           ]
-    //                       }
-    // }
