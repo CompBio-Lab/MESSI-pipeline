@@ -95,6 +95,8 @@ main <- function(mae_path, split_dir, dataset_name) {
   # Get model options
   # num_factors might be tuneable
   model_opts <- get_default_model_options(mofa_obj)
+  # TODO: Currently to use number factors to be 2 x the numbers of views
+  model_opts$num_factors <- 2 * mofa_obj@dimensions$M
   # Get train options
   # maxiter: number of iterations. Default is 1000.
   # convergence_mode: fast, medium, slow? not sure which one affects? tuneable?
@@ -110,7 +112,9 @@ main <- function(mae_path, split_dir, dataset_name) {
   )
   # Convert to embeddings
   mofa_emb_file <- "mofa_emb.hdf5"
-  mofa_emb <- run_mofa(mofa_obj, outfile = mofa_emb_file)
+  mofa_emb_raw <- run_mofa(mofa_obj, outfile = mofa_emb_file)
+  # TODO: This is an uggly fix to load "no variance" explained factors, since by default it drops all
+  mofa_emb <- load_model(file=mofa_emb_file, remove_inactive_factors = FALSE)
   # Although to make predictions, need its embeddings and use a glmnet on prediction
   factors <- get_factors(mofa_emb, factors="all")
   # Then use this new mae
