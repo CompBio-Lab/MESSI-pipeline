@@ -61,9 +61,6 @@ process SIMULATE_MVN_DATA {
 			--sp=${grid.sp} \
 			--u_std=${grid.u_std} \
 			--fct_str=${grid.fct_str} \
-			--task=${grid.task} \
-			--tr=${grid.tr} \
-			--y_name=${grid.y_name} \
 			--output_format=${output_format} > \
 			${grid.dataset_name}_${task.process.tokenize(':')[-1].toLowerCase()}.log
 		echo -e "\nDone with ${grid.dataset_name}"
