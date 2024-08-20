@@ -23,14 +23,21 @@ library(dplyr)
 library(here)
 library(MultiAssayExperiment)
 library(stringr)
+# Gather the pipeline dir (THIS IS VERY UGGLY FIX)
+bin_dir <- Sys.getenv("PATH") |> 
+  strsplit(":") |>
+  unlist() |>
+  tail(1)
+pipeline_dir <- gsub("/bin", "", bin_dir)
+
 # Load scripts ========================================================
-source(here("bin/rhelpers.R")) # This is included in nextflow bin path
+source(here(pipeline_dir, "bin/rhelpers.R")) # This is included in nextflow bin path
 # Loading generic utils
-load_utils(here("bin/logging"))
-load_utils(here("bin/preprocessing"))
-load_utils(here("bin/misc_utils"))
+load_utils(here(pipeline_dir, "bin/logging"))
+load_utils(here(pipeline_dir, "bin/preprocessing"))
+load_utils(here(pipeline_dir, "bin/misc_utils"))
 # Load specific util
-rp <- resource_helper_path("modules/rgcca/train")
+rp <- resource_helper_path(here(pipeline_dir, "modules/rgcca/train"))
 source(here(rp, "parse_rgcca_input.R"))
 # Parase docopt
 opt <- docopt::docopt(doc)

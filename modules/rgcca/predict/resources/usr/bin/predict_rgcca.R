@@ -49,8 +49,16 @@ parse_response_col <- function(data, col) {
 library(RGCCA)
 library(magrittr)
 library(dplyr)
+
+# Gather the pipeline dir (THIS IS VERY UGGLY FIX)
+bin_dir <- Sys.getenv("PATH") |> 
+  strsplit(":") |>
+  unlist() |>
+  tail(1)
+pipeline_dir <- gsub("/bin", "", bin_dir)
+
 # Source scripts
-source(here::here("bin/wrangling/get_result_table.R"))
+source(here::here(pipeline_dir, "bin/wrangling/get_result_table.R"))
 # Parse docopt
 opt <- docopt::docopt(doc)
 # Default to use AveragedPredict and max.dist

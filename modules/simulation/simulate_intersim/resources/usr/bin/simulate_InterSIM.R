@@ -27,15 +27,22 @@ library(InterSIM)
 library(dplyr)
 
 
+# Gather the pipeline dir (THIS IS VERY UGGLY FIX)
+bin_dir <- Sys.getenv("PATH") |> 
+  strsplit(":") |>
+  unlist() |>
+  tail(1)
+pipeline_dir <- gsub("/bin", "", bin_dir)
+
 # Helper to convert mae to h5mu on mudata
-save_h5mu <- function(mae, dataset_name) {
+save_h5mu <- function(mae, dataset_name, pipeline_dir) {
   # Takes the MAE experiment and save this as MuData
   exps <- mae@ExperimentList |> lapply(t)
   col_data <- mae@colData |> as.data.frame()
   feat_names <- mae@ExperimentList |> lapply(rownames)
   # Then calls python code here
   reticulate::use_python("/usr/bin/python")
-  reticulate::source_python(here::here("modules/simulation/simulate_intersim/resources/usr/bin/save_mudata.py"))
+  reticulate::source_python(here::here(pipeline_dir, "modules/simulation/simulate_intersim/resources/usr/bin/save_mudata.py"))
   # Save it to mudata
   save_mudata(exps, col_data, feat_names, dataset_name)
 }
@@ -149,7 +156,7 @@ main <- function(dataset_name, output_format, n, effect,
                  sigma=c("indep", "def"), 
                  corr=0,
                  transformation="rev_logit",
-                 output_) {
+                 pipeline_dir=".") {
   
   # Stop when no custom dataset name is provided
   if (dataset_name == "empty") stop("Did not provided a custom dataset for simulation of intersim")
@@ -186,7 +193,7 @@ main <- function(dataset_name, output_format, n, effect,
   
   # Then should convert mae to mudata h5mu
   if (tolower(output_format) == "mudata") {
-      save_h5mu(mae, dataset_name)
+      save_h5mu(mae, dataset_name, pipeline_dir)
   }
 
   if (tolower(output_format) == "mae") {
@@ -207,5 +214,6 @@ main(
   effect = as.numeric(opt$effect),
   sigma = opt$sigma,
   corr = as.numeric(opt$corr),
-  transformation = opt$transformation
+  transformation = opt$transformation,
+  pipeline_dir = pipeline_dir
 )
