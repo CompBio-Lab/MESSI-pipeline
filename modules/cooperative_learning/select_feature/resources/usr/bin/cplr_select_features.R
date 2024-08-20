@@ -25,13 +25,18 @@ library(multiview)
 library(tidyr)
 library(dplyr)
 library(magrittr)
-
+# Gather the pipeline dir (THIS IS VERY UGGLY FIX)
+bin_dir <- Sys.getenv("PATH") |> 
+  strsplit(":") |>
+  unlist() |>
+  tail(1)
+pipeline_dir <- gsub("/bin", "", bin_dir)
 # Source custom functions
-source(here("bin/rhelpers.R")) # This is included in nextflow bin path
+source(here(pipeline_dir, "bin/rhelpers.R")) # This is included in nextflow bin path
 # Loading generic utils from directories
-load_utils(here("bin/logging"))
-load_utils(here("bin/misc_utils"))
-load_utils(here("bin/plotting"))
+load_utils(here(pipeline_dir, "bin/logging"))
+load_utils(here(pipeline_dir, "bin/misc_utils"))
+load_utils(here(pipeline_dir, "bin/plotting"))
 
 # Main entrypoint of the script
 # criteria_order: variable to sort the features, use one of standardized_coef or coef
