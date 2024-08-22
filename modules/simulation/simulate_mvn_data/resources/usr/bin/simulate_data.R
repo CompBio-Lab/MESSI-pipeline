@@ -32,16 +32,24 @@ Options:
 library(dplyr)
 library(magrittr)
 library(here)
+
+# TODO: very uggly fix
+bin_dir <- Sys.getenv("PATH") |> 
+    strsplit(":") |>
+    unlist() |>
+    tail(1)
+pipeline_dir <- gsub("/bin", "", bin_dir)
+print(pipeline_dir)
 # Loading scripts
-source(here("bin/rhelpers.R")) # This is included in nextflow bin path
+source(here(pipeline_dir, "bin/rhelpers.R")) # This is included in nextflow bin path
 # Load utils specific to simulation data
-rp <- resource_helper_path("modules/simulation/simulate_mvn_data")
+rp <- resource_helper_path(here(pipeline_dir, "modules/simulation/simulate_mvn_data"))
 source(here(rp, "gen_simul_metadata.R"))
 source(here(rp, "unique_matrices.R"))
 # Loading generic utils
-load_utils(here("bin/logging"))
-load_utils(here("bin/preprocessing"))
-source(here("bin/savers/saveFile.R"))
+load_utils(here(pipeline_dir, "bin/logging"))
+load_utils(here(pipeline_dir, "bin/preprocessing"))
+source(here(pipeline_dir, "bin/savers/saveFile.R"))
 # ============================================================================
 # Parse above doc
 opt_chr <- docopt::docopt(doc)

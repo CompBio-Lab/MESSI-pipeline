@@ -50,10 +50,12 @@ process SIMULATE_INTERSIM {
 	script:
 		"""
 		simulate_InterSIM.R	--dataset_name=${grid.dataset_name} \
-			--number=${grid.num_obs} \
+			--number_obs=${grid.num_obs} \
 			--effect=${grid.effect} \
 			--sigma=${grid.sigma} \
 			--corr=${grid.corr} \
+			--noise=${grid.noise} \
+			--number_noise_vars=${grid.num_noise_vars} \
 			--output_format=${output_format} > \
 			${grid.dataset_name}_${task.process.tokenize(':')[-1].toLowerCase()}.log
 		"""

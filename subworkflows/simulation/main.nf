@@ -96,19 +96,24 @@ workflow SIMULATION {
     // =====================================================================
     // Make up the grid for InterSIM
     // =====================================================================
+    ch_intersim_num_noise_vars = Channel.fromList(params.intersim_num_noise_vars)
+    ch_intersim_effect = Channel.fromList(params.intersim_effect)
+    ch_intersim_noise = Channel.fromList(params.intersim_noise)
     ch_intersim_sigma = Channel.fromList(params.intersim_sigma)
     ch_intersim_corr = Channel.fromList(params.intersim_corr)
-    ch_intersim_effect = Channel.fromList(params.intersim_effect)
 
     // Assign to map for easy access later
     Channel.of(dataset_base_name)
       .combine(ch_num_obs)
+      .combine(ch_intersim_num_noise_vars)
       .combine(ch_intersim_effect)
+      // TODO: might need better naming vs noise and sigma, since sigma here is more like covariance of omics
+      .combine(ch_intersim_noise)
       .combine(ch_intersim_sigma)
       .combine(ch_intersim_corr)
       .map { m -> 
-        [ dataset_name: "${m[0]}_strategy-intersim_n-${m[1]}_effect-${m[2]}_sigma-${m[3]}_corr-${m[4]}", 
-          num_obs: m[1], effect: m[2], sigma: m[3], corr: m[4] ]
+        [ dataset_name: "${m[0]}_strategy-intersim_n-${m[1]}_H-${m[2]}_effect-${m[3]}_e-${m[4]}_sigma-${m[5]}_corr-${m[6]}", 
+          num_obs: m[1], num_noise_vars: m[2], effect: m[3], noise: m[4], sigma: m[5], corr: m[6] ]
       }
       .set { intersim_grid }
     

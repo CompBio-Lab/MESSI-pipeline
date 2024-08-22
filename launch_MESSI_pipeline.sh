@@ -42,7 +42,7 @@ module load nextflow/23.04.3
 PIPELINE_DIR=$(eval pwd)
 export NXF_WORK="${PIPELINE_DIR}/work"
 export NXF_HOME="${PIPELINE_DIR}"
-export NXF_OFFLINE='TRUE'
+export NXF_OFFLINE='true'
 # =============================================================================
 # 3. Options to use for the pipeline
 # The NXF script to run, located on the repo root directory

@@ -25,11 +25,19 @@ library(multiview)
 library(dplyr)
 library(here)
 library(stringr)
-source(here("bin/rhelpers.R")) # This is included in nextflow bin path
+
+# Gather the pipeline dir (THIS IS VERY UGGLY FIX)
+bin_dir <- Sys.getenv("PATH") |> 
+  strsplit(":") |>
+  unlist() |>
+  tail(1)
+pipeline_dir <- gsub("/bin", "", bin_dir)
+
+source(here(pipeline_dir, "bin/rhelpers.R")) # This is included in nextflow bin path
 # Loading generic utils
-load_utils(here("bin/logging"))
-load_utils(here("bin/preprocessing"))
-load_utils(here("bin/misc_utils"))
+load_utils(here(pipeline_dir, "bin/logging"))
+load_utils(here(pipeline_dir, "bin/preprocessing"))
+load_utils(here(pipeline_dir, "bin/misc_utils"))
 
 
 # This the main function to execute

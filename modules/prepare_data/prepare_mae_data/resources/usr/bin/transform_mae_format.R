@@ -15,11 +15,18 @@ Options:
 "
 library(here)
 library(mixOmics)
+# Gather the pipeline dir (THIS IS VERY UGGLY FIX)
+bin_dir <- Sys.getenv("PATH") |> 
+  strsplit(":") |>
+  unlist() |>
+  tail(1)
+pipeline_dir <- gsub("/bin", "", bin_dir)
+
 # Load scripts
-source(here("bin/rhelpers.R"))
-source(here("bin/misc_utils/load_MAE.R"))
+source(here(pipeline_dir, "bin/rhelpers.R"))
+source(here(pipeline_dir, "bin/misc_utils/load_MAE.R"))
 # Other related files to this script
-rp <- resource_helper_path("modules/prepare_data/prepare_mae_data")
+rp <- resource_helper_path(here(pipeline_dir, "modules/prepare_data/prepare_mae_data"))
 source(here(rp, "check_long_wide.R"))
 source(here(rp, "check_response.R"))
 source(here(rp, "preprocess_view.R"))

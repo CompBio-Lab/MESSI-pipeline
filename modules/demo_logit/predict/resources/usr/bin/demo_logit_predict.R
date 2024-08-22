@@ -21,9 +21,16 @@ library(tibble)
 library(magrittr)
 library(dplyr)
 library(here)
+
+# Gather the pipeline dir (THIS IS VERY UGGLY FIX)
+bin_dir <- Sys.getenv("PATH") |> 
+  strsplit(":") |>
+  unlist() |>
+  tail(1)
+pipeline_dir <- gsub("/bin", "", bin_dir)
 # Source scripts
 # This is a helper script to help combine and store results for downstream comparison
-source(here("bin/wrangling/get_result_table.R"))
+source(here(pipeline_dir, "bin/wrangling/get_result_table.R"))
 # Parse docopt
 opt <- docopt::docopt(doc)
 # This is the function logic

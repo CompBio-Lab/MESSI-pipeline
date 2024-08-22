@@ -64,7 +64,16 @@ save_rds <- function(object, file, message, ...) {
 
 # General composite saver ----------------------------------------------------
 # Source a python script as R object
-save_bp <- here::here("bin/savers")
+
+# TODO: REMOVE THIS UGGLY FIX AND USE SOMETHING MORE STABLE
+bin_dir <- Sys.getenv("PATH") |> 
+    strsplit(":") |>
+    unlist() |>
+    tail(1)
+pipeline_dir <- gsub("/bin", "", bin_dir)
+
+
+save_bp <- here::here(pipeline_dir, "bin/savers")
 reticulate::source_python(here::here(save_bp, "save_mudata.py"))
 source(here::here(save_bp, "save_mae.R"))
 

@@ -26,8 +26,16 @@ library(dplyr)
 # Parse docopt
 opt <- docopt::docopt(doc)
 # Source custom scripts
-source(here("bin/misc_utils/extract_Xy.R"))
-source(here("bin/misc_utils/load_MAE.R"))
+
+# Gather the pipeline dir (THIS IS VERY UGGLY FIX)
+bin_dir <- Sys.getenv("PATH") |> 
+  strsplit(":") |>
+  unlist() |>
+  tail(1)
+pipeline_dir <- gsub("/bin", "", bin_dir)
+
+source(here(pipeline_dir, "bin/misc_utils/extract_Xy.R"))
+source(here(pipeline_dir, "bin/misc_utils/load_MAE.R"))
 
 # Fun to create empty graphic device of fixed size provided
 getPlotDevice <- function(name, dataset_name, height, width, res, 
