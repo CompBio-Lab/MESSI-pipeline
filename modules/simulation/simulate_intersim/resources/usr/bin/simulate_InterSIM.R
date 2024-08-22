@@ -14,6 +14,7 @@ Options:
   --dataset_name=DNAME    Name of the dataset [default: empty]
   --output_format=OUT_F   Format of the output data, one of MAE or MuData [default: empty]
   --number_obs=N          Number of observations to generate [default: 30]
+  --number_noise_vars=H   Number of noise variables to create [default: 200]
   --effect=EFFECT         Cluster mean shift on each view [default: 2]
   --sigma=SIGMA           Covariance structure in the each omics's data, one of def, indep [default: indep]
   --noise=NOISE           Gaussian noise standard deviation [default: 1]
@@ -141,7 +142,8 @@ generate_Y <- function(response, id_name="sample_name") {
 
 # Helper to apply gaussian noise to each col or row of a matrix
 add_gaussian_noise <- function(x, noise_mean = 0, noise_sd = 1) {
-  noise <- rnorm(length(x), noise_mean = mean, noise_sd = sd)
+  # X could be a column vector or row vector
+  noise <- rnorm(length(x), mean=noise_mean, sd=noise_sd)
   new_x <- x + noise
   return(new_x)
 }
@@ -188,8 +190,8 @@ generate_bimodal_noise_vars <- function(n,  H=100,
   first_half <- 1:(n / 2)
   second_half <- (n / 2 + 1):n
   # Then modify these two halves
-  noise_vars_matrix[first_half,  ]  <- noise_matrix_vars_matrix[first_half,  ] * scale_1 + shift_1
-  noise_vars_matrix[second_half, ]  <- noise_matrix_vars_matrix[second_half, ] * scale_2 + shift_2
+  noise_vars_matrix[first_half,  ]  <- noise_vars_matrix[first_half,  ] * scale_1 + shift_1
+  noise_vars_matrix[second_half, ]  <- noise_vars_matrix[second_half, ] * scale_2 + shift_2
   return(noise_vars_matrix)
 }
 
@@ -211,11 +213,15 @@ generate_X <- function(X_raw, meta_df, H, noise_mean=0, noise_sd=1, sd_multiplie
     is_beta_distributed <- all(x_mat >= 0 & x_mat <= 1)
     if (is_beta_distributed) {
       # This specifically handles methyl data
+      beta_shape = 2
+      beta_scale = 2
+      shift_1 = 1
+      shift_2 = 3
       noise_vars_matrix <- generate_bimodal_noise_vars(
-        n=n H=H, 
-        beta_shape1 = 2, beta_shape2 = 2, 
-        scale_1 = 2, shift_1 = 1, 
-        scale_2 = 2, shift_2 = 3
+        n=n, H=H, 
+        beta_shape1=beta_shape, beta_shape2=beta_shape, 
+        scale_1=beta_scale, shift_1=shift_1, 
+        scale_2=beta_scale, shift_2=shift_2
       )
     }
 
@@ -228,7 +234,7 @@ generate_X <- function(X_raw, meta_df, H, noise_mean=0, noise_sd=1, sd_multiplie
     # https://stats.stackexchange.com/questions/144410/how-to-add-noise-to-a-random-variable-whose-range-is-the-unit-interval
     # TODO: might need to check if this doing right here
     # Then for each column add gaussian noise
-    x_mat_full <- apply(x_mat_full, 2, function(col) add_gaussian_noise(col, mean=noise_mean, sd=noise_sd))
+    x_mat_full <- apply(x_mat_full, 2, function(col) add_gaussian_noise(col, noise_mean=noise_mean, noise_sd=noise_sd))
     
     # And transpose the X to MultiAssayExperiment format
     return(t(x_mat))
@@ -314,9 +320,10 @@ main(
   dataset_name = opt$dataset_name,
   output_format = opt$output_format,
   n = as.numeric(opt$number_obs),
+  H = as.numeric(opt$number_noise_vars),
   effect = as.numeric(opt$effect),
   sigma = opt$sigma,
   corr = as.numeric(opt$corr),
-  transformation = opt$transformation
+  transformation = opt$transformation,
   noise = as.numeric(opt$noise)
 )
