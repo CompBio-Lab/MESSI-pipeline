@@ -4,6 +4,7 @@ small.nf
 interactive_testing/
 # remote files not tracked
 remote_params.yaml
+simulation.nf
 
 # scratch file for nextflow 
 data/test_on_remote/
