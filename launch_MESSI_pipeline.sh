@@ -30,7 +30,7 @@ cd $SLURM_SUBMIT_DIR
 module purge
 module load CVMFS_CC
 # Related dependencies
-module load apptainer/1.1.8 
+module load apptainer/1.1.8
 module load java/11.0.16_8
 module load nextflow/23.04.3
 # Source the load script with env vars setup
@@ -41,10 +41,11 @@ module load nextflow/23.04.3
 # and offline option
 # And pull the containers required using the test profile
 PIPELINE_DIR=$(eval pwd)
-#export NXF_WORK="${PIPELINE_DIR}/work"
-#export NXF_HOME="${PIPELINE_DIR}"
+# AS per nextflow expert, work/ CANNOT be under /tmp
+export NXF_WORK="${PIPELINE_DIR}/work"
+export NXF_HOME="${PIPELINE_DIR}"
 #export NXF_WORK=${TMPDIR}/work
-export NXF_HOME=${TMPDIR}
+#export NXF_HOME=${TMPDIR}
 export NXF_OFFLINE='true'
 # =============================================================================
 # 3. Options to use for the pipeline
@@ -57,11 +58,10 @@ PROFILE=sockeye
 #PARAMS_FILE=remote_params.yaml
 # Modify this option if you want to run several times
 # Could be done in a for-loop fashion for different OUTDIR
-timestamp=$(date +"%Y%m%d_%H%M%S")
-#OUTDIR=results
-OUTDIR=${TMPDIR}/${timestamp}-MESSI_results
+#timestamp=$(date +"%Y%m%d_%H%M%S")
+OUTDIR=MESSI_results
 SAMPLESHEET=data/samplesheet_test_full.csv
-#SAMPLESHEET=data/samplesheet_sim.csv
+#SAMPLESHEET=data/samplesheet_test_small.csv
 echo "Running pipeline with ${NXF_SRC_MAIN}"
 # =============================================================================
 # 4. Run the pipeline on the work dir
@@ -73,7 +73,7 @@ nextflow run ${NXF_SRC_MAIN} \
   -ansi-log false
 # =============================================================================
 # 5. Compress output results and move back to submitted directory
-cd ${TMPDIR}
-tar -czf ${timestamp}-MESSI_results.tar.gz $(basename ${OUTDIR})
-echo "Moving compressed gz to ${PIPELINE_DIR}"
-mv ${timestamp}-MESSI_results.tar.gz ${PIPELINE_DIR}
+#cd ${TMPDIR}
+#tar -czf ${timestamp}-MESSI_results.tar.gz $(basename ${OUTDIR})
+#echo "Moving compressed gz to ${PIPELINE_DIR}"
+#mv ${timestamp}-MESSI_results.tar.gz ${PIPELINE_DIR}
