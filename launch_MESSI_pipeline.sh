@@ -43,7 +43,7 @@ module load nextflow/23.04.3
 PIPELINE_DIR=$(eval pwd)
 #export NXF_WORK="${PIPELINE_DIR}/work"
 #export NXF_HOME="${PIPELINE_DIR}"
-export NXF_WORK=${TMPDIR}/work
+#export NXF_WORK=${TMPDIR}/work
 export NXF_HOME=${TMPDIR}
 export NXF_OFFLINE='true'
 # =============================================================================
