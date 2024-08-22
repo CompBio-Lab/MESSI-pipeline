@@ -4,6 +4,7 @@ def tr_te_mdata(mdata, train_idx, test_idx, meta):
     train_mu, test_mu = mdata[train_idx].copy(), mdata[test_idx].copy()
     # Add this metadata for downstream access
     cols_interest = ["sample_name", "y"]
+    # TODO: this rename is kinda risky, since it could skip if did not match naming
     test_meta = meta.reset_index(drop=True).rename(columns={"sample_names": "sample_name",
                                                            "response": "y"})
     test_meta = test_meta[cols_interest].loc[test_idx]
