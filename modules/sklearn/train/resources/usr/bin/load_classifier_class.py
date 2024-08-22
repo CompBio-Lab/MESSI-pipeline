@@ -1,42 +1,80 @@
 import importlib
+import scipy.stats as stats
 
-# Custom function to load different classifiers
+
+# Dynamically load sklearn classifer from preset configx
 def load_classifier_class(model_name, random_state=42, probability=True):
+    # Define models with their respective classes, default parameters, and distributions
     # Adopted from https://scikit-learn.org/stable/auto_examples/classification/plot_classifier_comparison.html
-    # Storing path of each classifier's class
-    model_classes = {
-    "Nearest_Neighbors": "sklearn.neighbors.KNeighborsClassifier",
-    "Linear_SVM": "sklearn.svm.SVC",
-    "RBF_SVM": "sklearn.svm.SVC",
-    "Gaussian_Process": "sklearn.gaussian_process.GaussianProcessClassifier",
-    "Decision_Tree": "sklearn.tree.DecisionTreeClassifier",
-    "Random_Forest": "sklearn.ensemble.RandomForestClassifier",
-    "Neural_Net": "sklearn.neural_network.MLPClassifier",
-    "AdaBoost": "sklearn.ensemble.AdaBoostClassifier",
-    "Naive_Bayes": "sklearn.naive_bayes.GaussianNB",
-    "QDA": "sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis",
+    # NOTE: keep to use SVC rather than LinearSVC class since the latter do not have predict_prob
+    # https://stackoverflow.com/questions/33843981/under-what-parameters-are-svc-and-linearsvc-in-scikit-learn-equivalent
+
+    # Common params
+    min_sample_leaf = stats.randint(1,6)
+    n_estimators = stats.randint(50, 501)
+    learning_rate = stats.uniform(0.01, 1.1)
+    max_features = ["sqrt", "log2", 100, 500, 1000, None]
+    # Dict to store relevant information of sklearn classifiers
+    model_info = {
+        "Linear_SVM": {
+            "class_path": "sklearn.svm.SVC",
+            "default_params": {"C": 1.0, "kernel": "linear", "random_state": random_state, "probability": probability},
+            "params_dist": {"C": stats.loguniform(1e0, 1e3), "kernel": ["linear"]}
+        },
+        "Decision_Tree": {
+            "class_path": "sklearn.tree.DecisionTreeClassifier",
+            "default_params": {"max_depth": 10, "random_state": random_state},
+            "params_dist": {
+                "criterion": ['gini', 'entropy', 'log_loss'],
+                "max_depth": stats.randint(5, 41),
+                "min_samples_leaf": min_sample_leaf,
+                "max_leaf_nodes": [10, 100, 1000, None]
+            }
+        },
+        "Random_Forest": {
+            "class_path": "sklearn.ensemble.RandomForestClassifier",
+            "default_params": {"n_estimators": 100, "max_features": "sqrt", "max_depth": 10, "random_state": random_state, "n_jobs": -1},
+            "params_dist": {
+                "max_features": max_features,
+                "max_leaf_nodes": [10, 100, 1000, None],
+                "min_samples_leaf": min_sample_leaf
+            }
+        },
+        "AdaBoost": {
+            "class_path": "sklearn.ensemble.AdaBoostClassifier",
+            "default_params": {"algorithm": "SAMME", "random_state": random_state},
+            "params_dist": {
+                "n_estimators": n_estimators,
+                "learning_rate": learning_rate,
+                "algorithm": ['SAMME', 'SAMME.R']
+            }
+        },
+        "GradientBoost": {
+            "class_path": "sklearn.ensemble.GradientBoostingClassifier",
+            "default_params": {"loss":'log_loss', "learning_rate":0.1, "n_estimators":100},
+            "params_dist": { 
+                "n_estimators": n_estimators,
+                "learning_rate": learning_rate,
+                "min_samples_leaf": min_sample_leaf,
+                "max_features": max_features
+            }
+        }
     }
-    # Storing default params of the classifier
-    default_params = {
-        "Nearest_Neighbors": {"n_neighbors": 3},
-        "Linear_SVM": {"C": 0.025, "kernel": "linear", "random_state": random_state, "probability": probability},
-        "RBF_SVM": {"C": 1.0, "kernel": "rbf", "gamma": 2.0, "random_state": random_state, "probability": probability},
-        "Gaussian_Process": {"random_state": random_state},
-        "Decision_Tree": {"max_depth": 10, "random_state": random_state},
-        "Random_Forest": {"n_estimators": 100, "max_features": "sqrt", "max_depth": 10, "random_state": random_state},
-        "Neural_Net": {"alpha": 1.0, "max_iter": 1000, "random_state": random_state},
-        "AdaBoost": {"algorithm": "SAMME", "random_state": random_state},
-        # Empty params for naive bayes and qda for now, use their default
-        "Naive_Bayes": {},
-        "QDA": {},
-    }
-    
+
     # Check if valid name of model was input
-    model_names  = set(model_classes.keys())
-    if model_name not in model_names:
-        print(f"Valid models are: {model_names}")
+    if model_name not in model_info:
+        valid_models = list(model_info.keys())
+        print(f"Valid models are: {valid_models}")
         raise ValueError(f"Model '{model_name}' not valid, check spelling")
     
-    module_path, class_name = model_classes[model_name].rsplit(".", 1)
+    # Retrieve model info
+    model = model_info[model_name]
+    class_path = model["class_path"]
+    default_params = model["default_params"]
+    params_dist = model["params_dist"]
+
+    # Import and return the classifier class
+    module_path, class_name = class_path.rsplit(".", 1)
     classifier_class = getattr(importlib.import_module(module_path), class_name)
-    return classifier_class, default_params[model_name]
+    print(f"class name is: {class_name}")
+    return classifier_class, default_params, params_dist
