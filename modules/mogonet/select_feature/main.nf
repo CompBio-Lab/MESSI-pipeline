@@ -37,7 +37,7 @@ process MOGONET_SELECT_FEATURE {
   mogonet_select_features.py  --dataset_name=${dataset_name} \
                               --mu_path=${mu_path} \
                               --n_percent=${n_percent} > \
-                              ${dataset_name}.log
+                              mogonet-select_features-${dataset_name}.log
 
   """
 }

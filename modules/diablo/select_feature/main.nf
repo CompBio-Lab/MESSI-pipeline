@@ -36,7 +36,7 @@ process DIABLO_SELECT_FEATURE {
                             --mae_path=${mae_path} \
                             --n_percent=${n_percent} \
                             --design=${design} > \
-                            ${dataset_name}-${design}.log
+                            diablo-${dataset_name}-${design}.log
 
   """
 

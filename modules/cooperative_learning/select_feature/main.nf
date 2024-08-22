@@ -41,7 +41,7 @@ process COOPERATIVE_LEARNING_SELECT_FEATURE {
   cplr_select_features.R  --dataset_name=${dataset_name} \
                           --mae_path=${mae_path} \
                           --n_percent=${n_percent} > \
-                          ${dataset_name}.log
+                          cplr-select_features_${dataset_name}.log
 
   """
 

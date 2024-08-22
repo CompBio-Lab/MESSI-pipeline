@@ -34,7 +34,7 @@ process RGCCA_SELECT_FEATURE {
   rgcca_select_features.R  --dataset_name=${dataset_name} \
                             --mae_path=${mae_path} \
                             --n_percent=${n_percent} > \
-                            ${dataset_name}.log
+                            rgcca-select_features_${dataset_name}.log
 
   """
 

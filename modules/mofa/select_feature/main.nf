@@ -34,7 +34,7 @@ process MOFA_SELECT_FEATURE {
   mofa_select_features.R  --dataset_name=${dataset_name} \
                             --mae_path=${mae_path} \
                             --n_percent=${n_percent} > \
-                            ${dataset_name}.log
+                            mofa-select_features-${dataset_name}.log
 
   """
 }

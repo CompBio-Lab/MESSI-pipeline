@@ -27,6 +27,13 @@ library(dplyr)
 library(here)
 library(magrittr)
 
+# Gather the pipeline dir (THIS IS VERY UGGLY FIX)
+bin_dir <- Sys.getenv("PATH") |> 
+  strsplit(":") |>
+  unlist() |>
+  tail(1)
+pipeline_dir <- gsub("/bin", "", bin_dir)
+
 # Source custom functions
 source(here(pipeline_dir, "bin/rhelpers.R")) # This is included in nextflow bin path
 # Loading generic utils from directories
