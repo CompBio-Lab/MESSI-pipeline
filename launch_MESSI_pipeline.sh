@@ -49,7 +49,7 @@ export NXF_OFFLINE='true'
 # =============================================================================
 # 3. Options to use for the pipeline
 # The NXF script to run, located on the repo root directory
-NXF_SRC_MAIN=main.nf
+NXF_SRC_MAIN=$PIPELINE_DIR/main.nf
 # Profile order matters, since the later one overrides the prior ones
 PROFILE=sockeye
 # Or use this one for development usage
