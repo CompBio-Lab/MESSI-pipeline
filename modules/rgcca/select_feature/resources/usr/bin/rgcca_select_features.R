@@ -11,7 +11,6 @@ Options:
   --mae_path=MAE_PATH           Path to read the full data in
   --dataset_name=DNAME          Dataset name used as identification
   --output_ext=EXT              Extension of output table to save [default: csv]
-  --n_percent=N_PER             N percent of features to be selected [default: 10]
   --nfolds=NFOLDS               Number of folds to perform CV to perform feature selection [default: 5]
   --prediction_model=PRED_MOD   Prediction model from caret [default: lda]
   --metric=METRIC               Metric to perform CV on [default: Balanced_Accuracy]
@@ -32,7 +31,13 @@ bin_dir <- Sys.getenv("PATH") |>
   strsplit(":") |>
   unlist() |>
   tail(1)
-pipeline_dir <- gsub("/bin", "", bin_dir)
+# Determin if running on cluster deploy mode or local mode
+is_scratch <- stringr::str_detect(bin_dir, pattern = "scratch")
+if (is_scratch) {
+  pipeline_dir <- gsub("/bin", "", bin_dir)
+} else {
+  pipeline_dir <- ""
+}
 
 # Source custom functions
 source(here(pipeline_dir, "bin/rhelpers.R")) # This is included in nextflow bin path
@@ -43,7 +48,7 @@ load_utils(here(pipeline_dir, "bin/plotting"))
 
 # Main entrypoint of the script
 # prediction_model should be glm to accord with rest of methods?
-main <- function(mae_path, dataset_name, n_percent, prediction_model = "lda", par_type="sparsity", 
+main <- function(mae_path, dataset_name, prediction_model = "lda", par_type="sparsity", 
                  validation = "kfold", nfolds=5, reps=1, metric="Balanced_Accuracy",
                  criteria_order = "top") {
   # PARAMS
@@ -126,7 +131,7 @@ main <- function(mae_path, dataset_name, n_percent, prediction_model = "lda", pa
 
 # Then call the function above
 main(mae_path=opt$mae_path, dataset_name=opt$dataset_name, 
-  n_percent=as.numeric(opt$n_percent), nfolds=as.numeric(opt$nfolds),
+  nfolds=as.numeric(opt$nfolds),
   prediction_model = opt$prediction_model, metric=opt$metric)
 
 

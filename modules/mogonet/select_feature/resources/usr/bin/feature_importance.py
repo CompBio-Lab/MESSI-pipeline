@@ -10,7 +10,6 @@ import pandas as pd
 from mogonet.train_mogonet import gen_trte_adj_mat
 from mogonet.prepare_trte_data import prepare_trte_data
 from mogonet.models import init_model_dict
-from select_top_n_percent import select_top_n_percent
 
 # Othe functions to run
 
@@ -104,12 +103,17 @@ def summarize_imp_feat(featimp_list_list, dataset_name, view_list, n_percent=10,
     df_featimp_top = df_featimp_top.rename(
       columns={
       'feat_name': 'feature', 
-      'omics': 'view'
+      'omics': 'view',
+      'imp': 'coef'
     })
     # Then now for each view select the top n percent of features
-    feats_df = df_featimp_top.groupby('view').apply(select_top_n_percent, criteria="imp", n_percent=n_percent).reset_index(drop=True)
+    feats_df = df_featimp_top.reset_index(drop=True)
     feats_df["method"] = method
     feats_df["dataset_name"] = dataset_name
-    # And select everything else except this imp column
-    feats_df = feats_df.drop(columns=['imp'])
+    # Make sure to match names and order
+    right_order = ['feature', 'view', 'coef', 'method', 'dataset_name']
+    try:
+      feats_df = feats_df[right_order]
+    except KeyError as e:
+      print(f"Sklearn select feature for '{dataset_name}', '{model_lower}' column not found: {e}")
     return feats_df

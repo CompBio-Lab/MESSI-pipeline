@@ -11,7 +11,6 @@ Options:
   --mae_path=MAE_PATH         Path to read the full data in
   --dataset_name=DNAME        Dataset name used as identification
   --output_ext=EXT            Extension of output table to save [default: csv]
-  --n_percent=N_PER           N percent of features to be selected [default: 10]
   --nfolds=NFOLDS             Number of folds to perform CV to perform feature selection [default: 5]
   --criteria_order=CRT_ORDER  Variable to sort feature coeffcients, one of standardized_coef or coef [default: standardized_coef]
 "
@@ -49,7 +48,7 @@ load_utils(here(pipeline_dir, "bin/plotting"))
 
 # Main entrypoint of the script
 # criteria_order: variable to sort the features, use one of standardized_coef or coef
-main <- function(mae_path, dataset_name, n_percent, type.measure="deviance", rho=0.5, useLasso=FALSE,
+main <- function(mae_path, dataset_name, type.measure="deviance", rho=0.5, useLasso=FALSE,
 nfolds=5, criteria_order="standardized_coef") {
   # TODO: n_percent and criteria order are ignored now and not used
   
@@ -117,5 +116,5 @@ nfolds=5, criteria_order="standardized_coef") {
 
 # Then call the function above
 main(mae_path=opt$mae_path, dataset_name=opt$dataset_name, 
-  n_percent=as.numeric(opt$n_percent), nfolds=as.numeric(opt$nfolds),
+  nfolds=as.numeric(opt$nfolds),
   criteria_order=opt$criteria_order)

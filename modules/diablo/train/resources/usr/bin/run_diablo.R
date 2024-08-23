@@ -29,8 +29,13 @@ bin_dir <- Sys.getenv("PATH") |>
   strsplit(":") |>
   unlist() |>
   tail(1)
-pipeline_dir <- gsub("/bin", "", bin_dir)
-
+# Determin if running on cluster deploy mode or local mode
+is_scratch <- stringr::str_detect(bin_dir, pattern = "scratch")
+if (is_scratch) {
+  pipeline_dir <- gsub("/bin", "", bin_dir)
+} else {
+  pipeline_dir <- ""
+}
 # Load scripts ========================================================
 source(here(pipeline_dir, "bin/rhelpers.R")) # This is included in nextflow bin path
 # Load utils specific to simulation data?

@@ -10,7 +10,6 @@ Options:
   --mae_path=MAE_PATH         Path to read the full data in
   --dataset_name=DNAME        Dataset name used as identification
   --output_ext=EXT            Extension of output table to save [default: csv]
-  --n_percent=N_PER           N percent of features to be selected [default: 10]
 "
 # Parse cli docs
 opt <- docopt::docopt(doc)
@@ -48,7 +47,7 @@ mofa_pre <- function(mae, scale_views=FALSE) {
 
 
 # Main entrypoint here
-main <- function(mae_path, dataset_name, n_percent, 
+main <- function(mae_path, dataset_name, 
                  factor_levels = c("Factor1"), 
                  scale_views=FALSE, method="mofa") {
   # ============================================================================
@@ -93,8 +92,7 @@ main <- function(mae_path, dataset_name, n_percent,
 # Call the main function here
 main(
   mae_path=opt$mae_path, 
-  dataset_name=opt$dataset_name, 
-  n_percent=as.numeric(opt$n_percent)
+  dataset_name=opt$dataset_name
 )
 # Exit with message
 message("\nDone")
