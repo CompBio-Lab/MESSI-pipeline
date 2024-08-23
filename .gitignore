@@ -5,7 +5,8 @@ interactive_testing/
 # remote files not tracked
 remote_params.yaml
 simulation.nf
-
+get_relevant_results.sh
+rstudio_slurm.sh
 # scratch file for nextflow 
 data/test_on_remote/
 scratch.nf
