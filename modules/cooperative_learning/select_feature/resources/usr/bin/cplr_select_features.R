@@ -30,7 +30,16 @@ bin_dir <- Sys.getenv("PATH") |>
   strsplit(":") |>
   unlist() |>
   tail(1)
-pipeline_dir <- gsub("/bin", "", bin_dir)
+
+# Determin if running on cluster deploy mode or local mode
+is_scratch <- stringr::str_detect(bin_dir, pattern = "scratch")
+if (is_scratch) {
+  pipeline_dir <- gsub("/bin", "", bin_dir)
+} else {
+  pipeline_dir <- ""
+}
+
+
 # Source custom functions
 source(here(pipeline_dir, "bin/rhelpers.R")) # This is included in nextflow bin path
 # Loading generic utils from directories
@@ -42,6 +51,8 @@ load_utils(here(pipeline_dir, "bin/plotting"))
 # criteria_order: variable to sort the features, use one of standardized_coef or coef
 main <- function(mae_path, dataset_name, n_percent, type.measure="deviance", rho=0.5, useLasso=FALSE,
 nfolds=5, criteria_order="standardized_coef") {
+  # TODO: n_percent and criteria order are ignored now and not used
+  
   # PARAMS
   method <- "cooperative_learning"
   # Log the params used
@@ -52,6 +63,7 @@ nfolds=5, criteria_order="standardized_coef") {
   # Split them to X and Y (and factor this)
   X <- data_list$X
   Y <- as.factor(data_list$Y)
+  
   # Get the first 10 rownames and colnames, and print it to file as sanity check
   logging_head_names(X=X, n = 10)
   # RUN a cv model on multiview (alpha 0 = ridge, alpha 1 = lasso)
@@ -64,6 +76,8 @@ nfolds=5, criteria_order="standardized_coef") {
   cv_model <- cv.multiview(x_list = X,  y = Y, 
                           family = binomial(), type.measure=type.measure, 
                           rho=rho, alpha=alpha, nfolds=nfolds)
+  
+  
   # Get the lambda to use
   s <- cv_model$lambda.min
 
@@ -73,24 +87,27 @@ nfolds=5, criteria_order="standardized_coef") {
               height=8, width=8, device="svg")
   plot(cv_model)
   dev.off()
-
-  # Now get those features out by taking top n percent of features in each view
+  
+    # Now get those features out by taking top n percent of features in each view
   feats_df <- coef_ordered(cv_model, s=s) %>%
-              as_tibble() %>%
-              rename(feature=view_col) %>%
-              mutate(method = method,
-                    dataset_name = dataset_name
-              ) %>%
-              group_by(view) %>%
-              # Option to use coef instead of standardized_coef
-              arrange(desc(abs( !!sym( criteria_order ) ))) %>%
-              # This takes top N percent of feature from each view
-              group_modify(~ slice_head(
-                .x, n = round(n_percent * nrow(.x) / 100, digits=0)
-                )
-              ) %>%
-              ungroup() %>%
-              select(feature, view, method, dataset_name)
+    as_tibble() %>%
+    rename(feature=view_col) %>%
+    mutate(
+      method = method,
+      dataset_name = dataset_name
+    ) %>%
+    # Directly get the feat along with the coef (not standardized)
+    dplyr::select(feature, view, coef, method, dataset_name)
+    # group_by(view) %>%
+    # # Option to use coef instead of standardized_coef
+    # arrange(desc(abs( !!sym( criteria_order ) ))) %>%
+    # # This takes top N percent of feature from each view
+    # group_modify(~ slice_head(
+    #   .x, n = round(n_percent * nrow(.x) / 100, digits=0)
+    # )
+    # ) %>%
+    # ungroup() %>%
+    # =============
   
   # write it to disk
   feats_file <- paste0(method, "-", dataset_name, "_", "features_selected", ".csv")
