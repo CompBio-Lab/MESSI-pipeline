@@ -28,7 +28,6 @@ process COOPERATIVE_LEARNING_SELECT_FEATURE {
   // This is triggered from FEATURE_SELECTION:CPLR_SELECT_FEATURE
   input:
     tuple val(dataset_name), path(mae_path)
-    val(n_percent)
   output:
     path("*.csv"),  emit: features
     path("*plot*"), emit: plot

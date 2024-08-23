@@ -12,7 +12,7 @@ Options:
   --data_path=DATA_PATH       Path that contains full portion of MuData [default: empty]
   --dataset_name=DNAME        Label of the dataset [default: empty]
   --n_iter=N_ITER             Number of repetitions of cv [default: 10]
-  --method_name=METHOD_NAME   Name of the sklearn model [default: empty]
+  --model_name=MODEL_NAME     Name of the sklearn model [default: empty]
 """
 
 # TODO: You could improve the docstring above and add more arguments if desired
@@ -21,6 +21,8 @@ import pandas as pd
 import mudata
 import os
 import copy
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
 # Custom import
 from get_feats_df import get_feats_df
@@ -96,6 +98,6 @@ if __name__ == '__main__':
   # Execute the main function
   main(mu_path=args['--data_path'], 
   dataset_name=args['--dataset_name'],
-  model_name=args['--method_name'],
+  model_name=args['--model_name'],
   n_iter=int(args['--n_iter'])
   )

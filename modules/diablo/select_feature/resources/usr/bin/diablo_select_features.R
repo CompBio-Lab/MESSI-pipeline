@@ -85,12 +85,12 @@ main <- function(mae_path, dataset_name, n_percent, design) {
                     as_tibble() |>
                     # Need a better naming rather than coef?
                     rename("coef" = "value.var") |>
-                    arrange(desc( coef )) |>
+                    #arrange(desc( coef )) |>
                     mutate(
                       method = paste(method, design, sep="-"), 
                       dataset_name = dataset_name
                     ) |>
-                    select(feature, view, method, dataset_name)
+                    select(feature, view, coef, method, dataset_name)
 
   # write it to disk
   comb_name <- paste(method, design, dataset_name, sep = "-")

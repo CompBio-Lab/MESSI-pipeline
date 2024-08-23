@@ -31,7 +31,7 @@ process SKLEARN_SELECT_FEATURE {
   // which is just a convert data format only
   """
   sklearn_select_features.py  --dataset_name=${dataset_name} \
-                            --data_path=${mae_path} \
+                            --data_path=${data_path} \
                             --model_name=${model_name} > \
                             sklearn-select_features_${model_name}-${dataset_name}.log
 

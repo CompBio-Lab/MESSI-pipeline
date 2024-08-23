@@ -19,7 +19,6 @@ process MOGONET_SELECT_FEATURE {
 	)
 
 	// Labels
-	label 'low_mem'
 	label 'gpu'
   
   /* Input and output blocks*/

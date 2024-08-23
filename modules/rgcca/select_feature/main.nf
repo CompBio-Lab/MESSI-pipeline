@@ -7,7 +7,7 @@ process RGCCA_SELECT_FEATURE {
 	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	tag "${dataset_name}"
 	debug true
-  label 'process_high'
+  label 'process_low'
 	container "${ onSockeye  ?
 		'rgcca.sif' :
 		'tonyliang19/rgcca:latest' }"
