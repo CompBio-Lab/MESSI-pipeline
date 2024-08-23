@@ -21,7 +21,6 @@ process DIABLO_SELECT_FEATURE {
   /* Input and output blocks*/
   input:
     tuple val(dataset_name), path(mae_path)
-    val (n_percent)
     each(design)
   output:
     path("*.csv"),    emit: features
@@ -34,7 +33,6 @@ process DIABLO_SELECT_FEATURE {
   """
   diablo_select_features.R  --dataset_name=${dataset_name} \
                             --mae_path=${mae_path} \
-                            --n_percent=${n_percent} \
                             --design=${design} > \
                             diablo-${dataset_name}-${design}.log
 

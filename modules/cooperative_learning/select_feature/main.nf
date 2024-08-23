@@ -39,8 +39,7 @@ process COOPERATIVE_LEARNING_SELECT_FEATURE {
   // which is just a convert data format only
   """
   cplr_select_features.R  --dataset_name=${dataset_name} \
-                          --mae_path=${mae_path} \
-                          --n_percent=${n_percent} > \
+                          --mae_path=${mae_path}  > \
                           cplr-select_features_${dataset_name}.log
 
   """
