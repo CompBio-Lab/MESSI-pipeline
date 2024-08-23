@@ -5,7 +5,7 @@ include { getPublishPath } from "${modulesDir}/functions"
 process SKLEARN_SELECT_FEATURE {
   // Vars stuff
 	def onSockeye = workflow.projectDir.toString().contains('/scratch')
-	tag "${dataset_name}"
+	tag "${model_name}-${dataset_name}"
 	debug true
   label 'process_high'
 	container "${ onSockeye  ?
@@ -21,10 +21,9 @@ process SKLEARN_SELECT_FEATURE {
   /* Input and output blocks*/
   input:
     tuple val(dataset_name), path(data_path)
-    val (n_percent)
+    each (model_name)
   output:
     path("*.csv"),    emit: features
-    path("*plot*"),   emit: plot
     path("*.log"),    emit: log
 
   script:
@@ -33,8 +32,8 @@ process SKLEARN_SELECT_FEATURE {
   """
   sklearn_select_features.py  --dataset_name=${dataset_name} \
                             --data_path=${mae_path} \
-                            --n_percent=${n_percent} > \
-                            ${dataset_name}.log
+                            --model_name=${model_name} > \
+                            sklearn-select_features_${model_name}-${dataset_name}.log
 
   """
 }
