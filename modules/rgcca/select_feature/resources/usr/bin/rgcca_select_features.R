@@ -101,19 +101,22 @@ main <- function(mae_path, dataset_name, n_percent, prediction_model = "lda", pa
       method = method, 
       dataset_name = dataset_name
     ) %>%
-    dplyr::rename(view = block) %>%
+    dplyr::rename(
+      view = block,
+      coef = top
+    ) %>%
     # Remap the view name since it changed to number from rgcca
     mutate(view = purrr::map_chr(view, ~ view_names[.x])) %>%
-    group_by(view) %>%
+    select(feature, view, coef, method, dataset_name)
+    #group_by(view) %>%
     # Sort the top value
-    arrange(desc(abs( !!sym( criteria_order ) ))) %>%
+    #arrange(desc(abs( !!sym( criteria_order ) ))) %>%
     # This takes top N percent of feature from each view
-    group_modify(~ slice_head(
-      .x, n = round(n_percent * nrow(.x) / 100, digits=0)
-      )
-    ) %>%
-    ungroup() %>%
-    select(feature, view, method, dataset_name)
+    #group_modify(~ slice_head(
+    #  .x, n = round(n_percent * nrow(.x) / 100, digits=0)
+    #  )
+    #) %>%
+    #ungroup() %>%
   
   # write it to disk
   feats_file <- paste0(method, "-", dataset_name, "_", "features_selected", ".csv")
