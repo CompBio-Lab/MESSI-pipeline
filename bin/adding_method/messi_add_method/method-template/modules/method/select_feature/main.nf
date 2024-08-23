@@ -30,7 +30,7 @@ process {{ method|upper }}_SELECT_FEATURE {
   // The selected features, note have to run preprocess inside this step
   // which is just a convert data format only
   """
-  {{ method|lower }}_select_features.{{ ext }}  --dataset_name=${dataset_name} \
+  {{ method|lower }}_select_feature.{{ ext }}  --dataset_name=${dataset_name} \
                             --data_path=${data_path} > \
                             {{ method|lower }}-${dataset_name}.log
 
