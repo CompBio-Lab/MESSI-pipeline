@@ -26,6 +26,7 @@ import copy
 from get_feats_df import get_feats_df
 from run_random_search_cv import run_random_search_cv
 from combine_mdata2df import combine_mdata2df
+from load_classifier_class import load_classifier_class
 
 
 # This is the main entrance of the script
