@@ -27,9 +27,11 @@ parseMeta2df <- function(mae, dataset_name=NULL, sim_base_dname="sim-data") {
   # Each row should be a dataset
   output_df <- data.frame(dataset_name = dataset_name)
   # Now get various information from the mae
+  # MAE comes in a P x n format, P is number of features == rows
+  # and n is number of subjects == col
   omics_names <- names(mae@ExperimentList) |> paste(collapse=",")
-  row_dims <- sapply(mae@ExperimentList, nrow) |> paste(collapse = ",")
-  col_dims <- sapply(mae@ExperimentList, ncol) |> paste(collapse = ",")
+  feat_dims <- sapply(mae@ExperimentList, nrow) |> paste(collapse = ",")
+  subject_dims <- sapply(mae@ExperimentList, ncol) |> paste(collapse = ",")
   # This is response variable
   #response <- mae@metadata$response
   response <- colData(mae) |> as.data.frame() |> pull(response)
@@ -49,8 +51,8 @@ parseMeta2df <- function(mae, dataset_name=NULL, sim_base_dname="sim-data") {
   output_df <- output_df |>
                mutate(
                  omics_names = omics_names,
-                 row_dimensions = row_dims,
-                 col_dimensions = col_dims,
+                 feat_dimensions = feat_dims,
+                 subject_dimensions = subject_dims,
                  positive_prop = positive_prop,
                  is_simulated  = is_simulated
                )
