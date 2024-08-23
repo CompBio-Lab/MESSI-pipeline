@@ -27,7 +27,7 @@ workflow FEATURE_SELECTION {
   // DIABLO param
   diablo_design_connection = params.diablo_design_connection
   // Sklearn param
-  sklearn_model = params.sklearn_classifier_names
+  sklearn_classifier_names = params.sklearn_classifier_names
   // Require input of workflow
   take:
 		datasets
