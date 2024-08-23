@@ -6,6 +6,7 @@ include { COOPERATIVE_LEARNING_SELECT_FEATURE }   from "${modulesDir}/cooperativ
 include { DIABLO_SELECT_FEATURE }                 from "${modulesDir}/diablo/select_feature"
 include { MOGONET_SELECT_FEATURE }                from "${modulesDir}/mogonet/select_feature"
 include { RGCCA_SELECT_FEATURE }                  from "${modulesDir}/rgcca/select_feature"
+include { SKLEARN_SELECT_FEATURE }                from "${modulesDir}/sklearn/select_feature"
 include { MOFA_SELECT_FEATURE }                   from "${modulesDir}/mofa/select_feature"
 include { MERGE_SELECTED_FEATURES }               from "${modulesDir}/merge_selected_features"
 
@@ -14,7 +15,7 @@ include { MERGE_SELECTED_FEATURES }               from "${modulesDir}/merge_sele
 //def lang 			= "all_langs"
 workflow FEATURE_SELECTION {
   // Params used
-  n_percent     = params.n_percent // N percent of features to be selected for each method
+  // n_percent     = params.n_percent // N percent of features to be selected for each method
   // Skip or trigger method to run
   skip_cplr     = params.skip_cplr    // boolean: true/false
   skip_diablo   = params.skip_diablo  // boolean: true/false
@@ -22,8 +23,11 @@ workflow FEATURE_SELECTION {
   skip_sgmr     = params.skip_sgmr    // boolean: true/false
   skip_mofa     = params.skip_mofa    // boolean: true/false
 	skip_mogonet  = params.skip_mogonet // boolean: true/false
+  skip_sklearn  = params.skip_sklearn // boolean: true/false
   // DIABLO param
   diablo_design_connection = params.diablo_design_connection
+  // Sklearn param
+  sklearn_model = params.sklearn_classifier_names
   // Require input of workflow
   take:
 		datasets
@@ -44,7 +48,7 @@ workflow FEATURE_SELECTION {
     /* The ones in R */
    cooperative_learning_features = Channel.empty()
     if (!skip_cplr) {
-      COOPERATIVE_LEARNING_SELECT_FEATURE (all_datasets.mae_pt, n_percent)
+      COOPERATIVE_LEARNING_SELECT_FEATURE (all_datasets.mae_pt)
       cooperative_learning_features = COOPERATIVE_LEARNING_SELECT_FEATURE.out.features
     }
 
@@ -52,27 +56,35 @@ workflow FEATURE_SELECTION {
     if (!skip_diablo) {
       // Connection for its design matrix
       ch_design = Channel.fromList( diablo_design_connection )
-      DIABLO_SELECT_FEATURE ( all_datasets.mae_pt, n_percent, ch_design)
+      DIABLO_SELECT_FEATURE ( all_datasets.mae_pt, ch_design)
       diablo_features = DIABLO_SELECT_FEATURE.out.features
     }
 
     mofa_features = Channel.empty()
     if (!skip_mofa) {
-      MOFA_SELECT_FEATURE ( all_datasets.mae_pt, n_percent )
+      MOFA_SELECT_FEATURE ( all_datasets.mae_pt)
       mofa_features = MOFA_SELECT_FEATURE.out.features
     }
 
     rgcca_features = Channel.empty()
     if (!skip_rgcca) {
-      RGCCA_SELECT_FEATURE (all_datasets.mae_pt, n_percent)
+      RGCCA_SELECT_FEATURE (all_datasets.mae_pt)
       rgcca_features = RGCCA_SELECT_FEATURE.out.features
     }
 
     /* The ones in Python */
     mogonet_features = Channel.empty()
     if (!skip_mogonet) {
-      MOGONET_SELECT_FEATURE (all_datasets.mu_pt, n_percent)
+      MOGONET_SELECT_FEATURE (all_datasets.mu_pt)
       mogonet_features = MOGONET_SELECT_FEATURE.out.features
+    }
+
+    sklearn_features = Channel.empty()
+    if (!skip_sklearn) {
+      // Classifier from sklearn
+      ch_sk_classifiers = Channel.fromList( sklearn_classifier_names )
+      SKLEARN_SELECT_FEATURE (all_datasets.mu_pt, ch_sk_classifiers)
+      sklearn_features = SKLEARN_SELECT_FEATURE.out.features
     }
 
 
@@ -85,6 +97,7 @@ workflow FEATURE_SELECTION {
             .mix( mogonet_features )
             .mix( mofa_features )
             .mix( rgcca_features )
+            .mix( sklearn_features )
             // This is the last step MUST to wait for all previous processes are finished
             .collect()
             //.groupTuple(by: 0)
