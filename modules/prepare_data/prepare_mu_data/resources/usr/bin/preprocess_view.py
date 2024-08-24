@@ -1,36 +1,44 @@
 import pandas as pd
-from sklearn.feature_selection import VarianceThreshold
-from sklearn.preprocessing import StandardScaler
 
-def preprocess_view(df, var_threshold=0.16, replace_na_val=0, scale=True):
+# Helper function to calculate the threshold to use for filtering feature
+def calculate_threshold(variances, threshold_type='mean', percentile=0.10):
+    """
+    Calculates the threshold for feature selection based on variance.
+
+    Parameters:
+    - variances (pd.Series): Series of variances for each feature.
+    - threshold_type (str): Type of threshold to calculate ('mean', 'median', 'percentile').
+    - percentile (float): The percentile to use if 'percentile' is selected (default is 0.10).
+
+    Returns:
+    - float: The calculated threshold value.
+    """
+    if threshold_type == 'mean':
+        return variances.mean()
+    elif threshold_type == 'median':
+        return variances.median()
+    elif threshold_type == 'percentile':
+        if percentile < 0 or percentile > 1:
+            raise ValueError("Percentile must be between 0 and 1.")
+        return variances.quantile(percentile)
+    else:
+        raise ValueError("Invalid threshold_type. Choose from 'mean', 'median', or 'percentile'.")
+
+
+def preprocess_view(df, var_threshold=0.16, replace_na_val=0, scale=False):
     df_copy = df.copy()
-    sample_names = df_copy.index
-    # Create the VarianceThreshold object
-    # Sometimes matrix could too small variance in each
-    try:
-        selector = VarianceThreshold(threshold=var_threshold)
-        # Fit the selector to the data and transform the data
-        df_reduced = selector.fit_transform(df_copy)
-    except Exception as e:
-        print(e)
-        print("\nTrying a new var threshold instead by choosing mean of variance of each column")
-        # TODO: this not top great now
-        # might need a different option to remove zero vars features
-        var_threshold = df_copy.var().mean()
-        selector = VarianceThreshold(threshold=var_threshold)
-        # Fit the selector to the data and transform the data
-        df_reduced = selector.fit_transform(df_copy)
-    # Convert the transformed data back into a DataFrame
-    # Get the columns that were kept
-    columns_kept = df.columns[selector.get_support()]
-    df_reduced = pd.DataFrame(df_reduced, columns=columns_kept, index=sample_names)
-    # replace the nas with 0
-    df_reduced = df_reduced.fillna(replace_na_val)
-    # Now also center and scale the data
-    # Create a StandardScaler instance
-    if not scale:
-        return df_reduced
-    scaler = StandardScaler()
-    # Fit the scaler to the DataFrame and transform it
-    df_reduced = pd.DataFrame(scaler.fit_transform(df_reduced), columns=df_reduced.columns)
+    # 1. First remove NAs in features (columns here)
+    df_copy = df_copy.dropna(axis=1)
+    # 2. Remove features with variance less than mean of all variances
+    # Calculate variance for each column
+    variances = df_copy.var()
+    # Use mean of the variances as threshold to keep
+    threshold = calculate_threshold(variances, threshold_type="mean")
+    # These are the relevant columns to keep
+    relv_feats = variances >= threshold
+    # Then filter it out
+    # NOTE: In python, it uses AnnData and MuData, so dont need to worry about prefixing
+    # view_name into the feature name
+    df_reduced = df_copy.loc[:, relv_feats]
+    
     return df_reduced
