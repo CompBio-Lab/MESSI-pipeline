@@ -27,9 +27,7 @@ opt <- docopt::docopt(doc)
 # Load library
 library(InterSIM)
 library(dplyr)
-
-
-
+library(magrittr)
 
 # Helper to convert mae to h5mu on mudata
 save_h5mu <- function(mae, dataset_name) {
@@ -44,7 +42,12 @@ save_h5mu <- function(mae, dataset_name) {
     strsplit(":") |>
     unlist() |>
     tail(1)
-  pipeline_dir <- gsub("/bin", "", bin_dir)
+  is_scratch <- stringr::str_detect(bin_dir, pattern = "scratch")
+  if (is_scratch) {
+    pipeline_dir <- gsub("/bin", "", bin_dir)
+  } else {
+    pipeline_dir <- ""
+  }
   reticulate::source_python(here::here(pipeline_dir, "modules/simulation/simulate_intersim/resources/usr/bin/save_mudata.py"))
   # Save it to mudata
   save_mudata(exps, col_data, feat_names, dataset_name)
@@ -73,13 +76,13 @@ save_h5mu <- function(mae, dataset_name) {
 #   message("Using transformation: ", transformation)
 #   # NOTE: Always using row here, since InterSim output row as subject, col as
 #   # feature
-  
-  
+
+
 #   # =======================
 #   # THIS IS FOR DEBUG
 #   #X <- dd@ExperimentList |> lapply(t)
 #   # =======================
-  
+
 #   if (transformation == "composite_score") {
 #     z <- rowSums(do.call(cbind, lapply(X, rowSums)))
 #     # Calculate a avg score of either mean or median
@@ -87,7 +90,7 @@ save_h5mu <- function(mae, dataset_name) {
 #     # Named vector of 1 and 0s
 #     response <- ifelse(z >= median_score, 1, 0)
 #   }
-  
+
 #   if (transformation == "rev_logit") {
 #     # TODO: the rowmeans could be bad, since its almost always > 0
 #     # resulting in a not so fair bernoulli random variable
@@ -105,7 +108,7 @@ save_h5mu <- function(mae, dataset_name) {
 #   diff <- abs(pop_var - sample_var)
 #   is_bernoulli <- diff <= tol
 #   if (!is_bernoulli) warning("Difference of population and sample variance: ", round(diff, 3), " which exceeded tolerance of ", tol)
-  
+
 #   # Lastly assign the rownames to df as well
 #   meta_df <- response |>
 #     as.data.frame() |>
@@ -117,23 +120,26 @@ save_h5mu <- function(mae, dataset_name) {
 #   return(meta_df)
 # }
 
-
-generate_Y <- function(response, id_name="sample_name") {
+generate_Y <- function(response_df, id_name="sample_name", response_name="response") {
   # Maybe should not create the y by clustering it, otherwise method will catch it 100%?
-  meta_df <- response |>
-            rename( 
-              {{ id_name }} := subjects ,
-              "response" = cluster.id
-            ) |>
-            # INTERSIM gives 3 clusters, so we only keep the first two 1 and 2
-            filter(response != 3) |>
-            # This makes it to binary 1 and 0
-            mutate(response = as.numeric(as.factor(response)) - 1)
+  if(!("subjects" %in% colnames(response_df) && "cluster.id" %in% colnames(response_df))) {
+    stop("The columns 'subjects' and 'cluster.id' must exist in the response dataset.")
+  }
+  meta_df <- response_df %>%
+    rename( 
+      {{ id_name }} := subjects,
+      {{ response_name }} := cluster.id
+    )  %>%
+    # The response vector is numeric already
+    # INTERSIM gives 3 clusters, so we only keep the first two 1 and 2
+    filter( !!sym(response_name) != 3) %>%
+    mutate( {{ response_name }} := !!sym(response_name) - 1)
   # Manually assign the rownames back, since MAE uses rownames of colData to
   # match those colnames of the X matrix (P_j x n)
   rownames(meta_df) <- meta_df |> pull( {{ id_name }} )
   return(meta_df)
 }
+
 
 # ============================================================================
 # HANDLING THE X LIST OF OMICS MATRICES
@@ -164,7 +170,7 @@ generate_gaussian_noise_vars <- function(omic_matrix,  H=100, sd_multiplier = 1.
   # noise_vars_matrix <- replicate(H, {
   #   # For each new noise variable, use a standard deviation larger than existing ones
   #   noise_sd <- sd_multiplier * mean(existing_sd, na.rm = TRUE)
-    
+  
   #   # Generate random values with increased standard deviation
   #   runif(n = nrow(matrix), min = min(matrix, na.rm = TRUE), max = max(matrix, na.rm = TRUE))
   # }, simplify = TRUE)
@@ -176,8 +182,8 @@ generate_bimodal_noise_vars <- function(n,  H=100,
                                         scale_1 = 2, shift_1 = 1, 
                                         scale_2 = 2, shift_2 = 3,
                                         bimodal = TRUE) {
-
-
+  
+  
   # Generate beta-distributed data for n rows and H columns
   noise_data <- rbeta(n*H, shape1 = beta_shape1, shape2 = beta_shape2)
   # Stored to matrix
@@ -205,7 +211,10 @@ generate_X <- function(X_raw, meta_df, H, noise_mean=0, noise_sd=1, sd_multiplie
   keep_samples <- rownames(meta_df)
   X <- lapply(names(X_raw), function(omic_name, H, noise_mean, noise_sd, sd_multiplier) {
     omic <- X_raw[[omic_name]]
-    # Keep relevant observations, since some are belong to cluster 3 which is not included
+    # Keep relevant observations, since some belong to cluster 3 which is not included
+    if (!all(keep_samples %in% rownames(omic))) {
+      stop("Some keep_samples are not found in the omic matrix.")
+    }
     x_mat <- omic[keep_samples, ]
     # Some conveninent vars
     n <- nrow(x_mat)
@@ -217,6 +226,7 @@ generate_X <- function(X_raw, meta_df, H, noise_mean=0, noise_sd=1, sd_multiplie
       beta_scale = 2
       shift_1 = 1
       shift_2 = 3
+      # Uses bimodal distribute noise
       noise_vars_matrix <- generate_bimodal_noise_vars(
         n=n, H=H, 
         beta_shape1=beta_shape, beta_shape2=beta_shape, 
@@ -224,11 +234,13 @@ generate_X <- function(X_raw, meta_df, H, noise_mean=0, noise_sd=1, sd_multiplie
         scale_2=beta_scale, shift_2=shift_2
       )
     }
-
+    
     # Otherwise always use gaussian noise variables
     noise_vars_matrix <- generate_gaussian_noise_vars(omic_matrix=x_mat, H=H, sd_multiplier=sd_multiplier)
     # Append dummy name to columns
-    colnames(noise_vars_matrix) <- paste(omic_name, "noise_var", seq_len(H), sep="_")
+    # TODO: this bit could be redundant of removing prefix?
+    omic_name_no_prefix <- gsub("dat.", "", omic_name)
+    colnames(noise_vars_matrix) <- paste(omic_name_no_prefix, "noise_var", seq_len(H), sep="_")
     # Then combine the noise variables to the var matrix
     x_mat_full <- cbind(x_mat, noise_vars_matrix)
     # https://stats.stackexchange.com/questions/144410/how-to-add-noise-to-a-random-variable-whose-range-is-the-unit-interval
@@ -237,7 +249,7 @@ generate_X <- function(X_raw, meta_df, H, noise_mean=0, noise_sd=1, sd_multiplie
     x_mat_full <- apply(x_mat_full, 2, function(col) add_gaussian_noise(col, noise_mean=noise_mean, noise_sd=noise_sd))
     
     # And transpose the X to MultiAssayExperiment format
-    return(t(x_mat))
+    return(t(x_mat_full))
   }, H=H, noise_mean=noise_mean, noise_sd=noise_sd, sd_multiplier=sd_multiplier)
   names(X) <- X_names
   return(X)
@@ -253,7 +265,7 @@ main <- function(dataset_name, output_format,
                  sigma=c("indep", "def"), 
                  corr=0,
                  transformation="rev_logit"
-                 ) {
+) {
   
   # Stop when no custom dataset name is provided
   if (dataset_name == "empty") stop("Did not provided a custom dataset for simulation of intersim")
@@ -263,30 +275,31 @@ main <- function(dataset_name, output_format,
   if (sigma == "def") {
     sigma <- NULL
   }
-
+  
   
   # First generate the count data from InterSIM
-  # TODO: The interSIM pkg doesnt have a way to change number of features in each omics
+  # TODO: The interSIM pkg doesnt have a way to change number of features in each omic
   # fixed to their defaults ....
-
+  
   # Given cluster propotions are c(0.45, 0.45, 0.1), where last cluster is always dropped after creation
   # So need to adjust that raw n to cancel this effect and having enough obsercations as stated.
   # Using this formula: n* = ceiling(raw_n / 0.9)
   # For example, if one want to simulate n = 50, then n* need to be ceiling(50 / 0.9) = 56
   # Then, 0.45 * 56 = 25.2 , 0.1 * 56 = 5.6
   # We can then only keep floor(25.2 + 25.2 ) = 50 which yields original n required
-
-  dat <- InterSIM(n.sample=n,
+  adjusted_n <- ceiling(n / 0.9)
+  dat <- InterSIM(n.sample=adjusted_n,
                   cluster.sample.prop=cluster.sample.prop,
                   delta.methyl = effect, delta.expr = effect, delta.protein = effect,
                   p.DMP=p.DMP,p.DEG=p.DEG, p.DEP=p.DEP, 
                   sigma.methyl=sigma, sigma.expr=sigma, sigma.protein=sigma,
                   cor.methyl.expr=corr, cor.expr.protein=corr)
   
+  
   # Ignore its cluster assignment for now
   n_list <- length(dat)
   # We retaining only cluster 1 and 2 subjects, so need to first process meta then on X
-  Y_df <- generate_Y(response=dat[[n_list]])
+  Y_df <- generate_Y(response_df=dat[[n_list]])
   # Process the X as well with suitable parameters to control noise generation
   # Let X be a J length list of n (row) x p (column) matrix
   # 1. Generate H noise variables of either:
@@ -310,21 +323,21 @@ main <- function(dataset_name, output_format,
   
   # Then should convert mae to mudata h5mu
   if (tolower(output_format) == "mudata") {
-      save_h5mu(mae, dataset_name)
+    save_h5mu(mae, dataset_name)
   }
-
+  
   if (tolower(output_format) == "mae") {
-      # Also saving it as mae
-      MultiAssayExperiment::saveHDF5MultiAssayExperiment(mae, prefix="",
-                                  dir=paste0(dataset_name, "_", "mae_data"),
-                                  replace = T)
+    # Also saving it as mae
+    MultiAssayExperiment::saveHDF5MultiAssayExperiment(mae, prefix="",
+                                                       dir=paste0(dataset_name, "_", "mae_data"),
+                                                       replace = T)
   }
   return(mae)
 }
 
 
 # Call the main function
-main(
+dat <- main(
   dataset_name = opt$dataset_name,
   output_format = opt$output_format,
   n = as.numeric(opt$number_obs),
@@ -335,3 +348,5 @@ main(
   transformation = opt$transformation,
   noise = as.numeric(opt$noise)
 )
+
+dat
