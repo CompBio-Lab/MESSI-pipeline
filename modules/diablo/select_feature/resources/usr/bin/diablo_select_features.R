@@ -40,8 +40,6 @@ if (is_scratch) {
   pipeline_dir <- ""
 }
 
-
-
 # Source custom functions
 source(here(pipeline_dir, "bin/rhelpers.R")) # This is included in nextflow bin path
 # Loading generic utils from directories
@@ -73,7 +71,7 @@ main <- function(mae_path, dataset_name, n_percent, design) {
   Y <- as.factor(data_list$Y)
   # Get the first 10 rownames and colnames, and print it to file as sanity check
   logging_head_names(X=X, n = 10)
-  # Then make the list of keepX
+  # Then make the list of keepX, now defaults to take 100 percent of it
   keepX <- createKeepX(X, n_percent=n_percent)
   cat("\nKeep X is the following:", "\n", unlist(keepX), "\n")
   # Then fit the model

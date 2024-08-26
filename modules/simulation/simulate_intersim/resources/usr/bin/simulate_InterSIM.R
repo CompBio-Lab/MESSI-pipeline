@@ -348,5 +348,5 @@ dat <- main(
   transformation = opt$transformation,
   noise = as.numeric(opt$noise)
 )
-
-dat
+# View the output of this
+print(dat)

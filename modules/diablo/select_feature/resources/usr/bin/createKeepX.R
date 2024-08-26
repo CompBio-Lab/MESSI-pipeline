@@ -1,4 +1,4 @@
-createKeepX <- function(x_list, n_percent = 10, ncomp=2) {
+createKeepX <- function(x_list, n_percent = 100, ncomp=2) {
   # For each omics, only get 10% of total features
   # Assume the input list is already after transforming to rows being common
   # samples
