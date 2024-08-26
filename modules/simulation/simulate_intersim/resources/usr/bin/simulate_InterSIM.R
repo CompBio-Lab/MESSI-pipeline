@@ -268,6 +268,14 @@ main <- function(dataset_name, output_format,
   # First generate the count data from InterSIM
   # TODO: The interSIM pkg doesnt have a way to change number of features in each omics
   # fixed to their defaults ....
+
+  # Given cluster propotions are c(0.45, 0.45, 0.1), where last cluster is always dropped after creation
+  # So need to adjust that raw n to cancel this effect and having enough obsercations as stated.
+  # Using this formula: n* = ceiling(raw_n / 0.9)
+  # For example, if one want to simulate n = 50, then n* need to be ceiling(50 / 0.9) = 56
+  # Then, 0.45 * 56 = 25.2 , 0.1 * 56 = 5.6
+  # We can then only keep floor(25.2 + 25.2 ) = 50 which yields original n required
+
   dat <- InterSIM(n.sample=n,
                   cluster.sample.prop=cluster.sample.prop,
                   delta.methyl = effect, delta.expr = effect, delta.protein = effect,
