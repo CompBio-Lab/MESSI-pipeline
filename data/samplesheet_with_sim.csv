@@ -1,9 +1,5 @@
 dataset_name,tar_path
-GSE123,/arc/project/st-singha53-1/datasets/messi_demo_data/GSE123.tar.gz
 GSE71669,/arc/project/st-singha53-1/datasets/messi_demo_data/GSE71669.tar.gz
-breast_tcga,/arc/project/st-singha53-1/datasets/messi_demo_data/breast_tcga.tar.gz
-multiomics-sim1,/arc/project/st-singha53-1/datasets/messi_demo_data/multiomics-sim1.tar.gz
-multiomics-sim2,/arc/project/st-singha53-1/datasets/messi_demo_data/multiomics-sim2.tar.gz
 rosmap,/arc/project/st-singha53-1/datasets/messi_demo_data/rosmap.tar.gz
 sim-data_strategy-intersim_n-100_H-100_effect-0.5_e-100_sigma-def_corr-0.5,/arc/project/st-singha53-1/datasets/messi_demo_data/sim-data_strategy-intersim_n-100_H-100_effect-0.5_e-100_sigma-def_corr-0.5.tar.gz
 sim-data_strategy-intersim_n-100_H-100_effect-0.5_e-100_sigma-def_corr-0,/arc/project/st-singha53-1/datasets/messi_demo_data/sim-data_strategy-intersim_n-100_H-100_effect-0.5_e-100_sigma-def_corr-0.tar.gz
