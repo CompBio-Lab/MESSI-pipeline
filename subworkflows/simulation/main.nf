@@ -98,17 +98,13 @@ workflow SIMULATION {
     // =====================================================================
     // Make up the grid for InterSIM
     // =====================================================================
-    // ch_intersim_num_noise_vars = Channel.fromList(params.intersim_num_noise_vars)
-    // ch_intersim_effect = Channel.fromList(params.intersim_effect)
-    // ch_intersim_noise = Channel.fromList(params.intersim_noise)
-    // ch_intersim_sigma = Channel.fromList(params.intersim_sigma)
-    // ch_intersim_corr = Channel.fromList(params.intersim_corr)
+    ch_intersim_num_noise_vars = Channel.fromList(params.intersim_num_noise_vars)
+    ch_intersim_effect = Channel.fromList(params.intersim_effect)
+    ch_intersim_noise = Channel.fromList(params.intersim_noise)
+    ch_intersim_sigma = Channel.fromList(params.intersim_sigma)
+    ch_intersim_corr = Channel.fromList(params.intersim_corr)
 
-    ch_intersim_num_noise_vars = Channel.fromList([10])
-    ch_intersim_effect = Channel.fromList([1])
-    ch_intersim_noise = Channel.fromList([20])
-    ch_intersim_sigma = Channel.fromList(["def"])
-    ch_intersim_corr = Channel.fromList([0.5])
+
 
     // Assign to map for easy access later
     Channel.of(dataset_base_name)
