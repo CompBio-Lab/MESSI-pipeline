@@ -13,7 +13,7 @@
 # Author: Tony Liang
 # ==============================================================================
 #SBATCH --job-name=MESSI-main
-#SBATCH --time=05:00:00
+#SBATCH --time=08:00:00
 #SBATCH --cpus-per-task=6
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -27,9 +27,10 @@ cd $SLURM_SUBMIT_DIR
 # =============================================================================
 # 1. Environments related imports
 # This first unload existing modules, since they might conflict with CC modules
-module purge && module load CVMFS_CC
+module purge
+module load CVMFS_CC
 # Related dependencies
-module load apptainer/1.1.8 
+module load apptainer/1.1.8
 module load java/11.0.16_8
 module load nextflow/23.04.3
 # Source the load script with env vars setup
@@ -40,13 +41,16 @@ module load nextflow/23.04.3
 # and offline option
 # And pull the containers required using the test profile
 PIPELINE_DIR=$(eval pwd)
+# AS per nextflow expert, work/ CANNOT be under /tmp
 export NXF_WORK="${PIPELINE_DIR}/work"
 export NXF_HOME="${PIPELINE_DIR}"
+#export NXF_WORK=${TMPDIR}/work
+#export NXF_HOME=${TMPDIR}
 export NXF_OFFLINE='true'
 # =============================================================================
 # 3. Options to use for the pipeline
 # The NXF script to run, located on the repo root directory
-NXF_SRC_MAIN=main.nf
+NXF_SRC_MAIN=$PIPELINE_DIR/main.nf
 # Profile order matters, since the later one overrides the prior ones
 PROFILE=sockeye
 # Or use this one for development usage
@@ -54,16 +58,22 @@ PROFILE=sockeye
 #PARAMS_FILE=remote_params.yaml
 # Modify this option if you want to run several times
 # Could be done in a for-loop fashion for different OUTDIR
-OUTDIR=MESSI_results
+timestamp=$(date +"%Y%m%d_%H%M%S")
+OUTDIR=${timestamp}-MESSI_results
 SAMPLESHEET=data/samplesheet_test_full.csv
-#SAMPLESHEET=data/bad_samplesheet.csv
+#SAMPLESHEET=data/samplesheet_test_small.csv
 echo "Running pipeline with ${NXF_SRC_MAIN}"
 # =============================================================================
-# 4. Run the pipeline
+# 4. Run the pipeline on the work dir
 # The ansi-log option is used for redirecting output
 nextflow run ${NXF_SRC_MAIN} \
   -profile ${PROFILE} \
   --outdir ${OUTDIR} \
   --samplesheet ${SAMPLESHEET} \
   -ansi-log false
-
+# =============================================================================
+# 5. Compress output results and move back to submitted directory
+#cd ${TMPDIR}
+#tar -czf ${timestamp}-MESSI_results.tar.gz $(basename ${OUTDIR})
+#echo "Moving compressed gz to ${PIPELINE_DIR}"
+#mv ${timestamp}-MESSI_results.tar.gz ${PIPELINE_DIR}

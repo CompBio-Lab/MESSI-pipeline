@@ -11,7 +11,7 @@ Options:
   --mae_path=MAE_PATH       Path to read the full data in
   --dataset_name=DNAME      Dataset name used as identification
   --output_ext=EXT          Extension of output table to save [default: csv]
-  --n_percent=N_PER         N percent of features per view to select [default: 10]
+  --n_percent=N_PER         N percent of features per view to select [default: 100]
   --design=DESIGN           Connection in design matrix, one of full or null [default: full]
 "
 # Parse cli docs
@@ -32,7 +32,13 @@ bin_dir <- Sys.getenv("PATH") |>
   strsplit(":") |>
   unlist() |>
   tail(1)
-pipeline_dir <- gsub("/bin", "", bin_dir)
+# Determin if running on cluster deploy mode or local mode
+is_scratch <- stringr::str_detect(bin_dir, pattern = "scratch")
+if (is_scratch) {
+  pipeline_dir <- gsub("/bin", "", bin_dir)
+} else {
+  pipeline_dir <- ""
+}
 
 # Source custom functions
 source(here(pipeline_dir, "bin/rhelpers.R")) # This is included in nextflow bin path
@@ -65,7 +71,7 @@ main <- function(mae_path, dataset_name, n_percent, design) {
   Y <- as.factor(data_list$Y)
   # Get the first 10 rownames and colnames, and print it to file as sanity check
   logging_head_names(X=X, n = 10)
-  # Then make the list of keepX
+  # Then make the list of keepX, now defaults to take 100 percent of it
   keepX <- createKeepX(X, n_percent=n_percent)
   cat("\nKeep X is the following:", "\n", unlist(keepX), "\n")
   # Then fit the model
@@ -77,12 +83,12 @@ main <- function(mae_path, dataset_name, n_percent, design) {
                     as_tibble() |>
                     # Need a better naming rather than coef?
                     rename("coef" = "value.var") |>
-                    arrange(desc( coef )) |>
+                    #arrange(desc( coef )) |>
                     mutate(
                       method = paste(method, design, sep="-"), 
                       dataset_name = dataset_name
                     ) |>
-                    select(feature, view, method, dataset_name)
+                    select(feature, view, coef, method, dataset_name)
 
   # write it to disk
   comb_name <- paste(method, design, dataset_name, sep = "-")

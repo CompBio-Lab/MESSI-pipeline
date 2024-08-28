@@ -21,20 +21,18 @@ process {{ method|upper }}_SELECT_FEATURE {
   /* Input and output blocks*/
   input:
     tuple val(dataset_name), path(data_path)
-    val (n_percent)
   output:
     path("*.csv"),    emit: features
-    path("*plot*"),   emit: plot
+    path("*plot*"),   optional: true,   emit: plot
     path("*.log"),    emit: log
 
   script:
   // The selected features, note have to run preprocess inside this step
   // which is just a convert data format only
   """
-  {{ method|lower }}_select_features.{{ ext }}  --dataset_name=${dataset_name} \
-                            --data_path=${mae_path} \
-                            --n_percent=${n_percent} > \
-                            ${dataset_name}.log
+  {{ method|lower }}_select_feature.{{ ext }}  --dataset_name=${dataset_name} \
+                            --data_path=${data_path} > \
+                            {{ method|lower }}-${dataset_name}.log
 
   """
 }

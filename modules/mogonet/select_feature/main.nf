@@ -19,13 +19,11 @@ process MOGONET_SELECT_FEATURE {
 	)
 
 	// Labels
-	label 'low_mem'
 	label 'gpu'
   
   /* Input and output blocks*/
   input:
     tuple val(dataset_name), path(mu_path)
-    val(n_percent)
   output:
     path("*.csv"), emit: features
     path("*.log"), emit: log
@@ -35,9 +33,8 @@ process MOGONET_SELECT_FEATURE {
   // which is just a convert data format only
   """
   mogonet_select_features.py  --dataset_name=${dataset_name} \
-                              --mu_path=${mu_path} \
-                              --n_percent=${n_percent} > \
-                              ${dataset_name}.log
+                              --mu_path=${mu_path}  > \
+                              mogonet-select_features-${dataset_name}.log
 
   """
 }

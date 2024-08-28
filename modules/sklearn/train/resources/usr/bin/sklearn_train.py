@@ -38,7 +38,8 @@ def train(train_data, model_name):
     # y_df contains response and other metadata information
     X_df, y_df = mudata2df(train_data)
     # Dynamically load classifier class
-    classifier_class, params = load_classifier_class(model_name)
+    # The third is params_dist which is for cv tuning, so discard it
+    classifier_class, params, _ = load_classifier_class(model_name)
     # Unpack those params for the classifier, and instantiate it
     clf = classifier_class(**params)
     print("\n", clf)

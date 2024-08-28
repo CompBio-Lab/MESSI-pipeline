@@ -11,7 +11,6 @@ Options:
   --mae_path=MAE_PATH           Path to read the full data in
   --dataset_name=DNAME          Dataset name used as identification
   --output_ext=EXT              Extension of output table to save [default: csv]
-  --n_percent=N_PER             N percent of features to be selected [default: 10]
   --nfolds=NFOLDS               Number of folds to perform CV to perform feature selection [default: 5]
   --prediction_model=PRED_MOD   Prediction model from caret [default: lda]
   --metric=METRIC               Metric to perform CV on [default: Balanced_Accuracy]
@@ -27,6 +26,19 @@ library(dplyr)
 library(here)
 library(magrittr)
 
+# Gather the pipeline dir (THIS IS VERY UGGLY FIX)
+bin_dir <- Sys.getenv("PATH") |> 
+  strsplit(":") |>
+  unlist() |>
+  tail(1)
+# Determin if running on cluster deploy mode or local mode
+is_scratch <- stringr::str_detect(bin_dir, pattern = "scratch")
+if (is_scratch) {
+  pipeline_dir <- gsub("/bin", "", bin_dir)
+} else {
+  pipeline_dir <- ""
+}
+
 # Source custom functions
 source(here(pipeline_dir, "bin/rhelpers.R")) # This is included in nextflow bin path
 # Loading generic utils from directories
@@ -36,7 +48,7 @@ load_utils(here(pipeline_dir, "bin/plotting"))
 
 # Main entrypoint of the script
 # prediction_model should be glm to accord with rest of methods?
-main <- function(mae_path, dataset_name, n_percent, prediction_model = "lda", par_type="sparsity", 
+main <- function(mae_path, dataset_name, prediction_model = "lda", par_type="sparsity", 
                  validation = "kfold", nfolds=5, reps=1, metric="Balanced_Accuracy",
                  criteria_order = "top") {
   # PARAMS
@@ -94,19 +106,22 @@ main <- function(mae_path, dataset_name, n_percent, prediction_model = "lda", pa
       method = method, 
       dataset_name = dataset_name
     ) %>%
-    dplyr::rename(view = block) %>%
+    dplyr::rename(
+      view = block,
+      coef = top
+    ) %>%
     # Remap the view name since it changed to number from rgcca
     mutate(view = purrr::map_chr(view, ~ view_names[.x])) %>%
-    group_by(view) %>%
+    select(feature, view, coef, method, dataset_name)
+    #group_by(view) %>%
     # Sort the top value
-    arrange(desc(abs( !!sym( criteria_order ) ))) %>%
+    #arrange(desc(abs( !!sym( criteria_order ) ))) %>%
     # This takes top N percent of feature from each view
-    group_modify(~ slice_head(
-      .x, n = round(n_percent * nrow(.x) / 100, digits=0)
-      )
-    ) %>%
-    ungroup() %>%
-    select(feature, view, method, dataset_name)
+    #group_modify(~ slice_head(
+    #  .x, n = round(n_percent * nrow(.x) / 100, digits=0)
+    #  )
+    #) %>%
+    #ungroup() %>%
   
   # write it to disk
   feats_file <- paste0(method, "-", dataset_name, "_", "features_selected", ".csv")
@@ -116,7 +131,7 @@ main <- function(mae_path, dataset_name, n_percent, prediction_model = "lda", pa
 
 # Then call the function above
 main(mae_path=opt$mae_path, dataset_name=opt$dataset_name, 
-  n_percent=as.numeric(opt$n_percent), nfolds=as.numeric(opt$nfolds),
+  nfolds=as.numeric(opt$nfolds),
   prediction_model = opt$prediction_model, metric=opt$metric)
 
 

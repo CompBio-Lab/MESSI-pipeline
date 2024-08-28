@@ -10,7 +10,6 @@ Options:
   --mae_path=MAE_PATH         Path to read the full data in
   --dataset_name=DNAME        Dataset name used as identification
   --output_ext=EXT            Extension of output table to save [default: csv]
-  --n_percent=N_PER           N percent of features to be selected [default: 10]
 "
 # Parse cli docs
 opt <- docopt::docopt(doc)
@@ -48,7 +47,7 @@ mofa_pre <- function(mae, scale_views=FALSE) {
 
 
 # Main entrypoint here
-main <- function(mae_path, dataset_name, n_percent, 
+main <- function(mae_path, dataset_name, 
                  factor_levels = c("Factor1"), 
                  scale_views=FALSE, method="mofa") {
   # ============================================================================
@@ -67,24 +66,21 @@ main <- function(mae_path, dataset_name, n_percent,
   # For each factor in factor level and view get top n percent ?
   feats_df <- get_weights(mofa_emb, as.data.frame = T) %>%
     filter(factor %in% factor_levels) %>%
-    # Sort by descending order of absolute value of the weights 
-    arrange(desc(abs( value ))) %>%
-    # TODO: need to think keep this or not
-    # This is due to the fact feature has <view>_ in front of it
-    # mutate(
-    #   feature = str_remove(feature, paste0(view, "_"))
-    # ) %>%
-    group_by(view) %>%
-    # This takes top n percent of each view
-    group_modify(
-      ~ slice_head(
-        .x, n = round(n_percent * nrow(.x) / 100, digits=0)
-      )
-    ) %>% 
-    ungroup() %>%
     # Add metadata for downstream usage
     mutate(method = method, dataset_name = dataset_name) %>%
-    select(feature, view, method, dataset_name) 
+    dplyr::rename(coef = value) %>%
+    select(feature, view, coef, method, dataset_name) 
+    
+    # ===============================================
+    # Staled code for select top n percent
+    #group_by(view) %>%
+    # This takes top n percent of each view
+    #group_modify(
+    #  ~ slice_head(
+    #    .x, n = round(n_percent * nrow(.x) / 100, digits=0)
+    #  )
+    #) %>% 
+    #ungroup()
   
   # write it to disk
   feats_file <- paste0(method, "-", dataset_name, "_", "features_selected", ".csv")
@@ -96,8 +92,7 @@ main <- function(mae_path, dataset_name, n_percent,
 # Call the main function here
 main(
   mae_path=opt$mae_path, 
-  dataset_name=opt$dataset_name, 
-  n_percent=as.numeric(opt$n_percent)
+  dataset_name=opt$dataset_name
 )
 # Exit with message
 message("\nDone")

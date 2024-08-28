@@ -9,11 +9,11 @@ extract_feats_df <- function(var_list) {
     # For each omic (which is a list(name, value)), get the value part
     view_feats <- feat_list[[view]]
     view_feats_df <- view_feats$value |> 
-      rownames_to_column(var="feature") |>
-      mutate(view = view)
+      tibble::rownames_to_column(var="feature") |>
+      dplyr::mutate(view = view)
     return(view_feats_df)
   })
   
-  selected_feat_df <- bind_rows(selected_feat_df_list)
+  selected_feat_df <- dplyr::bind_rows(selected_feat_df_list)
   return(selected_feat_df)
 }

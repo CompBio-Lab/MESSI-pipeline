@@ -21,7 +21,6 @@ process MOFA_SELECT_FEATURE {
   /* Input and output blocks*/
   input:
     tuple val(dataset_name), path(mae_path)
-    val (n_percent)
   output:
     path("*.csv"),                  emit: features
     path("*plot*"), optional:true,  emit: plot
@@ -32,9 +31,8 @@ process MOFA_SELECT_FEATURE {
   // which is just a convert data format only
   """
   mofa_select_features.R  --dataset_name=${dataset_name} \
-                            --mae_path=${mae_path} \
-                            --n_percent=${n_percent} > \
-                            ${dataset_name}.log
+                            --mae_path=${mae_path} > \
+                            mofa-select_features-${dataset_name}.log
 
   """
 }

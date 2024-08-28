@@ -28,7 +28,6 @@ process COOPERATIVE_LEARNING_SELECT_FEATURE {
   // This is triggered from FEATURE_SELECTION:CPLR_SELECT_FEATURE
   input:
     tuple val(dataset_name), path(mae_path)
-    val(n_percent)
   output:
     path("*.csv"),  emit: features
     path("*plot*"), emit: plot
@@ -39,9 +38,8 @@ process COOPERATIVE_LEARNING_SELECT_FEATURE {
   // which is just a convert data format only
   """
   cplr_select_features.R  --dataset_name=${dataset_name} \
-                          --mae_path=${mae_path} \
-                          --n_percent=${n_percent} > \
-                          ${dataset_name}.log
+                          --mae_path=${mae_path}  > \
+                          cplr-select_features_${dataset_name}.log
 
   """
 
