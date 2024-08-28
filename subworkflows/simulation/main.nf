@@ -36,7 +36,7 @@ process COMPRESS_DATA_GZ {
   input:
     tuple val(dataset_name), path(mae_path), path(mu_path)
   output:
-    path("*.tar.gz"), emit: ch_sim_datasets
+    path("${dataset_name}.tar.gz"), emit: ch_sim_datasets
   
   script:
     """
@@ -52,6 +52,8 @@ process COMPRESS_DATA_GZ {
 workflow SIMULATION {
   // WORKFLOW PARAMS
   dataset_base_name   = params.dataset_base_name
+  // TODO: output format need to be removed here and inside the
+  // scripts, just left here for compatibility
   output_format       = params.output_formats
   num_obs             = params.num_obs
   y_name              = params.y_name
@@ -90,17 +92,23 @@ workflow SIMULATION {
     */
     
     // Common params
-    ch_num_obs      = Channel.fromList(num_obs)
+    ch_num_obs  = Channel.fromList(num_obs)
     ch_y_name   = Channel.of(y_name)
 
     // =====================================================================
     // Make up the grid for InterSIM
     // =====================================================================
-    ch_intersim_num_noise_vars = Channel.fromList(params.intersim_num_noise_vars)
-    ch_intersim_effect = Channel.fromList(params.intersim_effect)
-    ch_intersim_noise = Channel.fromList(params.intersim_noise)
-    ch_intersim_sigma = Channel.fromList(params.intersim_sigma)
-    ch_intersim_corr = Channel.fromList(params.intersim_corr)
+    // ch_intersim_num_noise_vars = Channel.fromList(params.intersim_num_noise_vars)
+    // ch_intersim_effect = Channel.fromList(params.intersim_effect)
+    // ch_intersim_noise = Channel.fromList(params.intersim_noise)
+    // ch_intersim_sigma = Channel.fromList(params.intersim_sigma)
+    // ch_intersim_corr = Channel.fromList(params.intersim_corr)
+
+    ch_intersim_num_noise_vars = Channel.fromList([10])
+    ch_intersim_effect = Channel.fromList([1])
+    ch_intersim_noise = Channel.fromList([20])
+    ch_intersim_sigma = Channel.fromList(["def"])
+    ch_intersim_corr = Channel.fromList([0.5])
 
     // Assign to map for easy access later
     Channel.of(dataset_base_name)
@@ -160,14 +168,14 @@ workflow SIMULATION {
     ch_intersim = Channel.empty()
     if (!skip_sim_intersim) {
       // TODO: need to add their right params
-      SIMULATE_INTERSIM ( intersim_grid, output_format )
+      SIMULATE_INTERSIM ( intersim_grid )
       ch_intersim = SIMULATE_INTERSIM.out.sim_mae.join(SIMULATE_INTERSIM.out.sim_mu)
     }
     // 2. When strategy is cplr's mvn simulation
     ch_mvn = Channel.empty()
     if (!skip_sim_MVN) {
       // TODO: need to add their right params
-      SIMULATE_MVN_DATA ( mvn_sim_grid, output_format )
+      SIMULATE_MVN_DATA ( mvn_sim_grid )
       ch_mvn = SIMULATE_MVN_DATA.out.sim_mae.join(SIMULATE_MVN_DATA.out.sim_mu)
     }
   

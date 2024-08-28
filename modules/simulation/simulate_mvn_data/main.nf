@@ -3,7 +3,6 @@
     parameters to control the data-generating process.
 
     Input:  val(grid), combination of parameters
-            output_format, output format to generate
     Whereas you could acess its parameters by grid.<key_name>, i.e. grid.number
 
     Possible parameters are:
@@ -25,7 +24,7 @@ process SIMULATE_MVN_DATA {
 	debug false
 	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	// process metadata and configs
-	tag "${grid.dataset_name}-${output_format}"
+	tag "${grid.dataset_name}"
 	label 'process_medium'
 	container "${ onSockeye ? 
 		'save_simulate.sif' : 
@@ -40,12 +39,11 @@ process SIMULATE_MVN_DATA {
 	// Input goes here
 	input:
 		val  grid 					// Combinations of parameters, key-value pair, access element by grid.xxx
-		each output_format 	// Output type of data to generate, one of MAE or MuData
 	// Possible output for downstream
 	output:
 		// The optional MUST be true here, since it should output one of MAE or MuData at a time
-		tuple val(grid.dataset_name), path('*mae*'), 	optional: true, emit: sim_mae
-		tuple val(grid.dataset_name), path('*.h5mu'), optional: true, emit: sim_mu
+		tuple val(grid.dataset_name), path("${grid.dataset_name}*mae*"), 	 emit: sim_mae
+		tuple val(grid.dataset_name), path("${grid.dataset_name}*.h5mu"),  emit: sim_mu
 		tuple val(grid.dataset_name), path('*.log'),									emit: sim_log
 	
 	script:
@@ -60,8 +58,7 @@ process SIMULATE_MVN_DATA {
 			--sy=${grid.sy} \
 			--sp=${grid.sp} \
 			--u_std=${grid.u_std} \
-			--fct_str=${grid.fct_str} \
-			--output_format=${output_format} > \
+			--fct_str=${grid.fct_str} > \
 			${grid.dataset_name}_${task.process.tokenize(':')[-1].toLowerCase()}.log
 		echo -e "\nDone with ${grid.dataset_name}"
 		"""

@@ -12,7 +12,6 @@ Usage:
 Options:
   --help                  Display this help message
   --dataset_name=DNAME    Name of the dataset [default: empty]
-  --output_format=OUT_F   Format of the output data, one of MAE or MuData [default: empty]
   --number_obs=N          Number of observations to generate [default: 30]
   --number_noise_vars=H   Number of noise variables to create [default: 200]
   --effect=EFFECT         Cluster mean shift on each view [default: 2]
@@ -204,7 +203,7 @@ generate_bimodal_noise_vars <- function(n,  H=100,
 
 # Get the X omics matrices and add numbers of noise variable in each matrix
 # And add additional noise to existing vars (including those noise variables)
-generate_X <- function(X_raw, meta_df, H, noise_mean=0, noise_sd=1, sd_multiplier=1.5) {
+generate_X <- function(X_raw, meta_df, dataset_name, H, noise_mean=0, noise_sd=1, sd_multiplier=1.5) {
   # Rename its prefix of dat.<view_name>
   X_names <- gsub("dat.", "", names(X_raw))
   # The sample names in clusters 1 and 2
@@ -239,15 +238,15 @@ generate_X <- function(X_raw, meta_df, H, noise_mean=0, noise_sd=1, sd_multiplie
     noise_vars_matrix <- generate_gaussian_noise_vars(omic_matrix=x_mat, H=H, sd_multiplier=sd_multiplier)
     # Append dummy name to columns
     # TODO: this bit could be redundant of removing prefix?
-    omic_name_no_prefix <- gsub("dat.", "", omic_name)
-    colnames(noise_vars_matrix) <- paste(omic_name_no_prefix, "noise_var", seq_len(H), sep="_")
+    #omic_name_no_prefix <- gsub("dat.", "", omic_name)
+    colnames(noise_vars_matrix) <- paste(omic_name, "noise_var", seq_len(H), sep="_")
     # Then combine the noise variables to the var matrix
     x_mat_full <- cbind(x_mat, noise_vars_matrix)
     # https://stats.stackexchange.com/questions/144410/how-to-add-noise-to-a-random-variable-whose-range-is-the-unit-interval
     # TODO: might need to check if this doing right here
     # Then for each column add gaussian noise
     x_mat_full <- apply(x_mat_full, 2, function(col) add_gaussian_noise(col, noise_mean=noise_mean, noise_sd=noise_sd))
-    
+    # Also append the dataset name  in front of each column name
     # And transpose the X to MultiAssayExperiment format
     return(t(x_mat_full))
   }, H=H, noise_mean=noise_mean, noise_sd=noise_sd, sd_multiplier=sd_multiplier)
@@ -258,7 +257,7 @@ generate_X <- function(X_raw, meta_df, H, noise_mean=0, noise_sd=1, sd_multiplie
 
 
 # Main entrace of the function
-main <- function(dataset_name, output_format, 
+main <- function(dataset_name,
                  n, effect, noise, H=200,
                  cluster.sample.prop = c(0.45,0.45,0.1),
                  p.DMP=0.2, p.DEG=NULL, p.DEP=NULL, 
@@ -269,7 +268,6 @@ main <- function(dataset_name, output_format,
   
   # Stop when no custom dataset name is provided
   if (dataset_name == "empty") stop("Did not provided a custom dataset for simulation of intersim")
-  if (output_format == "empty") stop("Did not provided the format of data to write out for simulation of intersim")
   # Match args of sigma
   sigma <- match.arg(sigma)
   if (sigma == "def") {
@@ -313,7 +311,7 @@ main <- function(dataset_name, output_format,
   # Note: this get added to those previous noise variables, so could be double source of noise
   # And it also gets added to non normally distributed omics like the ones of Methylation
   # which is stricly Beta distributed.
-  X <- generate_X(X_raw = dat[1:n_list - 1], meta_df=Y_df, H=H, noise_sd=noise)
+  X <- generate_X(X_raw = dat[1:n_list - 1], meta_df=Y_df, dataset_name=dataset_name, H=H, noise_sd=noise)
   # Construct the X and Y here
   mae <- MultiAssayExperiment::MultiAssayExperiment(
     experiments = X,
@@ -322,16 +320,19 @@ main <- function(dataset_name, output_format,
   
   
   # Then should convert mae to mudata h5mu
-  if (tolower(output_format) == "mudata") {
-    save_h5mu(mae, dataset_name)
-  }
+  #if (tolower(output_format) == "mudata") {
   
-  if (tolower(output_format) == "mae") {
+  # Directly saves h5mu
+  save_h5mu(mae, dataset_name)
+  #}
+  
+  #if (tolower(output_format) == "mae") {
     # Also saving it as mae
-    MultiAssayExperiment::saveHDF5MultiAssayExperiment(mae, prefix="",
+  # Directly saves mae
+  MultiAssayExperiment::saveHDF5MultiAssayExperiment(mae, prefix="",
                                                        dir=paste0(dataset_name, "_", "mae_data"),
                                                        replace = T)
-  }
+  #}
   return(mae)
 }
 
@@ -339,7 +340,6 @@ main <- function(dataset_name, output_format,
 # Call the main function
 dat <- main(
   dataset_name = opt$dataset_name,
-  output_format = opt$output_format,
   n = as.numeric(opt$number_obs),
   H = as.numeric(opt$number_noise_vars),
   effect = as.numeric(opt$effect),

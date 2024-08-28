@@ -22,7 +22,6 @@ Options:
   --fct_str=FCT_STR               Factor strength [default: 7] 
   --task=TASK                     Type of response, binary/categorical [default: categorical]
   --tr=TRANSFORM                  Transformation on response, one of sigmoid or softmax [default: sigmoid]
-  --output_format=OUT_FMT         Type of output data to write. One of MAE or MuData [default: MAE]
 	--dataset_name=DATASET_NAME			Name of data to save [default: sim_data]
   --seed=SEED                     Seed to reproduce [default: 1]
   --y_name=Y_NAME                 Column name for the response var [default: response]
@@ -62,13 +61,11 @@ simulate_data <- function(
   sp, u_std, fct_str,
   task = c("continuous","binary", "categorical"),
   tr=c("sigmoid", "softmax"), 
-  output_format=c("MAE", "MuData"),
   y_name
   ) {
   # Match arguments ----------------------------------------------------------
   task <- match.arg(task)
   tr <- match.arg(tr)
-  output_format <- match.arg(output_format)
   # Logging stuff ------------------------------------------------------------
   args_used <- c(as.list(environment()))
   logging_params(args_used) # custom function to format and log
@@ -117,7 +114,7 @@ simulate_data <- function(
 # Main entrance of the scripts
 main <- function(number, num_predictors, blocks_num,
                 p_imp, sigma, sy, sp, u_std, 
-                factor_strength, task, tr, output_format,
+                factor_strength, task, tr,
                 dataset_name, y_name, prefix="") {
   
   cat("Generating simulation... \n")
@@ -126,11 +123,12 @@ main <- function(number, num_predictors, blocks_num,
   dat <- simulate_data(n=number, p=num_predictors, m=blocks_num,
                       p_imp=p_imp, sigma=sigma, sy = sy, sp=sp, 
                       u_std=u_std, fct_str=factor_strength, task=task,
-                      tr=tr, output_format=output_format, y_name=y_name)
+                      tr=tr, y_name=y_name)
   # Time to write data
   write_start <- Sys.time()
-  # To MAE or MuData
-  saveFile(dat, name=dataset_name, prefix=prefix, output_format=output_format)
+  # To MAE and MuData
+  saveFile(dat, name=dataset_name, prefix=prefix, output_format="MAE")
+  saveFile(dat, name=dataset_name, prefix=prefix, output_format="MuData")
   # Log to end
   logging_write_disk(write_start = write_start)
   # Write metadata to file as well
@@ -152,7 +150,6 @@ dat <- main(
     factor_strength = opt$fct_str,
     task            = opt_chr$task,
     tr              = opt_chr$tr,
-    output_format   = opt_chr$output_format,
     dataset_name	  = opt_chr$dataset_name,
     y_name          = opt_chr$y_name
   )
