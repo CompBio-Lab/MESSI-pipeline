@@ -32,17 +32,19 @@ main <- function(tables, method_name, methodMode, readMode="csv", pattern="-resu
   cat("\nMerging", length(to_bind), "tables\n")
   # Flatten these tables by merging rows
   merged_table <- dplyr::bind_rows(to_bind) %>%
+                  {.}
+                  # Stale code, since this might cause problem
                   # Removes the prefix of the view from the feature 
                   # TODO: this could be dangerous?
                   # This only replaces if contains _ :
                   #  - feat = abc , nothing will be done
                   #  - feat = aaa_bbb , aaa would be feat, bbb would be view
                   #  BUT the last one could be misleading
-                  mutate(
-                    feature = purrr::map2_chr(
-                      feature, view, ~ stringr::str_replace(.x, paste0(.y, "_"), "")
-                    )
-                  )
+                  # mutate(
+                  #   feature = purrr::map2_chr(
+                  #     feature, view, ~ stringr::str_replace(.x, paste0(.y, "_"), "")
+                  #   )
+                  # )
   # Writing to files both csv and txt for now
   file_name <- "all_feature_selection_results"
   csv_format <- paste0(file_name, ".csv")
