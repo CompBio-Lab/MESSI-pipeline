@@ -13,7 +13,7 @@
 # Author: Tony Liang
 # ==============================================================================
 #SBATCH --job-name=MESSI-main
-#SBATCH --time=05:00:00
+#SBATCH --time=08:00:00
 #SBATCH --cpus-per-task=6
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -58,8 +58,8 @@ PROFILE=sockeye
 #PARAMS_FILE=remote_params.yaml
 # Modify this option if you want to run several times
 # Could be done in a for-loop fashion for different OUTDIR
-#timestamp=$(date +"%Y%m%d_%H%M%S")
-OUTDIR=MESSI_results
+timestamp=$(date +"%Y%m%d_%H%M%S")
+OUTDIR=${timestamp}-MESSI_results
 SAMPLESHEET=data/samplesheet_test_full.csv
 #SAMPLESHEET=data/samplesheet_test_small.csv
 echo "Running pipeline with ${NXF_SRC_MAIN}"
