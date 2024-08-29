@@ -274,7 +274,10 @@ main <- function(dataset_name,
     sigma <- NULL
   }
   
-  
+
+  # Internal calculate a seed to make sure the data is reproducible
+  seed <- sum(base::utf8ToInt(dataset_name))
+  set.seed(seed)
   # First generate the count data from InterSIM
   # TODO: The interSIM pkg doesnt have a way to change number of features in each omic
   # fixed to their defaults ....
