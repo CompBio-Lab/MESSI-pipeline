@@ -102,7 +102,7 @@ custom_rgcca_stability <- function (rgcca_res, keep = vapply(rgcca_res$a, functi
   }
   
   # NOTE: this is start of manual fix here
-  #res$block <- factor(res$block, levels = levels(droplevels(res$block)))
+  res$block <- factor(res$block, levels = levels(droplevels(res$block)))
   # NOTE: this is end of manual fix
   
   res_AVE <- res[res$type != "weights", ]
@@ -118,7 +118,7 @@ custom_rgcca_stability <- function (rgcca_res, keep = vapply(rgcca_res$a, functi
   top <- cbind(top = top, block = var2block[names(top), ])
   # NOTE: this is start of manual fix
   # remove the NA row which corresponds to the response?
-  #top <- top[complete.cases(top), ]
+  top <- top[complete.cases(top), ]
   # NOTE: this is end of manual fix
   perc <- RGCCA:::elongate_arg(keep, top)
   if (is.null(dim(rgcca_res$call$sparsity))) {
