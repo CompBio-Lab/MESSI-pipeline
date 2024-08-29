@@ -118,8 +118,11 @@ main <- function(number, num_predictors, blocks_num,
                 dataset_name, y_name, prefix="") {
   
   cat("Generating simulation... \n")
+
+  # Internal calculate a seed to make sure the data is reproducible
+  seed <- sum(base::utf8ToInt(dataset_name))
+  set.seed(seed)
   # Invoke simulate data
-  
   dat <- simulate_data(n=number, p=num_predictors, m=blocks_num,
                       p_imp=p_imp, sigma=sigma, sy = sy, sp=sp, 
                       u_std=u_std, fct_str=factor_strength, task=task,

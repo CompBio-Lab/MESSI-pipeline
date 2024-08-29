@@ -13,12 +13,13 @@
 # Author: Tony Liang
 # ==============================================================================
 #SBATCH --job-name=MESSI-main
-#SBATCH --time=08:00:00
+#SBATCH --time=24:00:00
 #SBATCH --cpus-per-task=6
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --mem=4G
 #SBATCH --output=%x-%j.log
+#SBATCH --mail-type=ALL
 # ==============================================================================
 
 # Change directory into the job dir
@@ -59,10 +60,12 @@ PROFILE=sockeye
 # Modify this option if you want to run several times
 # Could be done in a for-loop fashion for different OUTDIR
 timestamp=$(date +"%Y%m%d_%H%M%S")
-OUTDIR=${timestamp}-MESSI_results
-SAMPLESHEET=data/samplesheet_test_full.csv
+OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results
+SAMPLESHEET=data/samplesheet_with_sim.csv
+#SAMPLESHEET=data/samplesheet_test_full.csv
 #SAMPLESHEET=data/samplesheet_test_small.csv
 echo "Running pipeline with ${NXF_SRC_MAIN}"
+echo "Running data under '${SAMPLESHEET}'"
 # =============================================================================
 # 4. Run the pipeline on the work dir
 # The ansi-log option is used for redirecting output
