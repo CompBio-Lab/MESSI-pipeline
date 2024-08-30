@@ -72,9 +72,9 @@ custom_rgcca_stability <- function (rgcca_res, keep = vapply(rgcca_res$a, functi
                                        keep_all_variables = keep_all_variables)
   sd_null <- boot_sampling$sd_null
   if (!is.null(sd_null)) {
-    rgcca_res$call$blocks <- remove_null_sd(list_m = rgcca_res$call$blocks, 
+    rgcca_res$call$blocks <- RGCCA:::remove_null_sd(list_m = rgcca_res$call$blocks, 
                                             column_sd_null = sd_null)$list_m
-    rgcca_res <- rgcca(rgcca_res)
+    rgcca_res <- RGCCA::rgcca(rgcca_res)
   }
   
   W <- RGCCA:::par_pblapply(boot_sampling$full_idx, function(b) {
