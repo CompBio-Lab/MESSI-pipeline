@@ -60,10 +60,13 @@ def main(mu_path, dataset_name, model_name, block_num=0, n_iter=10, random_state
     raw_mdata = mudata.read(mu_path)
     # Use a copy here to avoid mixing up stuff
     mdata = raw_mdata.copy()
+    # TODO: this is uggly solution now
+    # Take the modality out for usage later
+    modality_names = list(mdata.mod.keys())
     # Then convert the mdata to merged dataframe column wise
     merged_df = combine_mdata2df(mdata)
     # And split them to X and Y
-    X_df, y_df = merged_df.drop(columns=[target_col]), merged_df[target_col]
+    X_df, y_df = merged_df.drop(columns=[target_col]), merged_df[[target_col]]
     # For a model , apply a CV on full data to find optimal hyperparam
     # then instantiate new model with best param to get feature importance or weight
     print(f"Model name is '{model_name}'")
@@ -76,11 +79,14 @@ def main(mu_path, dataset_name, model_name, block_num=0, n_iter=10, random_state
     print(opt_clf_instance)
     # Apply scaling and fit final model
     opt_clf = make_pipeline(StandardScaler(), opt_clf_instance)
-    opt_clf.fit(X_df, y_df)
+    opt_clf.fit(X_df, y_df["response"])
     # Extract the classifier from the pipeline
     classifier = opt_clf.steps[-1][1]   # Adjust this based on your pipeline's step name
     # Then could either extract their weights or feature importance
-    feats_df = get_feats_df(classifier=classifier, feat_names=X_df.columns, model_name=model_name, dataset_name=dataset_name)    
+    feats_df = get_feats_df(
+        classifier=classifier, feat_names=X_df.columns, 
+        model_name=model_name, dataset_name=dataset_name,
+        modality_names=modality_names)    
     # Fix naming here for output, specifically add sklearn and turn it to lower
     method = f"sklearn-{model_name.lower().replace(' ', '_')}"
     filename = f"{method}-{dataset_name}_features_selected.csv"

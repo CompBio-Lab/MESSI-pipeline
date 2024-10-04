@@ -26,17 +26,19 @@ import pickle
 # Custom imports
 from load_classifier_class import load_classifier_class
 from load_tr_te import load_tr_te
-from mudata2df import mudata2df
+from combine_mdata2df import combine_mdata2df
 
 
 # Train data is MuData
 # model_name is name of classifier to use from sklearn
 # See main function of available options
-def train(train_data, model_name):
+def train(train_data, model_name, target_col="response"):
+    # Convert the mdata to merged dataframe column wise
+    merged_df = combine_mdata2df(train_data)
     # Transform the mudata into X and y for sklearn
     # X_df contains all count data from the views
-    # y_df contains response and other metadata information
-    X_df, y_df = mudata2df(train_data)
+    # y_df contains response
+    X_df, y_df = merged_df.drop(columns=[target_col]), merged_df[[target_col]]
     # Dynamically load classifier class
     # The third is params_dist which is for cv tuning, so discard it
     classifier_class, params, _ = load_classifier_class(model_name)

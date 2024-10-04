@@ -13,7 +13,7 @@
 # Author: Tony Liang
 # ==============================================================================
 #SBATCH --job-name=MESSI-main
-#SBATCH --time=24:00:00
+#SBATCH --time=1-12:00:00
 #SBATCH --cpus-per-task=6
 #SBATCH --nodes=1
 #SBATCH --ntasks=1

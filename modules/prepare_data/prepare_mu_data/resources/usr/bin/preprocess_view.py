@@ -24,7 +24,7 @@ def calculate_threshold(variances, threshold_type='mean', percentile=0.10):
     else:
         raise ValueError("Invalid threshold_type. Choose from 'mean', 'median', or 'percentile'.")
 
-
+# TODO: the last three arguments are not used for now
 def preprocess_view(df, var_threshold=0.16, replace_na_val=0, scale=False):
     df_copy = df.copy()
     # 1. First remove NAs in features (columns here)

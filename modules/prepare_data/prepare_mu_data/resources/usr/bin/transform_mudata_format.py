@@ -22,8 +22,9 @@ import mudata as mdata
 import anndata as ad
 # Custom import fun
 from preprocess_view import preprocess_view
-#from convert_binary_str import convert_binary_str
 from process_response import process_response
+#from convert_binary_str import convert_binary_str
+
 
 # Main function here
 # Requirements of the MuData
@@ -81,7 +82,7 @@ def transform_mudata_format(
         # Remove those of near zero variance
         # And replace nas with 0
         # And scale each
-        df_reduced = preprocess_view(df = omic_df, var_threshold = var_threshold, replace_na_val=replace_na_val, scale=scale)
+        df_reduced = preprocess_view(df = omic_df)
         # Recreate new AnnData
         new_ann = ad.AnnData(X = df_reduced, 
                              obs=omic_obs, 
