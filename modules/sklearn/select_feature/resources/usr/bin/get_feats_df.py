@@ -3,7 +3,7 @@ import pandas as pd
 
 # Use this fun to extract coefficients or feature importance
 # from sklearn classifiers
-def get_feats_df(classifier, feat_names, model_name, dataset_name):
+def get_feats_df(classifier, feat_names, model_name, dataset_name, modality_names):
     # Init importance value
     importance = None
     # Check the type of classifier and extract feature importance accordingly
@@ -25,7 +25,10 @@ def get_feats_df(classifier, feat_names, model_name, dataset_name):
     })
     
     # Map features to their corresponding omics
-    feats_df['view'] = feats_df['feature'].apply(lambda x: '_'.join(x.split('_')[:-1]))
+    #feats_df['view'] = feats_df['feature'].apply(lambda x: '_'.join(x.split('_')[:-1]))
+    feats_df['view'] = feats_df['feature'].apply(
+        lambda feature: next((view for view in modality_names if view in feature), None)
+    )
     # Add metadata info for downstream usage
     feats_df['dataset_name'] = dataset_name
     # Prepend sklearn-model_name for readability
