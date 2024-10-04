@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 
-def mudata2df(mdata):
+def combine_mdata2df(mdata):
     # Takes in a mudata and extract X and y components
     # Get the Xs as a dataframe of combining all modality together columnwise
     mod_names = list(mdata.mod.keys())
@@ -15,4 +15,5 @@ def mudata2df(mdata):
     assert y_df["response"].isin(['yes', 'no']).all(), "Column contains values other than 'yes' or 'no'"
     # Converting to numeric binary
     y_df.loc[:, "response"] = np.where(y_df["response"] == "yes", 1, 0)
-    return X_df, y_df
+    merged_df = pd.concat([X_df, y_df], axis=1)
+    return merged_df

@@ -1,5 +1,6 @@
 import mudata
 import pandas as pd
+import numpys as np
 
 
 def combine_mdata2df(mdata):
