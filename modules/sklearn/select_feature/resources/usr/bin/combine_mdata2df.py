@@ -2,21 +2,18 @@ import mudata
 import pandas as pd
 
 
-# Combine all modalities in mdata to single dataframe
 def combine_mdata2df(mdata):
-    # first mod
-    first_mod = list(mdata.mod.keys())[0]
-    y_df = mdata[first_mod].obs[["response"]]
-    # Create an empty list to hold DataFrames
-    dfs = []
-    # Iterate over each modality
-    for mod in mdata.mod.keys():
-    # Get the DataFrame for the modality and add the prefix of view_feat_i
-      mod_df = mdata[mod].to_df()
-      mod_df.columns = [f"{mod}_{col}" for col in mod_df.columns]
-      dfs.append(mod_df)
-    # Concatenate all modality DataFrames
-    X_df = pd.concat(dfs, axis=1)
+    # Takes in a mudata and extract X and y components
+    # Get the Xs as a dataframe of combining all modality together columnwise
+    mod_names = list(mdata.mod.keys())
+    # We also add the modality in front of every feature just like "epigenomics_some_feature_name"
+    X_df = pd.concat( [mdata[k].to_df().add_prefix(f"{k}_") for k in mod_names], axis=1 )
+    # Also extract the observation df
+    y_df = mdata[mod_names[0]].obs[["response"]]
+    # Should contain response column and is of string yes or no
+    assert y_df["response"].isin(['yes', 'no']).all(), "Column contains values other than 'yes' or 'no'"
+    # Converting to numeric binary
+    y_df.loc[:, "response"] = np.where(y_df["response"] == "yes", 1, 0)
     # Merge all DataFrames together
     merged_df = pd.concat([X_df, y_df], axis=1)
     return merged_df
