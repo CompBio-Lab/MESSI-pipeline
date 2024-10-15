@@ -18,7 +18,9 @@ process MERGE_SELECTED_FEATURES {
   input:
     path(list_result_tables)
 	output:
-		path('*csv'),   optional: true, emit: csv_results
+		// TODO: fix bad naming here of emitting channels
+		path('all_feature_selection_results.csv'), optional: true, emit: csv_results
+		path('relevant_feature_selection_results.csv'),   optional: true, emit: relevant_csv_results
 		path('*log*'),  optional: true, emit: log
 	script:
     // This script assumes to read in list of files
