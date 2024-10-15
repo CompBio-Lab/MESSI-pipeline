@@ -44,49 +44,55 @@ main <- function(tables, method_name, methodMode, readMode="csv", pattern="-resu
                   mutate(
                     feature_type = ifelse(
                       # Make column to identify current feat is actual "true" var or "noise" var
-                      stringr::str_detect(feature, "noise"),
-                        "noise",
-                        "true"
-                      )
+                      str_detect(feature, "noise"),
+                      "noise",
+                      "true"
+                    ),
+                    dataset_type = ifelse(
+                      str_detect(dataset_name, "sim"),
+                      "sim",
+                      "true"
+                    )
                   ) %>%
-                  select(feature, feature_type, view, coef, method, dataset_name)
-  # Then for counting those of relevant features
-  method_view_dname_counts_df <- merged_table %>%
+                  # Make this order of columns available
+                  select(
+                    feature, feature_type, view, coef, 
+                    method, dataset_name, dataset_type
+                  )
+
+  # Then to handle those of simulated data
+  relevant_feats_df <- merged_table %>%
+    filter(dataset_type == "sim") %>%
     group_by(method, dataset_name, view) %>%
-    summarize(
-      total_var_n = n(),
-      true_var_n = sum(feature_type == "true"),
-      noise_var_n = sum(feature_type == "noise")
+    # Positive being true predictor
+    # Negative being simulated predictor
+    mutate(
+      total_positive_n = sum(feature_type == "true"),
+      total_n = n(),
+      total_negative_n = sum(feature_type == "noise")
+      ) %>%
+    arrange(desc(abs(coef))) %>%
+    group_map(~ {
+      # Extract the group keys and the data
+      group_keys <- .y
+      sliced_data <- slice_head(.x, n = unique(.x$total_positive_n))
+      
+      # Add the group keys back to the sliced data
+      bind_cols(group_keys, sliced_data)
+    }) %>%
+    # Combine the results back into a dataframe 
+    bind_rows() %>%
+    # These are final columns to collect, along with those in summarize
+    group_by(method, dataset_name, view, total_positive_n, total_n, total_negative_n) %>%
+    summarize (
+      predicted_positive_n = sum(feature_type == "true"),
+      predicted_negative_n = sum(feature_type == "noise")
     ) %>%
     ungroup()
+    
 
-  relevant_feats_df <- merged_table %>%
-    group_by(method, view, dataset_name) %>%
-    group_modify(
-      ~ slice_max(.x, order_by = abs(.x$coef), n = sum(.x$feature_type == "true"))
-    ) %>%
-    group_by(method, view, dataset_name) %>%
-    summarize(
-      total_true = n(),
-      true_selected = sum(feature_type == "true"),
-      noise_selected = sum(feature_type == "noise")
-    ) %>%
-    ungroup() %>% 
-    left_join(
-      method_view_dname_counts_df, 
-      by = c("method", "view", "dataset_name")
-    ) %>%
-    mutate(
-      dataset_type = case_when(
-        str_detect(dataset_name, "sim") ~ "simulated",
-        TRUE ~ "real"
-      )
-    ) %>%
-    filter(dataset_type == "simulated") %>%
-    # Alter order
-    select(method, view, dataset_name, dataset_type,
-          total_true, true_var_n, true_selected, noise_selected,
-          noise_var_n, total_var_n)
+
+  
     # Stale code, since this might cause problem
     # Removes the prefix of the view from the feature 
     # TODO: this could be dangerous?
