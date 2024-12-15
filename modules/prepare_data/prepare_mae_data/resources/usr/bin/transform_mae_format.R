@@ -9,9 +9,10 @@ Usage:
   transform_mae_format.R [options]
 
 Options:
-  --mae_path=MAE_PATH       Path to the MultiAssayExperiment [default: empty]
-  --dataset_name=DNAME      Name of dataset to provide as id [default: empty]
-  --replace_na_val=NA_VAL   Value to replace NAs inside the data [default: 0]
+  --mae_path=MAE_PATH           Path to the MultiAssayExperiment [default: empty]
+  --dataset_name=DNAME          Name of dataset to provide as id [default: empty]
+  --replace_na_val=NA_VAL       Value to replace NAs inside the data [default: 0]
+  --filter_low_var=FIL_LOW_VAR  Filter low variance or not [default: 0]
 "
 library(here)
 library(mixOmics)
@@ -41,7 +42,7 @@ opt <- docopt::docopt(doc)
 # 3. Need to have a common observations names set as sample_names
 # 4. Also requires to supply a dataset_name
 
-main <- function(mae_path, dataset_name, prefix="", replace_na_val=0, center=TRUE, scale=FALSE) {
+main <- function(mae_path, dataset_name, prefix="", replace_na_val=0, center=TRUE, scale=FALSE, filter_low_var=FALSE) {
   # Fail quickly
   if (mae_path == "empty") stop ("Need to provide a path to directory containing MAE")
   if (dataset_name == "empty") stop("Need to provide a dataset name")
@@ -53,7 +54,7 @@ main <- function(mae_path, dataset_name, prefix="", replace_na_val=0, center=TRU
   X <- check_long_wide(X=mae@ExperimentList@listData)
   # TODO: This is NOT thoroughly tested yet
   # Another preprocessing step
-  X <- preprocess_view(X, replace_na_val=replace_na_val, scale=scale)
+  X <- preprocess_view(X, replace_na_val=replace_na_val, scale=scale, filter_low_var=filter_low_var)
   # This would transform response to factor chr
   y <- check_response(y=mae$response)
   # Put together these inputs and resave
@@ -66,4 +67,5 @@ main <- function(mae_path, dataset_name, prefix="", replace_na_val=0, center=TRU
 
 # Execute the main function here
 main(mae_path=opt$mae_path, dataset_name=opt$dataset_name, 
-replace_na_val=as.numeric(opt$replace_na_val))
+replace_na_val=as.numeric(opt$replace_na_val),
+filter_low_var=as.logical(as.numeric(opt$filter_low_var)))

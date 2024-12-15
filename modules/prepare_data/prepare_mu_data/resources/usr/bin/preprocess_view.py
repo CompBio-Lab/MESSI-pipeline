@@ -25,20 +25,23 @@ def calculate_threshold(variances, threshold_type='mean', percentile=0.10):
         raise ValueError("Invalid threshold_type. Choose from 'mean', 'median', or 'percentile'.")
 
 # TODO: the last three arguments are not used for now
-def preprocess_view(df, var_threshold=0.16, replace_na_val=0, scale=False):
+def preprocess_view(df, var_threshold=0.16, replace_na_val=0, scale=False, filter_low_var=False):
     df_copy = df.copy()
     # 1. First remove NAs in features (columns here)
     df_copy = df_copy.dropna(axis=1)
     # 2. Remove features with variance less than mean of all variances
     # Calculate variance for each column
-    variances = df_copy.var()
-    # Use mean of the variances as threshold to keep
-    threshold = calculate_threshold(variances, threshold_type="mean")
-    # These are the relevant columns to keep
-    relv_feats = variances >= threshold
-    # Then filter it out
-    # NOTE: In python, it uses AnnData and MuData, so dont need to worry about prefixing
-    # view_name into the feature name
-    df_reduced = df_copy.loc[:, relv_feats]
+    if not filter_low_var:
+        df_reduced = df_copy
+    else:
+        variances = df_copy.var()
+        # Use mean of the variances as threshold to keep
+        threshold = calculate_threshold(variances, threshold_type="mean")
+        # These are the relevant columns to keep
+        relv_feats = variances >= threshold
+        # Then filter it out
+        # NOTE: In python, it uses AnnData and MuData, so dont need to worry about prefixing
+        # view_name into the feature name
+        df_reduced = df_copy.loc[:, relv_feats]
     
     return df_reduced

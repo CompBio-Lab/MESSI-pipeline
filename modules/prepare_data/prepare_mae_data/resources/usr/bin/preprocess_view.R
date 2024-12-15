@@ -14,7 +14,7 @@ calculate_threshold <- function(variances, threshold_type = "mean", percentile =
   if (!(threshold_type %in% c("mean", "median", "percentile"))) {
     stop("Invalid threshold_type. Choose from 'mean', 'median', or 'percentile'.")
   }
-  
+
   # Calculate threshold based on type
   if (threshold_type == "mean") {
     threshold <- mean(variances)
@@ -26,13 +26,13 @@ calculate_threshold <- function(variances, threshold_type = "mean", percentile =
     }
     threshold <- quantile(omic_variances, probs = percentile)
   }
-  
+
   return(threshold)
 }
 
 
 # Takes input of an X list, such composed of I matrix of p_i x n
-preprocess_view <- function(X, replace_na_val=0, scale=FALSE) {
+preprocess_view <- function(X, replace_na_val=0, scale=FALSE, filter_low_var=FALSE) {
   view_names <- names(X)
   # Take a new copy of X to start fresh
   new_X <- X
@@ -51,20 +51,24 @@ preprocess_view <- function(X, replace_na_val=0, scale=FALSE) {
     long_X_i <- new_X[[view]]
     # Wide means n x p_i, so row is n
     wide_X_i <- t(long_X_i)
-    # 1. Remove features (now column) that contains NAs
-    wide_X_i <- wide_X_i %>%
-                as.data.frame() %>%
-                dplyr::select(where(~ !any(is.na(.)))) %>%
-                as.matrix()
+    if (!filter_low_var) {
+      # 1. Remove features (now column) that contains NAs
+      wide_X_i <- wide_X_i %>%
+                  as.data.frame() %>%
+                  dplyr::select(where(~ !any(is.na(.)))) %>%
+                  as.matrix()
+    } else {
+      # 2. Remove features with lower variance than the mean
+      # Calculate variance for each column
+      variances <- apply(wide_X_i, MARGIN=2, FUN=var)
+      # Remove features with less than mean of the variances
+      threshold <- calculate_threshold(variances, threshold_type="mean")
+      relv_feats <- variances >= threshold
+      # Apply the filter here
+      wide_X_i <- wide_X_i[, relv_feats]
+    }
 
-    # 2. Remove features with lower variance than the mean
-    # Calculate variance for each column
-    variances <- apply(wide_X_i, MARGIN=2, FUN=var)
-    # Remove features with less than mean of the variances
-    threshold <- calculate_threshold(variances, threshold_type="mean")
-    relv_feats <- variances >= threshold
-    # Apply the filter here
-    wide_X_i <- wide_X_i[, relv_feats]
+
     #long_X_i  <- long_X_i[!rownames(long_X_i) %in% irrev_feats, ]
     #long_X_i <- long_X_i %>%
     #            as.data.frame()  %>%
