@@ -35,6 +35,7 @@ workflow PREPARE_DATA {
     //                       )
     skip_simulation      = params.skip_simulation               // Skip simulations or not (default: true)
     runSimple            = params.runSimple
+    filter_low_var       = params.filter_low_var  // Filter the low variance features (default: "0")
 
     skip_handling_real_data = false
   /* Workflow starts here */
@@ -89,10 +90,10 @@ workflow PREPARE_DATA {
       /* ===================================================================== */
       // Have a process to check the right format for MAE
       // output MAE back with suitable transformations?
-      PREPARE_MAE_DATA  ( real_data.mae_pt )
+      PREPARE_MAE_DATA  ( real_data.mae_pt, filter_low_var )
       // Have a process to check the right format for MuData
       // output MuData back with suitable transformation?
-      PREPARE_MU_DATA   ( real_data.mu_pt  )
+      PREPARE_MU_DATA   ( real_data.mu_pt, filter_low_var  )
       // TODO: Need to test this bit first
       PREPARE_MAE_DATA.out
                       .mae_data

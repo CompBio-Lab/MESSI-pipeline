@@ -16,6 +16,15 @@ opt <- docopt::docopt(doc)
 
 library(magrittr)
 library(dplyr)
+library(stringr)
+
+
+# Small little helper to write csv
+to_csv <- function(df, filename="", row.names=FALSE) {
+  out_name <- paste0(filename, ".", "csv")
+  df %>%
+  write.csv(file=out_name, row.names=row.names)
+}
 
 main <- function(tables, method_name, methodMode, readMode="csv", pattern="-result.*") {
   # Special script to handle here
@@ -32,25 +41,81 @@ main <- function(tables, method_name, methodMode, readMode="csv", pattern="-resu
   cat("\nMerging", length(to_bind), "tables\n")
   # Flatten these tables by merging rows
   merged_table <- dplyr::bind_rows(to_bind) %>%
-                  {.}
-                  # Stale code, since this might cause problem
-                  # Removes the prefix of the view from the feature 
-                  # TODO: this could be dangerous?
-                  # This only replaces if contains _ :
-                  #  - feat = abc , nothing will be done
-                  #  - feat = aaa_bbb , aaa would be feat, bbb would be view
-                  #  BUT the last one could be misleading
-                  # mutate(
-                  #   feature = purrr::map2_chr(
-                  #     feature, view, ~ stringr::str_replace(.x, paste0(.y, "_"), "")
-                  #   )
-                  # )
+                  mutate(
+                    feature_type = ifelse(
+                      # Make column to identify current feat is actual "true" var or "noise" var
+                      str_detect(feature, "noise"),
+                      "noise",
+                      "true"
+                    ),
+                    dataset_type = ifelse(
+                      str_detect(dataset_name, "sim"),
+                      "sim",
+                      "true"
+                    )
+                  ) %>%
+                  # Make this order of columns available
+                  select(
+                    feature, feature_type, view, coef, 
+                    method, dataset_name, dataset_type
+                  )
+
+  # Then to handle those of simulated data
+  relevant_feats_df <- merged_table %>%
+    filter(dataset_type == "sim") %>%
+    group_by(method, dataset_name, view) %>%
+    # Positive being true predictor
+    # Negative being simulated predictor
+    mutate(
+      total_positive_n = sum(feature_type == "true"),
+      total_n = n(),
+      total_negative_n = sum(feature_type == "noise")
+      ) %>%
+    arrange(desc(abs(coef))) %>%
+    group_map(~ {
+      # Extract the group keys and the data
+      group_keys <- .y
+      sliced_data <- slice_head(.x, n = unique(.x$total_positive_n))
+      
+      # Add the group keys back to the sliced data
+      bind_cols(group_keys, sliced_data)
+    }) %>%
+    # Combine the results back into a dataframe 
+    bind_rows() %>%
+    # These are final columns to collect, along with those in summarize
+    group_by(method, dataset_name, view, total_positive_n, total_n, total_negative_n) %>%
+    summarize (
+      predicted_positive_n = sum(feature_type == "true"),
+      predicted_negative_n = sum(feature_type == "noise")
+    ) %>%
+    ungroup()
+    
+
+
+  
+    # Stale code, since this might cause problem
+    # Removes the prefix of the view from the feature 
+    # TODO: this could be dangerous?
+    # This only replaces if contains _ :
+    #  - feat = abc , nothing will be done
+    #  - feat = aaa_bbb , aaa would be feat, bbb would be view
+    #  BUT the last one could be misleading
+    # mutate(
+    #   feature = purrr::map2_chr(
+    #     feature, view, ~ stringr::str_replace(.x, paste0(.y, "_"), "")
+    #   )
+    # )
   # Writing to files both csv and txt for now
-  file_name <- "all_feature_selection_results"
-  csv_format <- paste0(file_name, ".csv")
-  txt_format <- paste0(file_name, ".txt")
+  all_feats_file_name       <- "all_feature_selection_results"
+  relevant_feats_file_name  <- "relevant_feature_selection_results" 
+
   # To disk
-  write.csv(merged_table, csv_format, row.names = FALSE)
+  # Filename doesnt need the extension, auto turned into csv
+  to_csv(merged_table, filename=all_feats_file_name, row.names=FALSE)
+  to_csv(relevant_feats_df, filename=relevant_feats_file_name, row.names=FALSE)
+  # csv_format <- paste0(file_name, ".csv")
+  # txt_format <- paste0(file_name, ".txt")
+  # write.csv(merged_table, csv_format, row.names = FALSE)
   return(merged_table)
 }
 
