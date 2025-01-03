@@ -104,7 +104,7 @@ workflow PREPARE_DATA {
     //              .collect()
     // )
     // TODO: Do the conversions later? assume two formats exists now
-    ch_datasets = Channel.empty()
+    // ch_datasets = Channel.empty()
     emit:
     /*
     Appending real data with simulation data (if any)
@@ -114,6 +114,7 @@ workflow PREPARE_DATA {
         N = n(real_data) + n(simulated_data)
         N = n(real_data)
     */
-    ch_datasets  = ch_datasets
+    mae_data = mae_pt
+    mu_data = mu_pt
 }
 
