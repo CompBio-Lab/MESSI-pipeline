@@ -114,7 +114,7 @@ workflow PREPARE_DATA {
         N = n(real_data) + n(simulated_data)
         N = n(real_data)
     */
-    mae_data = mae_pt
-    mu_data = mu_pt
+    mae_data = PREPARE_MAE_DATA.out.mae_data
+    mu_data = PREPARE_MU_DATA.out.mu_data
 }
 
