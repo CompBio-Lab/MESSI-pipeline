@@ -9,7 +9,8 @@ workflow SPLITTING {
 	output_dir		=	params.split_dir			// output directory to store the splits , def is "splits"
 	// Workflow of splitting starts here
 	take:
-		ch_datasets   // tuple of idendifier, path of mae data, path of mu data
+		// ch_datasets   // tuple of idendifier, path of mae data, path of mu data
+		mu_data // tuple of identifier, path of mu data
 	main:
 		// TODO: Add some checks inside here and add more verbose
 		printBanner()
@@ -17,7 +18,7 @@ workflow SPLITTING {
 		log.info "Indices are saved into a subfolder called: ${output_dir}"
 		// TODO: Add a option to determine when to use seed if pipeline needs to be ran
 		//			 several times
-		SPLIT_TRAIN_TEST ( ch_datasets , num_splits, output_dir	)
+		SPLIT_TRAIN_TEST ( mu_data , num_splits, output_dir	)
 	emit:
 		splits_indices 	= SPLIT_TRAIN_TEST.out.splits_indices
 		ch_logs					= SPLIT_TRAIN_TEST.out.split_log
