@@ -42,15 +42,25 @@ workflow CROSS_VALIDATION {
     runR            = params.runR 
     // inputs of workflow
 	take:
-		datasets
+		// datasets
+		mae_data
+		mu_data
 		splits_indices
 
 	main:
 		printBanner()
         // Special function to join maps (like hash map)
 		// Source: https://github.com/nextflow-io/nextflow/issues/559
+		// datasets
+		mae_data.join(mu_data, by:0)
+						.map { it ->
+							[ dataset_name: it[0], mae_path: it[1], mu_path: it[2] ]
+						}
+						.set { datasets }
+
+
 		datasets
-            .map { it -> [ it.dataset_name, it ] }
+						.map { it -> [ it.dataset_name, it ] }
             .cross (
                 splits_indices        
                     .map { it ->

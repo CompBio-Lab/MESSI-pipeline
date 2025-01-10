@@ -95,8 +95,8 @@ def transform_mudata_format(
         new_mu_dict[modality] = new_ann
     # Then create a new mudata object
     new_mdata = mdata.MuData(new_mu_dict)
-    # Lastly just write it to disk
-    output_name = dataset_name + ".h5mu"
+    # Lastly just write it to disk  
+    output_name = f"{dataset_name}_processed.h5mu"
     # This data is a MuData object, hence could access its write method
     new_mdata.write(output_name)
     return new_mdata

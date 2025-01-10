@@ -33,12 +33,12 @@ workflow MESSI_BENCHMARK {
   // SUBWORKFLOW: Run prepare_data to transform mae/h5mu accordingly
   //
   PREPARE_DATA ( params.samplesheet ) // Channel of [ dateset_name, mae_path, mu_path ]
-  ch_datasets = PREPARE_DATA.out.ch_datasets  
+  // TODO: fix this here?
   //
   // SUBWORKFLOW: Run feature selection if provided as option
   //
   if ( params.selectFeature ) {
-    FEATURE_SELECTION ( ch_datasets )
+    FEATURE_SELECTION ( PREPARE_DATA.out.mae_data, PREPARE_DATA.out.mu_data )
   } else {
     log.info "Not performing feature selection"
   }
@@ -50,11 +50,11 @@ workflow MESSI_BENCHMARK {
       // SUBWORKFLOW: Perform splitting with stratification to the response
       // variable on each dataset
       //
-      SPLITTING (	ch_datasets )
+      SPLITTING (	PREPARE_DATA.out.mu_data )
       //
       // SUBWORKFLOW: Perform cross validation for each dataset using these indices
       //
-      CROSS_VALIDATION ( ch_datasets, SPLITTING.out.splits_indices )
+      CROSS_VALIDATION ( PREPARE_DATA.out.mae_data, PREPARE_DATA.out.mu_data, SPLITTING.out.splits_indices )
       //
       // MODULE: Use the output of cross validation to calculate metrics
       //

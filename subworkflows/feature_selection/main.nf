@@ -30,7 +30,9 @@ workflow FEATURE_SELECTION {
   sklearn_classifier_names = params.sklearn_classifier_names
   // Require input of workflow
   take:
-		datasets
+		// datasets
+    mae_data
+    mu_data
 	main:
 		//Special function to join maps (like hash map)
 		//Source: https://github.com/nextflow-io/nextflow/issues/559
@@ -39,16 +41,16 @@ workflow FEATURE_SELECTION {
 		
     // Then it should fit the full data for each model and get features selected out from there
     // First make it up as mae portion and mu portion
-    datasets.multiMap{ it ->
-                    mae_pt:  [dataset_name: it.dataset_name, mae_path: it.mae_path]
-                    mu_pt:   [dataset_name: it.dataset_name, mu_path: it.mu_path]
-                  }
-            .set { all_datasets }
-    //all_datasets.mae_pt.view { "This is mae: $it"}
+    // datasets.multiMap{ it ->
+    //                 mae_pt:  [dataset_name: it.dataset_name, mae_path: it.mae_path]
+    //                 mu_pt:   [dataset_name: it.dataset_name, mu_path: it.mu_path]
+    //               }
+    //         .set { all_datasets }
+    //mae_data.view { "This is mae: $it"}
     /* The ones in R */
    cooperative_learning_features = Channel.empty()
     if (!skip_cplr) {
-      COOPERATIVE_LEARNING_SELECT_FEATURE (all_datasets.mae_pt)
+      COOPERATIVE_LEARNING_SELECT_FEATURE (mae_data)
       cooperative_learning_features = COOPERATIVE_LEARNING_SELECT_FEATURE.out.features
     }
 
@@ -56,26 +58,26 @@ workflow FEATURE_SELECTION {
     if (!skip_diablo) {
       // Connection for its design matrix
       ch_design = Channel.fromList( diablo_design_connection )
-      DIABLO_SELECT_FEATURE ( all_datasets.mae_pt, ch_design)
+      DIABLO_SELECT_FEATURE ( mae_data, ch_design)
       diablo_features = DIABLO_SELECT_FEATURE.out.features
     }
 
     mofa_features = Channel.empty()
     if (!skip_mofa) {
-      MOFA_SELECT_FEATURE ( all_datasets.mae_pt)
+      MOFA_SELECT_FEATURE ( mae_data)
       mofa_features = MOFA_SELECT_FEATURE.out.features
     }
 
     rgcca_features = Channel.empty()
     if (!skip_rgcca) {
-      RGCCA_SELECT_FEATURE (all_datasets.mae_pt)
+      RGCCA_SELECT_FEATURE (mae_data)
       rgcca_features = RGCCA_SELECT_FEATURE.out.features
     }
 
     /* The ones in Python */
     mogonet_features = Channel.empty()
     if (!skip_mogonet) {
-      MOGONET_SELECT_FEATURE (all_datasets.mu_pt)
+      MOGONET_SELECT_FEATURE (mu_data)
       mogonet_features = MOGONET_SELECT_FEATURE.out.features
     }
 
@@ -83,7 +85,7 @@ workflow FEATURE_SELECTION {
     if (!skip_sklearn) {
       // Classifier from sklearn
       ch_sk_classifiers = Channel.fromList( sklearn_classifier_names )
-      SKLEARN_SELECT_FEATURE (all_datasets.mu_pt, ch_sk_classifiers)
+      SKLEARN_SELECT_FEATURE (mu_data, ch_sk_classifiers)
       sklearn_features = SKLEARN_SELECT_FEATURE.out.features
     }
 

@@ -18,7 +18,7 @@ process SPLIT_TRAIN_TEST {
 
 
 	input:
-		tuple val(dataset_name), path(mae_path), path(mu_path)
+		tuple val(dataset_name), path(mu_path)
 		val(num_splits)
 		val(output_dir)
 
