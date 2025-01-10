@@ -6,6 +6,7 @@
 2. [Project Structure](#project-structure)
 3. [Setup the project](#setup)
 4. [Running the pipeline](#running-the-pipeline)
+5. [Preparing Data](#preparing-the-data)
 5. [Result Inspection](#result-inspection)
 5. [References](#reference)
 
@@ -114,19 +115,299 @@ Once you see the log:
 ```bash
 Finished setting up environment
 ```
-This means all required images have successfully downlaoded and stored under `/arc/project/<ALLOCATION_CODE>/<USER>/MESSI-apptainer-images`
+This means all required images have successfully downlaoded and stored under `/arc/project/<ALLOCATION_CODE>/<USER>/MESSI-apptainer-images`, this could be verified if this directory contains the following:
+
+```bash
+# ./ is /arc/project/<ALLOCATION_CODE>/<USER>/MESSI-apptainer-images
+./
+├── codia.sif
+├── cooperative_learning.sif
+├── intersim.sif
+├── mae_mudata.sif
+├── mixdiablo.sif
+├── mofa.sif
+├── mogonet.sif
+├── mowgli.sif
+├── muon-py.sif
+├── rgcca.sif
+└── save_simulate.sif
+```
 
 ### Data Source
 
-Given ARC Sockeye have no internet connection on compute nodes, which means user cannot pull data during the pipeline computation. Hence, the data have pre-stored in a common directory.
+Given ARC Sockeye have no internet connection on compute nodes, which means user cannot pull data during the pipeline computation. Hence, the data have to be previouly stored in a common directory.
 
-### Running the pipeline
+## Running the pipeline
 
-Lastly, you could start the pipeline by submitting the wrapper script that sends the batch script to SLURM:
+You could start the pipeline by submitting the wrapper script that sends the batch script to SLURM using default parameters:
 
 ```bash
 # If you see any complains from this script, then is likely you did not setup properly
 # NOTE: this only works on the UBC ARC Sockeye platform for now
+bash launcher_sockeye.sh
+```
+
+Actual parameters of the pipeline are set under the `launch_MESSI_pipeline.sh` script, speficifically these variables:
+
+```bash
+# This tells nextflow to use pre-defined configuration found at conf/
+# Could chain more profiles like prof1,prof2,... NOTE: no space between ,
+PROFILE=sockeye
+# This sets the output directory to store final outputs of the pipeline
+# If not like this way of adding timestamp, you could simply set it to a simpler path
+timestamp=$(date +"%Y%m%d_%H%M%S")
+OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results
+# This is MAIN input file of the pipeline, where it defines the path to find data, and its metadata idetifiers like dataset name
+SAMPLESHEET=data/samplesheet_test_full.csv
+```
+
+The most important variable here is `SAMPLESHEET`, where this is the main input file of pipeline. It's simply a csv where it specifies name of dataset and path to locate it like:
+
+```csv
+dataset_name,tar_path
+rosmap,/arc/project/st-singha53-1/datasets/messi_demo_data/rosmap.tar.gz
+tcga-blca,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-blca.tar.gz
+```
+
+> [!NOTE]
+> The csv content here MUST be UNQUOTED. `tar_path` MUST be absolute path leading to `tar.gz` of dataset
+>
+
+For a detailted instruction on how to setup and add your own samplesheet to explore method performance under different datasets, please see this [section](#preparing-the-data).
+
+
+Other meaningful variable is `PROFILE`, this is more of a nextflow feature, where you could read over the [nextflow official doc](https://www.nextflow.io/docs/latest/config.html#config-profiles) and set your own set of profile to override these default one. Suggested to use this `sockeye` profile, and add another one just to set some of the hyperpameters of the pipeline.
+
+
+### Preparing the data
+
+To use different data to evaluate methods, you must store the raw data in `tar.gz` format, where it is just a compressed archive of multiple files. The content of the `tar.gz` would be a directory to store the `MultiAssayExperiment` and file to store the `MuData` formats of multiomics data. Then list these as a `csv`, where each row is a different dataset, columns being metadata identifier (still in progress) and path to the tar gz. 
+
+Here is a sample csv input file:
+
+```csv
+dataset_name,tar_path
+rosmap,/arc/project/st-singha53-1/datasets/messi_demo_data/rosmap.tar.gz
+tcga-blca,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-blca.tar.gz
+```
+
+
+You could verify the content and file structure of these tar to match the described above using these commands:
+
+```bash
+# Looking at the rosmap data only
+cd /arc/project/st-singha53-1/datasets/messi_demo_data/
+tar -xzf rosmap.tar.gz
+```
+
+The uncompressed archive is a directory named `rosmap` with the following contents:
+
+```bash
+rosmap
+├── mae_data
+│   ├── experiments.h5
+│   └── mae.rds
+└── rosmap.h5mu
+```
+
+These MAE and MuData could be saved using these helpers files and instructions:
+
+
+Saving it into MAE
+
+```R
+# mae related
+save_mae <- function(object, dname=NULL, x_name=NULL, y_name=NULL, prefix="", output_dir,...) {
+  blocks <- object[[x_name]]
+  metadata <- object[[y_name]] # Metadata should be dataframe
+  if (!is.data.frame(metadata) & is.atomic(metadata)) {
+    metadata <- data.frame(response = metadata)
+  }
+
+  # Check if all matrices have the same number of rows (n)
+  same_n <- all(sapply(blocks, nrow) == nrow(blocks[[1]]))
+  # Check if its N x p then tranpose it to p x N
+  match_dim <- nrow(metadata) == nrow(blocks[[1]])
+  # ---------------------------------------------------------------------
+  if (same_n & match_dim) {
+    # Need to transpose it to p_i * n for MAE use
+    blocks <- lapply(blocks, t)
+  } else {
+    cat("\nRight format, nothing done\n")
+  }
+  mae <- MultiAssayExperiment::MultiAssayExperiment(
+    experiments = blocks,
+    metadata    = metadata
+  )
+  # Note, the delayed matrix is affecting the subset of metadata
+  # so manually add response here
+  if (! ("response" %in% colnames(metadata))) {
+    stop("Could not find 'response' column in metadata")
+  }
+  mae$response <- metadata$response
+  # Save to HDF5 format
+  outdir <- paste0(dname, "_", "mae_data")
+  MultiAssayExperiment::saveHDF5MultiAssayExperiment(
+    mae, dir=outdir,
+    prefix=prefix,
+    replace=TRUE)
+
+  message("Saved to ", outdir)
+}
+```
+
+Saving it into MuData
+
+```python
+from mudata import MuData
+from anndata import AnnData
+import numpy as np
+import pandas as pd
+
+
+def save_mudata(object, dname, x_name, y_name,**kwargs):
+  # Get blocks and metadata and other useful params
+  blocks = object.get(x_name)
+  metadata = object.get(y_name)
+
+  # This is passed from R
+  var_names = kwargs['var_names']
+  
+  
+
+  # Combine to mudata
+  mu_dict = {}
+  for b, mat in blocks.items():
+    var = pd.DataFrame(var_names[b], columns=["feature"])
+    ann = AnnData(X = mat, 
+                  obs = metadata, 
+                  var = var)
+    # This is also passed from R
+    ann.obs_names = kwargs['sample_name']
+    ann.var_names = var_names[b]
+    mu_dict[b] = ann  
+  
+  # store to mudata
+  mdata = MuData(mu_dict)
+  output_name = f"{dname}.h5mu"
+  mdata.write(output_name)
+  return mdata
+
+```
+
+Saving it into tar.gz, where it calls the `save_mae` and `save_mudata` first
+
+```R
+library(reticulate)
+use_python("/usr/bin/python")
+
+reticulate::source_python("save_mudata.py")
+source("save_mae.R")
+
+
+save_gz <- function(object, dname=NULL, x_name=NULL, y_name=NULL, prefix="", ...) {
+  if (is.null(x_name)) {
+    stop("Need to provide key name of list containing list of X matrices")
+  }
+
+  if (is.null(y_name)) {
+    stop("Need to provide key name of list containing dataframe of metadata")
+  }
+
+  if (is.null(dname)) {
+    stop("Did not provide unique dataset name")
+  }
+
+  # Var names being the column ones
+  # Sample names being the row names
+  X <- object[[x_name]]
+  X_dim <- dim(X[[1]])
+
+  y <- object[[y_name]]
+  if (!is.data.frame(y)) stop("Y is not datafram")
+  if (nrow(y) == X_dim[1] ) {
+    # Found rows being samples here
+    var_names <- lapply(X, colnames)
+    sample_name <- X[[1]] |> rownames()
+  } else if (nrow(y) == X_dim[2]) {
+    # Found rows being variables here
+    var_names <- lapply(X, rownames)
+    sample_name <- X[[1]] |> colnames()
+  }
+
+
+  save_mudata(object = object, dname = dname, x_name = x_name, y_name = y_name,
+              var_names = var_names, sample_name = sample_name)
+
+  save_mae(object = object, dname = dname, x_name = x_name, y_name = y_name)
+
+  # Then move this to unique folder
+  dname_folder <- dir.create(dname)
+
+  # Move the generated files or folders into the directory
+  mudata_file <- paste0(dname, ".h5mu")
+  mae_folder <- paste0(dname, "_mae_data")
+
+
+  # Move the mudata file
+  if (file.exists(mudata_file)) {
+    file.rename(mudata_file, file.path(dname, mudata_file))
+  }
+
+  # Move the mae folder (if it exists)
+  if (dir.exists(mae_folder)) {
+    file.rename(mae_folder, file.path(dname, mae_folder))
+  }
+
+  # Compress the directory into a .tar.gz file
+  gz_file <- paste0(dname, ".tar.gz")
+  tar(gz_file, files = dname, compression = "gzip")
+
+  # Clean up: Remove the uncompressed directory after archiving
+  unlink(dname, recursive = TRUE)
+
+  message("Saved and compressed dataset as ", gz_file)
+}
+```
+
+These helpers required your original data to be in a list format in R, where it should contains these keys:
+
+1. X, named list of matrices where at least one of either all of row dimensions match or all of col dimensions match
+2. Y, dataframe of metadata containing the response variable and sample_names
+3. label, dataset name
+
+Example of using these helpers like:
+
+```R
+label <- "example_data"
+X <- list(o1=o1, o2=o2, o3=o3) # where each o are matrix, say all rows match, where rows being number of patients
+Y <- data.frame(response=response, sample_names = rownames(o1))
+example_data <- list(X=X, Y=Y, label=label)
+# Then could be saved with
+save_gz(object=example_data, dname=example_data$label, x_name="X", y_name="Y")
+```
+
+Once this is done, you could then create a new samplesheet under `data/` of this project and specified it in the `launch_MESSI_pipeline.sh`:
+
+1. Creating the samplesheet `data/my_data.csv`:
+
+```csv
+dataset_name,tar_path
+example_data,/arc/project/singha53-1/messi_demo_data/example_data.tar.gz
+```
+
+2. Modify the `SAMPLESHEET` in `launch_MESSI_pipeline.sh`
+
+```bash
+OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results
+# Could either comment out old one or just replace its value NO SPACE between =
+#SAMPLESHEET=data/samplesheet_feat_selection.csv
+SAMPLESHEET=data/my_data.csv
+```
+
+3. Lastly just run it
+
+```bash
 bash launcher_sockeye.sh
 ```
 
