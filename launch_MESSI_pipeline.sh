@@ -61,8 +61,8 @@ PROFILE=sockeye
 # Could be done in a for-loop fashion for different OUTDIR
 timestamp=$(date +"%Y%m%d_%H%M%S")
 OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results
-SAMPLESHEET=data/samplesheet_feat_selection.csv
-#SAMPLESHEET=data/samplesheet_test_full.csv
+#SAMPLESHEET=data/samplesheet_feat_selection.csv
+SAMPLESHEET=data/samplesheet_test_full.csv
 #SAMPLESHEET=data/samplesheet_test_small.csv
 echo "Running pipeline with ${NXF_SRC_MAIN}"
 echo "Running data under '${SAMPLESHEET}'"
