@@ -60,7 +60,7 @@ preprocess_view <- function(X, replace_na_val=0, scale=FALSE, filter_low_var=FAL
     } else {
       # 2. Remove features with lower variance than the mean
       # Calculate variance for each column
-      variances <- apply(wide_X_i, MARGIN=2, FUN=var)
+      variances <- apply(wide_X_i, MARGIN=2, FUN=var, na.rm=TRUE))
       # Remove features with less than mean of the variances
       threshold <- calculate_threshold(variances, threshold_type="mean")
       relv_feats <- variances >= threshold
@@ -76,8 +76,9 @@ preprocess_view <- function(X, replace_na_val=0, scale=FALSE, filter_low_var=FAL
                 # of each row
     #            replace(is.na(.), values=replace_na_val)
     # 3. Add the view name in front of features if any two views after overlapping feature names
+    feat_names <- colnames(wide_X_i)
     if (overlapped_feats) {
-      colnames(wide_X_i) <- paste0(view, "_", colnames(wide_X_i))
+      colnames(wide_X_i) <- paste0(view, "_", feat_names)
     }
     # And return it back as long format of
     return(t(wide_X_i))
