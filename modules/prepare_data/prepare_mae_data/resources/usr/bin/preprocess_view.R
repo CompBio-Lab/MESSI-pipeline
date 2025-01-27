@@ -60,7 +60,7 @@ preprocess_view <- function(X, replace_na_val=0, scale=FALSE, filter_low_var=FAL
     } else {
       # 2. Remove features with lower variance than the mean
       # Calculate variance for each column
-      variances <- apply(wide_X_i, MARGIN=2, FUN=var, na.rm=TRUE))
+      variances <- apply(wide_X_i, MARGIN=2, FUN=var, na.rm=TRUE)
       # Remove features with less than mean of the variances
       threshold <- calculate_threshold(variances, threshold_type="mean")
       relv_feats <- variances >= threshold
