@@ -53,7 +53,7 @@ export NXF_OFFLINE='true'
 # The NXF script to run, located on the repo root directory
 NXF_SRC_MAIN=$PIPELINE_DIR/main.nf
 # Profile order matters, since the later one overrides the prior ones
-PROFILE=sockeye
+PROFILE=sockeye,real_data
 # Or use this one for development usage
 #PROFILE=sockeye,test,debug
 #PARAMS_FILE=remote_params.yaml
@@ -62,7 +62,7 @@ PROFILE=sockeye
 timestamp=$(date +"%Y%m%d_%H%M%S")
 OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results
 #SAMPLESHEET=data/samplesheet_feat_selection.csv
-SAMPLESHEET=data/samplesheet_test_full.csv
+#SAMPLESHEET=data/samplesheet_test_full.csv
 #SAMPLESHEET=data/samplesheet_test_small.csv
 echo "Running pipeline with ${NXF_SRC_MAIN}"
 echo "Running data under '${SAMPLESHEET}'"
@@ -72,7 +72,6 @@ echo "Running data under '${SAMPLESHEET}'"
 nextflow run ${NXF_SRC_MAIN} \
   -profile ${PROFILE} \
   --outdir ${OUTDIR} \
-  --samplesheet ${SAMPLESHEET} \
   -ansi-log false
 # =============================================================================
 # 5. Compress output results and move back to submitted directory
