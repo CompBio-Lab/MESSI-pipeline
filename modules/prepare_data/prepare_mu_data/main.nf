@@ -26,7 +26,7 @@ process PREPARE_MU_DATA {
   tuple val(dataset_name), path(mu_path)
   val(filter_low_var)
   output:
-  tuple val(dataset_name), path("${dataset_name}.h5mu"),  emit: mu_data // Path to processed h5mu file
+  tuple val(dataset_name), path("${dataset_name}*processed*.h5mu"),  emit: mu_data // Path to processed h5mu file
   tuple val(dataset_name), path("*.log"),                 emit: log
   """
   transform_mudata_format.py --mu_path=${mu_path} \
