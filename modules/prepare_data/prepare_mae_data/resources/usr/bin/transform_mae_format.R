@@ -60,7 +60,9 @@ main <- function(mae_path, dataset_name, prefix="", replace_na_val=0, center=TRU
   # Put together these inputs and resave
   dat <- list(blocks=X, response=y)
   # Save each of this to both MAE and Mu
-  new_mae <- save_mae(dat, dataset_name=dataset_name, prefix=prefix)
+  # Add prefix of processed in the dataset name
+  dname <- paste0(dataset_name, "_", "processed")
+  new_mae <- save_mae(dat, dataset_name=dname, prefix=prefix)
   return(new_mae)
 }
 
