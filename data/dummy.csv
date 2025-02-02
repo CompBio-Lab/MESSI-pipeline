@@ -1,5 +1,0 @@
-dataset_name,tar_path
-rosmap,/arc/project/st-singha53-1/datasets/messi_demo_data/rosmap.tar.gz
-sim-data_strategy-mvn_n-500_p-1000_sigma-39_j-3_latp-30_sy-1_sp-3_ustd-1_fctstr-7,/arc/project/st-singha53-1/datasets/messi_demo_data/sim-data_strategy-mvn_n-500_p-1000_sigma-39_j-3_latp-30_sy-1_sp-3_ustd-1_fctstr-7.tar.gz
-sim-data_strategy-mvn_n-50_p-500_sigma-39_j-5_latp-30_sy-1_sp-3_ustd-1_fctstr-7,/arc/project/st-singha53-1/datasets/messi_demo_data/sim-data_strategy-mvn_n-50_p-500_sigma-39_j-5_latp-30_sy-1_sp-3_ustd-1_fctstr-7.tar.gz
-tcga-thca,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-thca.tar.gz
