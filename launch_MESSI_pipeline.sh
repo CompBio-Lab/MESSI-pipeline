@@ -62,7 +62,7 @@ PROFILE=sockeye,real_data
 timestamp=$(date +"%Y%m%d_%H%M%S")
 OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results
 #SAMPLESHEET=data/samplesheet_feat_selection.csv
-#SAMPLESHEET=data/samplesheet_test_full.csv
+SAMPLESHEET=data/samplesheet_test_full.csv
 #SAMPLESHEET=data/samplesheet_test_small.csv
 echo "Running pipeline with ${NXF_SRC_MAIN}"
 echo "Running data under '${SAMPLESHEET}'"
@@ -72,6 +72,7 @@ echo "Running data under '${SAMPLESHEET}'"
 nextflow run ${NXF_SRC_MAIN} \
   -profile ${PROFILE} \
   --outdir ${OUTDIR} \
+  --samplesheet ${SAMPLESHEET} \
   -ansi-log false
 # =============================================================================
 # 5. Compress output results and move back to submitted directory
