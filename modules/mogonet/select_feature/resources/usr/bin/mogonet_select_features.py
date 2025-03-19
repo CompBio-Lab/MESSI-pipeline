@@ -57,6 +57,8 @@ def main(mu_path, dataset_name, n_percent, random_state=123, block_num=0, test_s
     # PARAMS
     # ---------------
     method = "mogonet"
+    he_base_dim = 100
+    adj_parameter = 5 # This has to be small, otherwise fails at somewhere when calculating adj matrix for tensors
     # --------------------
     # IMPLEMENTATION
     # --------------------
@@ -81,7 +83,7 @@ def main(mu_path, dataset_name, n_percent, random_state=123, block_num=0, test_s
         # he_base_dim is the dim of each he per omic, more like hidden layers?
         # adj_parameter needs to be tuned?
         featimp_list = cal_feat_imp(data_folder=data_folder, view_list=view_list, 
-                                    num_class=num_class, he_base_dim = 100, adj_parameter = 10)
+                                    num_class=num_class, he_base_dim = he_base_dim, adj_parameter = adj_parameter)
         # Add to the earlier allocated list
         featimp_list_list.append(copy.deepcopy(featimp_list))
     # Then run a summary on this list of lists
