@@ -99,10 +99,12 @@ workflow PREPARE_DATA {
     // // ch_datasets  = processed_real_data.mix(sim_data)
     // ch_datasets = processed_real_data
     // // TODO: Might have a better way to dealt this?
-    // PARSE_METADATA ( 
-    //   ch_datasets.map { it -> it.mae_path }
-    //              .collect()
-    // )
+    PARSE_METADATA ( 
+      PREPARE_MAE_DATA.out
+                      .mae_data
+                      .map { dname, data_path -> data_path }
+                      .collect()
+    )
     // TODO: Do the conversions later? assume two formats exists now
     // ch_datasets = Channel.empty()
     emit:

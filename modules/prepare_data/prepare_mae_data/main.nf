@@ -28,7 +28,7 @@ process PREPARE_MAE_DATA {
   tuple val(dataset_name), path(mae_path)
   val(filter_low_var)
   output:
-  tuple val(dataset_name), path("${dataset_name}_mae_data"),  emit: mae_data // Directory containing MultiAssayExperiment
+  tuple val(dataset_name), path("${dataset_name}*processed*mae_data"),  emit: mae_data // Directory containing MultiAssayExperiment
   tuple val(dataset_name), path("*.log"),                     emit:log
   script:
   """

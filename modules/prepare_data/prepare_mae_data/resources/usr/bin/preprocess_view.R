@@ -24,7 +24,7 @@ calculate_threshold <- function(variances, threshold_type = "mean", percentile =
     if (percentile < 0 || percentile > 1) {
       stop("Percentile must be between 0 and 1.")
     }
-    threshold <- quantile(omic_variances, probs = percentile)
+    threshold <- quantile(variances, probs = percentile)
   }
 
   return(threshold)
@@ -32,7 +32,7 @@ calculate_threshold <- function(variances, threshold_type = "mean", percentile =
 
 
 # Takes input of an X list, such composed of I matrix of p_i x n
-preprocess_view <- function(X, replace_na_val=0, scale=FALSE, filter_low_var=FALSE) {
+preprocess_view <- function(X, replace_na_val=0, scale=FALSE, filter_low_var=TRUE) {
   view_names <- names(X)
   # Take a new copy of X to start fresh
   new_X <- X
@@ -51,16 +51,16 @@ preprocess_view <- function(X, replace_na_val=0, scale=FALSE, filter_low_var=FAL
     long_X_i <- new_X[[view]]
     # Wide means n x p_i, so row is n
     wide_X_i <- t(long_X_i)
-    if (!filter_low_var) {
-      # 1. Remove features (now column) that contains NAs
-      wide_X_i <- wide_X_i %>%
-                  as.data.frame() %>%
-                  dplyr::select(where(~ !any(is.na(.)))) %>%
-                  as.matrix()
-    } else {
+    # 1. Remove features (now column) that contains NAs
+    wide_X_i <- wide_X_i %>%
+                as.data.frame() %>%
+                dplyr::select(where(~ !any(is.na(.)))) %>%
+                as.matrix()
+    
+    if (filter_low_var) {
       # 2. Remove features with lower variance than the mean
       # Calculate variance for each column
-      variances <- apply(wide_X_i, MARGIN=2, FUN=var)
+      variances <- apply(wide_X_i, MARGIN=2, FUN=var, na.rm=TRUE)
       # Remove features with less than mean of the variances
       threshold <- calculate_threshold(variances, threshold_type="mean")
       relv_feats <- variances >= threshold
@@ -76,8 +76,9 @@ preprocess_view <- function(X, replace_na_val=0, scale=FALSE, filter_low_var=FAL
                 # of each row
     #            replace(is.na(.), values=replace_na_val)
     # 3. Add the view name in front of features if any two views after overlapping feature names
+    feat_names <- colnames(wide_X_i)
     if (overlapped_feats) {
-      colnames(wide_X_i) <- paste0(view, "_", colnames(wide_X_i))
+      colnames(wide_X_i) <- paste0(view, "_", feat_names)
     }
     # And return it back as long format of
     return(t(wide_X_i))

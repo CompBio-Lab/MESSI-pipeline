@@ -73,7 +73,7 @@ def main(
     num_epoch_pretrain=50,
     num_epoch=200,
     test_interval=50,
-    adj_parameter=8
+    adj_parameter=5
     ):
   # Do something with mogonet here
   # ===========================================================================
@@ -85,6 +85,13 @@ def main(
   # ===========================================================================
   # Main executing goes here
   # ===========================================================================
+
+
+  # Adjacent parameter cannot be too big
+  # otherwise it might fail at cal_adj_mat_parameter, parameter = torch.sort(dist.reshape(-1,)).values[edge_per_node*data.shape[0]]
+  # where edge_per_node is the input adj_parameter, this could fail if edge_per_node*data.shape[0] >= dist.reshape(-1, )
+  # dist shape is data.shape[0] * data.shape[0], where data.shape is number of observations in data_tr_list
+  # So take adj_parameter arbitrary small at 5
   model_dict, test_input = train_mogonet(
         data_folder         = data_folder, 
         view_list           = view_list, 

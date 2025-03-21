@@ -31,9 +31,14 @@ cd $SLURM_SUBMIT_DIR
 module purge
 module load CVMFS_CC
 # Related dependencies
-module load apptainer/1.1.8
-module load java/11.0.16_8
-module load nextflow/23.04.3
+# THESE ARE OUTDATED FROM CC
+# module load apptainer/1.1.8
+# module load java/11.0.16_8
+# module load nextflow/23.04.3
+# THESE ARE NEWER VERSIONS
+module load apptainer/1.3.4
+module load java/17.0.6
+module load nextflow/24.04.4
 # Source the load script with env vars setup
 #source bin/helper.sh
 # =============================================================================
@@ -53,6 +58,7 @@ export NXF_OFFLINE='true'
 # The NXF script to run, located on the repo root directory
 NXF_SRC_MAIN=$PIPELINE_DIR/main.nf
 # Profile order matters, since the later one overrides the prior ones
+#PROFILE=sockeye,simulated_data
 PROFILE=sockeye,real_data
 # Or use this one for development usage
 #PROFILE=sockeye,test,debug
@@ -62,8 +68,9 @@ PROFILE=sockeye,real_data
 timestamp=$(date +"%Y%m%d_%H%M%S")
 OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results
 #SAMPLESHEET=data/samplesheet_feat_selection.csv
-#SAMPLESHEET=data/samplesheet_test_full.csv
+SAMPLESHEET=data/samplesheet_test_full.csv
 #SAMPLESHEET=data/samplesheet_test_small.csv
+#SAMPLESHEET=data/samplesheet_325-405.csv
 echo "Running pipeline with ${NXF_SRC_MAIN}"
 echo "Running data under '${SAMPLESHEET}'"
 # =============================================================================
@@ -72,6 +79,7 @@ echo "Running data under '${SAMPLESHEET}'"
 nextflow run ${NXF_SRC_MAIN} \
   -profile ${PROFILE} \
   --outdir ${OUTDIR} \
+  --samplesheet ${SAMPLESHEET} \
   -ansi-log false
 # =============================================================================
 # 5. Compress output results and move back to submitted directory
