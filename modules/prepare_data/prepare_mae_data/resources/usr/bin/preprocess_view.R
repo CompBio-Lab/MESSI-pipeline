@@ -66,6 +66,11 @@ preprocess_view <- function(X, replace_na_val=0, scale=FALSE, filter_low_var=TRU
       relv_feats <- variances >= threshold
       # Apply the filter here
       wide_X_i <- wide_X_i[, relv_feats]
+
+      # Then, check those features that have at least 50% of its values not being zero
+      # And, remove those that have 70% of zero
+      zero_var_feats <- rownames(nearZeroVar(wide_X_i, freqCut = 70/5, uniqueCut = 50)$Metrics)
+      wide_X_i <- wide_X_i[, !colnames(wide_X_i) %in% zero_var_feats]
     }
 
 

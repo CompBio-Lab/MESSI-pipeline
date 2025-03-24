@@ -24,6 +24,47 @@ def calculate_threshold(variances, threshold_type='mean', percentile=0.10):
     else:
         raise ValueError("Invalid threshold_type. Choose from 'mean', 'median', or 'percentile'.")
 
+def compute_freq_ratio(data):
+    data = data.dropna()
+    if len(data.unique()) == len(data):
+        return 1
+    elif len(data.unique()) == 1:
+        return 0
+    else:
+        value_counts = data.value_counts()
+        return value_counts.max() / value_counts.iloc[1] if len(value_counts) > 1 else value_counts.max()
+
+def calc_near_zero(x, freqCut = 95/5, uniqueCut=10):
+    # Calculate the number of unique values per column
+    lunique = df.apply(lambda data: len(data.dropna().unique()), axis=0)
+
+    # Calculate percentUnique
+    percent_unique = 100 * lunique / len(df)
+
+    # Identify zero variance columns
+    zero_var = (lunique == 1) | df.apply(lambda data: data.isna().all(), axis=0)
+
+    # Calculate freqRatio for each column
+    freq_ratio = df.apply(compute_freq_ratio, axis=0)
+
+    # Identify the positions where the conditions hold
+    positions = (freq_ratio > freqCut) & (percent_unique <= uniqueCut) | zero_var
+    positions = positions[positions].index.tolist()
+
+    # Prepare the output
+    out = {}
+    out['Position'] = positions
+    out['Metrics'] = pd.DataFrame({
+        'freqRatio': freq_ratio,
+        'percentUnique': percent_unique
+    })
+
+    # Filter the metrics based on positions
+    out['Metrics'] = out['Metrics'].loc[positions]
+    return out['Metrics']
+
+
+
 # TODO: the last three arguments are not used for now
 def preprocess_view(df, var_threshold=0.16, replace_na_val=0, scale=False, filter_low_var=False):
     df_copy = df.copy()
@@ -43,5 +84,9 @@ def preprocess_view(df, var_threshold=0.16, replace_na_val=0, scale=False, filte
         # NOTE: In python, it uses AnnData and MuData, so dont need to worry about prefixing
         # view_name into the feature name
         df_reduced = df_copy.loc[:, relv_feats]
-    
+	# And apply the nearZeroVar fun (implemented based on mixOmics)
+        # Then, check those features that have at least 50% of its values not being zero
+        # And, remove those that have 70% of zero
+        zero_var_feats = calc_near_zero(df_reduced, freqCut = 70/5, uniqueCut = 50).index.tolist()
+        df_reduced = df_reduced.drop(columns=zero_var_feats)
     return df_reduced
