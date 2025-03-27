@@ -71,6 +71,7 @@ workflow FEATURE_SELECTION {
     rgcca_features = Channel.empty()
     if (!skip_rgcca) {
       // RGCCA can use same design matrices like full or null as if in DIABLO
+      ch_design = Channel.fromList ( diablo_design_connection )
       RGCCA_SELECT_FEATURE (mae_data, ch_design)
       rgcca_features = RGCCA_SELECT_FEATURE.out.features
     }
