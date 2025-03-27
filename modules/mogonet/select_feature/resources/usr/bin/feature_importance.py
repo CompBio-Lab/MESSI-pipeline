@@ -1,6 +1,6 @@
 # Use this script as temp fix, need to update the pkg instead
 import os
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_scorex
 import copy
 import torch
 import torch.nn.functional as F
@@ -68,6 +68,9 @@ def cal_feat_imp(data_folder, view_list, num_class, he_base_dim = 100, adj_param
 
     # =============================
     # Fun starts here
+    # Check if cuda used or not
+    cuda = True if torch.cuda.is_available() else False
+
     num_view = len(view_list)
     dim_hvcdn = pow(num_class,num_view)
     # Fix later ------------------
@@ -75,6 +78,18 @@ def cal_feat_imp(data_folder, view_list, num_class, he_base_dim = 100, adj_param
     dim_he_list = [he_base_dim] * num_view
     # Fix later -----------------
     data_tr_list, data_trte_list, trte_idx, labels_trte = prepare_trte_data(data_folder, view_list)
+    # Get the labels of train to tensor
+    labels_tr_tensor = torch.LongTensor(labels_trte[trte_idx["tr"]])
+    # And for one hot
+    onehot_labels_tr_tensor = one_hot_tensor(labels_tr_tensor, num_class)
+    # Lastly the weights
+    sample_weight_tr = cal_sample_weight(labels_trte[trte_idx["tr"]], num_class)
+    sample_weight_tr = torch.FloatTensor(sample_weight_tr)
+    if cuda:
+        labels_tr_tensor = labels_tr_tensor.cuda()
+        onehot_labels_tr_tensor = onehot_labels_tr_tensor.cuda()
+        sample_weight_tr = sample_weight_tr.cuda()
+
     adj_tr_list, adj_te_list = gen_trte_adj_mat(data_tr_list, data_trte_list, trte_idx, adj_parameter)
     featname_list = []
     for v in view_list:
@@ -84,26 +99,25 @@ def cal_feat_imp(data_folder, view_list, num_class, he_base_dim = 100, adj_param
     dim_list = [x.shape[1] for x in data_tr_list]
     # In here, fit new network on full data
     model_dict = init_model_dict(num_view, num_class, dim_list, dim_he_list, dim_hvcdn)
-    cuda = True if torch.cuda.is_available() else False
     for m in model_dict:
         if cuda:
             model_dict[m].cuda()
+    
     optim_dict = init_optim(num_view, model_dict, lr_e_pretrain, lr_c)
-    # Get the labels of train to tensor
-    labels_tr_tensor = torch.LongTensor(labels_trte[trte_idx["tr"]])
-    # And for one hot
-    onehot_labels_tr_tensor = one_hot_tensor(labels_tr_tensor, num_class)
-    # Lastly the weights
-    sample_weight_tr = cal_sample_weight(labels_trte[trte_idx["tr"]], num_class)
-    sample_weight_tr = torch.FloatTensor(sample_weight_tr)
     # This bit is for pretrain GCN
-    for epoch in range(num_epoch_pretrain):
-        train_epoch(data_tr_list, adj_tr_list, labels_tr_tensor, 
-        onehot_labels_tr_tensor, sample_weight_tr, model_dict, optim_dict, train_VCDN=False
-        )
+    if num_epoch_pretrain == 0:
+        print("Not pretraining")
+    else:
+        for epoch in range(num_epoch_pretrain):
+            train_epoch(data_tr_list, adj_tr_list, labels_tr_tensor, 
+            onehot_labels_tr_tensor, sample_weight_tr, model_dict, optim_dict, train_VCDN=False
+            )
 
+    # Then here is main logic of training
     optim_dict = init_optim(num_view, model_dict, lr_e, lr_c)
     for epoch in range(num_epoch+1):
+        # Notice the model_dict is being changed under the hood
+        # for every model_dict[m].state_dict()
         train_epoch(data_tr_list, adj_tr_list, labels_tr_tensor, 
                     onehot_labels_tr_tensor, sample_weight_tr, model_dict, optim_dict)
     te_prob = test_epoch(data_trte_list, adj_te_list, trte_idx["te"], model_dict)
@@ -170,5 +184,5 @@ def summarize_imp_feat(featimp_list_list, dataset_name, view_list, n_percent=10,
     try:
       feats_df = feats_df[right_order]
     except KeyError as e:
-      print(f"Sklearn select feature for '{dataset_name}', '{model_lower}' column not found: {e}")
+      print(f"Mogonet select feature for '{dataset_name}', '{model_lower}' column not found: {e}")
     return feats_df
