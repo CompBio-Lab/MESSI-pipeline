@@ -50,7 +50,7 @@ load_utils(here(pipeline_dir, "bin/plotting"))
 rp <- resource_helper_path(here(pipeline_dir, "modules/diablo/select_feature"))
 source(here(rp, "createKeepX.R"))
 source(here(rp, "extract_feats_df.R"))
-
+source(here(rp, "getDesign.R"))
 
 # Main entrance of the script
 main <- function(mae_path, dataset_name, n_percent, design) {
@@ -75,7 +75,19 @@ main <- function(mae_path, dataset_name, n_percent, design) {
   keepX <- createKeepX(X, n_percent=n_percent)
   cat("\nKeep X is the following:", "\n", unlist(keepX), "\n")
   # Then fit the model
-  model <- block.splsda(X, Y, keepX=keepX, design=design)
+
+  # Get the design matrix first
+  
+  if (design == "full") {
+    corr <- 1
+  } else if (design == "null") {
+    corr <- 0
+  } else {
+    stop("Error design")
+  }
+  design_mat <- getDesign(X, corr = corr)
+
+  model <- block.splsda(X, Y, keepX=keepX, design=design_mat)
   # Then run the select var part and extract its names
   var_list <- selectVar(model)
   # Extract the features out from var_list and wrangle to df for downstream usage

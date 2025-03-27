@@ -66,6 +66,17 @@ main <- function(mae_path, label, fold_path, design, run_inner_cv, prefix) {
   sample_names <- check_common_samples(train_data)
   cat("\nTotal of", length(sample_names), "samples:\n", sample_names)
   
+
+  # Get the design matrix here
+  if (design == "full) {
+    corr <- 1
+  } else if (design == "null") {
+    corr <- 0  
+  } else {
+    stop("Design can only be one of 'full' or 'null'")
+  }
+  design_mat <- getDesign(train_data$X, corr = corr)
+
   # Train a modelel modele to run inner cv or not
   if (run_inner_cv) {
     cat("\nTraining with inner cv per single fold, this could take more time\n")
@@ -77,20 +88,20 @@ main <- function(mae_path, label, fold_path, design, run_inner_cv, prefix) {
     #---------------------------------------------------------------------------
     # Design matrix, with diagonals 0, rest 0.1 (default)
     # Then this overrides the default full design of the script
-    design <- getDesign(X = X)
+    #design <- getDesign(X = X)
     # run component number tuning with repeated CV
-    tuned_output <- tune_diablo(base_model = base_model, design=design)
+    tuned_output <- tune_diablo(base_model = base_model, design=design_mat)
     # Train the final model
     model <- mixOmics::block.splsda(X = X, Y = Y, 
                                     ncomp = tuned_output$ncomp, 
                                     keepX = tuned_output$keepX, 
-                                    design = design)
+                                    design = design_mat)
     #---------------------------------------------------------------------------
   } else {
     cat("\nNot running inner cv per fold\n")
     # use default settings
     # Use a fully connected design on def , could also use null
-    model <- mixOmics::block.splsda(X = train_data$X, Y = train_data$Y, design=design)
+    model <- mixOmics::block.splsda(X = train_data$X, Y = train_data$Y, design=design_mat)
     cat("\nFitted model\n")
   }
 
