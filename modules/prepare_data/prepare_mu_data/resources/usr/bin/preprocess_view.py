@@ -34,7 +34,7 @@ def compute_freq_ratio(data):
         value_counts = data.value_counts()
         return value_counts.max() / value_counts.iloc[1] if len(value_counts) > 1 else value_counts.max()
 
-def calc_near_zero(x, freqCut = 95/5, uniqueCut=10):
+def calc_near_zero(df, freqCut = 95/5, uniqueCut=10):
     # Calculate the number of unique values per column
     lunique = df.apply(lambda data: len(data.dropna().unique()), axis=0)
 
