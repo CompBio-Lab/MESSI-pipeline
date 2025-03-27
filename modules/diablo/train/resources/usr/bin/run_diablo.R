@@ -68,7 +68,7 @@ main <- function(mae_path, label, fold_path, design, run_inner_cv, prefix) {
   
 
   # Get the design matrix here
-  if (design == "full) {
+  if (design == "full") {
     corr <- 1
   } else if (design == "null") {
     corr <- 0  
