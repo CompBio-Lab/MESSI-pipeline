@@ -171,6 +171,8 @@ main <- function(mae_path, dataset_name, prediction_model = "lda", par_type="spa
   # It should now look like list(X1=X1, X2=X2, ... , XN=XN, response=Y)
   rgcca_input <- X
   rgcca_input[["response"]] <- as.factor(data_list$Y)
+
+ 
   # Get the first 10 rownames and colnames, and print it to file as sanity check
   logging_head_names(X=X, n = 10)
   # Also get the dimensions, since it sometimes might fail
@@ -200,6 +202,9 @@ main <- function(mae_path, dataset_name, prediction_model = "lda", par_type="spa
   # Get stable variables out
   # TODO: this needs to be reverted to using RGCCA::rgcca_stability instead
   # right now had to add two lines to manually fix an error out of bound
+  
+  # TODO: This could fail when the response are very imbalanced, resulting in bootstrapping
+  # samples of the response that have zero variance, which is complaint and error out
   stab <- custom_rgcca_stability(fit)
   
   
