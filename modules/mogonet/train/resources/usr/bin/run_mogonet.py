@@ -21,6 +21,7 @@ import os
 import glob
 import pandas as pd
 import pickle
+import hashlib
 
 # =============================================================================
 # Little utilities to use here
@@ -44,21 +45,24 @@ def write_metadata(data_folder, label):
     print(f"Wrote to {output_file}")
     return meta_df
 
+def label_to_seed(label, prime=999983):
+    hash_value = int(hashlib.sha256(label.encode()).hexdigest(), 16)
+    return hash_value % prime  # Controls range
 
 # See here: https://stackoverflow.com/questions/70584201/i-dont-understand-why-set-seed-is-needed-with-torch-and-tensorflow-import
-def set_seed(seed: int):
-    """
-    Helper function for reproducible behavior to set the seed in ``random``, ``numpy``, ``torch`` and/or ``tf`` (if
-    installed).
-
-    Args:
-        seed (:obj:`int`): The seed to set.
-    """
+# Function to set a seed
+def seed_everything(seed: int):
+    import random, os
+    import numpy as np
+    import torch
+    
     random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
-    if is_torch_available():
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True
         # ^^ safe to call this function even if cuda is not available
 # Train a model network from mogonet, assuming having those right inputs 
 # from upstream process
@@ -85,7 +89,9 @@ def main(
   # ===========================================================================
   # Main executing goes here
   # ===========================================================================
-
+  seed = label_to_seed(data_folder)
+  seed_everything(seed)
+  print(f"Seed number: '{seed}' for '{data_folder}'")
 
   # Adjacent parameter cannot be too big
   # otherwise it might fail at cal_adj_mat_parameter, parameter = torch.sort(dist.reshape(-1,)).values[edge_per_node*data.shape[0]]
