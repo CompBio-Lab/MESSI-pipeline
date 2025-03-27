@@ -73,8 +73,10 @@ main <- function(model_path, test_path, label, design, output_ext, method,
   test_data <- readRDS(test_path)
   # Load model (from same fold train portion)
   model <- readRDS(model_path)
+  method_name <- method
   # Append design to the method name
-  method_name <- paste0(method, "-", design)
+  # This doesnt seem to be needed??  
+  #method_name <- paste0(method, "-", design)
   # Verbose input
   message("\nRead model from ", model_path, "\n")
   message("\nRead test data from ", test_path, "\n")
