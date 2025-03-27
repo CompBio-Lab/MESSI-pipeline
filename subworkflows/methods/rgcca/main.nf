@@ -68,7 +68,9 @@ workflow RGCCA {
       so we need a second channel of list of methods
     */
     ch_methods = Channel.fromList(["rgcca", "sgcca"])
-    RGCCA_TRAIN ( train_input, ch_methods )
+    // These are possible design matrices for the method
+    ch_design = Channel.fromList(["full", "null"])
+    RGCCA_TRAIN ( train_input, ch_methods, ch_design )
 
     // Do some transformation to make a multiMap that has two branches for predict
     RGCCA_TRAIN.out.model

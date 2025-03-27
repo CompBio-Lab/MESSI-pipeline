@@ -5,7 +5,7 @@ include { getPublishPath } from "${modulesDir}/functions"
 process RGCCA_SELECT_FEATURE {
   // Vars stuff
 	def onSockeye = workflow.projectDir.toString().contains('/scratch')
-	tag "${dataset_name}"
+	tag "${dataset_name}-${design}"
 	debug true
   label 'process_low'
 	container "${ onSockeye  ?
@@ -21,6 +21,7 @@ process RGCCA_SELECT_FEATURE {
   /* Input and output blocks*/
   input:
     tuple val(dataset_name), path(mae_path)
+    each(design)
   output:
     path("*.csv"),    emit: features
     path("*plot*"),   emit: plot
@@ -31,8 +32,9 @@ process RGCCA_SELECT_FEATURE {
   // which is just a convert data format only
   """
   rgcca_select_features.R  --dataset_name=${dataset_name} \
-                            --mae_path=${mae_path} > \
-                            rgcca-select_features_${dataset_name}.log
+                            --mae_path=${mae_path} \
+                            --design=${design} > \
+                            rgcca-select_features_${dataset_name}-${design}.log
 
   """
 

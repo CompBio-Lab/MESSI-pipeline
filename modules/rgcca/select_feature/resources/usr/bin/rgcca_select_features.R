@@ -14,6 +14,7 @@ Options:
   --nfolds=NFOLDS               Number of folds to perform CV to perform feature selection [default: 5]
   --prediction_model=PRED_MOD   Prediction model from caret [default: lda]
   --metric=METRIC               Metric to perform CV on [default: Balanced_Accuracy]
+  --design=DESIGN		Design matrix of the method one of full or null [default: full]
 "
 # Parse cli docs
 opt <- docopt::docopt(doc)
@@ -154,7 +155,7 @@ custom_rgcca_stability <- function (rgcca_res, keep = vapply(rgcca_res$a, functi
 
 # Main entrypoint of the script
 # prediction_model should be glm to accord with rest of methods?
-main <- function(mae_path, dataset_name, prediction_model = "lda", par_type="sparsity", 
+main <- function(mae_path, dataset_name, design="full", prediction_model = "lda", par_type="sparsity", 
                  validation = "kfold", nfolds=5, reps=1, metric="Balanced_Accuracy",
                  criteria_order = "top") {
   # PARAMS
@@ -171,7 +172,21 @@ main <- function(mae_path, dataset_name, prediction_model = "lda", par_type="spa
   # It should now look like list(X1=X1, X2=X2, ... , XN=XN, response=Y)
   rgcca_input <- X
   rgcca_input[["response"]] <- as.factor(data_list$Y)
-
+  
+  # This is number of omics including the response block, so H + 1
+  J <- length(rgcca_input)
+  # Set up the connection matrix
+  if (design == "full") {
+    # Full means 1 everywhere not of diagonal, meaning every omics
+    # is related with other
+    connection <- 1 - diag(J)
+  } else if (design == "null") {
+    # Everywhere 0 except diagonal, meaning only associate to itself
+    connection <- diag(J)
+  } else {
+    message("\nProvide another design, one of 'full' or 'null'")
+    connection <- NULL
+  }
  
   # Get the first 10 rownames and colnames, and print it to file as sanity check
   logging_head_names(X=X, n = 10)
@@ -182,6 +197,7 @@ main <- function(mae_path, dataset_name, prediction_model = "lda", par_type="spa
   # Runs the cv 
   cv_out <- rgcca_cv(
     blocks = rgcca_input, response = length(rgcca_input),
+    connection = connection,
     par_type = par_type,
     prediction_model = prediction_model,
     validation = validation,
@@ -216,7 +232,7 @@ main <- function(mae_path, dataset_name, prediction_model = "lda", par_type="spa
     filter(!is.na( !!sym ( criteria_order) ))  %>%
     # Add metadata in for downstream merge
     mutate(
-      method = method, 
+      method = paste(method, design, sep="-"), 
       dataset_name = dataset_name
     ) %>%
     dplyr::rename(
@@ -237,7 +253,8 @@ main <- function(mae_path, dataset_name, prediction_model = "lda", par_type="spa
     #ungroup() %>%
   
   # write it to disk
-  feats_file <- paste0(method, "-", dataset_name, "_", "features_selected", ".csv")
+  comb_name <- paste(method, design, dataset_name, sep="-")
+  feats_file <- paste0(comb_name, "_", "features_selected", ".", "csv")
   write.csv(x=feats_df, file=feats_file, row.names=FALSE)
   return(feats_df)
 }
@@ -245,7 +262,9 @@ main <- function(mae_path, dataset_name, prediction_model = "lda", par_type="spa
 # Then call the function above
 main(mae_path=opt$mae_path, dataset_name=opt$dataset_name, 
   nfolds=as.numeric(opt$nfolds),
-  prediction_model = opt$prediction_model, metric=opt$metric)
+  prediction_model = opt$prediction_model, metric=opt$metric,
+  design=opt$design
+)
 
 
 

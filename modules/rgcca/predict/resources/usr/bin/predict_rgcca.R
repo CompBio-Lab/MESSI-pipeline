@@ -14,6 +14,7 @@ Options:
   --test_path=TEST_PATH     Path containing test data [default: null]
   --label=LABEL             Label of id and fold of data [default: data-fold_i]
   --method=METHOD           Method name input from upstream [default: empty]
+  --design=DESIGN	    Design matrix of the model one of full or null [default: full]
   --output_ext=EXT          Extension of output table to save [default: csv]
 "
 
@@ -62,7 +63,7 @@ source(here::here(pipeline_dir, "bin/wrangling/get_result_table.R"))
 # Parse docopt
 opt <- docopt::docopt(doc)
 # Default to use AveragedPredict and max.dist
-main <- function(model_path, test_path, label, output_ext, method, 
+main <- function(model_path, test_path, label, design, output_ext, method, 
                  prediction_model="glm", response_col="response", digit=3) {
 
   if (method == "empty") {
@@ -72,6 +73,8 @@ main <- function(model_path, test_path, label, output_ext, method,
   test_data <- readRDS(test_path)
   # Load model (from same fold train portion)
   model <- readRDS(model_path)
+  # Append design to the method name
+  method_name <- paste0(method, "-", design)
   # Verbose input
   message("\nRead model from ", model_path, "\n")
   message("\nRead test data from ", test_path, "\n")
@@ -90,7 +93,7 @@ main <- function(model_path, test_path, label, output_ext, method,
   # Then make some changes to our test data back to the format of X and Y
   # Merge to summary table
   result_table <- get_result_table(probs=pred_probs, label=label, 
-                                  method_name=method,
+                                  method_name=method_name,
                                   test_data=test_data, digit=digit
                                   )
   
@@ -108,7 +111,8 @@ main(model_path=opt$model_path,
      test_path=opt$test_path, 
      label=opt$label,
      output_ext=opt$output_ext,
-     method=opt$method
+     method=opt$method,
+     design=opt$design
 )
 
 message("Done")

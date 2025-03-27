@@ -20,7 +20,7 @@ process RGCCA_TRAIN {
 	// Vars stuff
 	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	// Identifier for each dataset and fold combination
-	tag "${dataset_name}-${fold_path.name}-${method}"
+	tag "${dataset_name}-${fold_path.name}-${method}-${design}"
 	label 'process_single'
 	// TODO: rename to the actual image name used
 	container "${ onSockeye  ?
@@ -42,10 +42,11 @@ process RGCCA_TRAIN {
 	input:
 		tuple val(dataset_name), path(mae_path), path(fold_path)
 		each(method)
+		each(design)
 	output:
-		tuple val(dataset_name), val(fold_path.name), val(method), path('*model*'),			 	emit: model
-		tuple val(dataset_name), val(fold_path.name), val(method), path('*test_data*'),	 	emit: test_data
-		tuple val(dataset_name), val(fold_path.name), val(method), path('*log*'), 				emit: log
+		tuple val(dataset_name), val(fold_path.name), val("${method}-${design}"), path('*model*'),		emit: model
+		tuple val(dataset_name), val(fold_path.name), val("${method}-${design}"), path('*test_data*'),		emit: test_data
+		tuple val(dataset_name), val(fold_path.name), val("${method}-${design}"), path('*log*'),		emit: log
 	script:
   	/* 
 			The script here should be found under method/resources/usr/bin/ , 
@@ -61,7 +62,8 @@ process RGCCA_TRAIN {
 				--mae_path=${mae_path} \
 				--label=${data_label} \
 				--fold_path=${fold_path} \
-				--method=${method} > \
+				--method=${method} \
+                                --design=${design} > \
 				${data_label}-${getPublishPath(task.process).tokenize('/')[-1].toLowerCase()}.log
 		echo ${data_label} > ${data_label}
 		"""
