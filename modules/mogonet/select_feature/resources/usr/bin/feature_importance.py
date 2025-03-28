@@ -1,6 +1,6 @@
 # Use this script as temp fix, need to update the pkg instead
 import os
-from sklearn.metrics import f1_scorex
+from sklearn.metrics import f1_score
 import copy
 import torch
 import torch.nn.functional as F
