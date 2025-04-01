@@ -155,11 +155,12 @@ custom_rgcca_stability <- function (rgcca_res, keep = vapply(rgcca_res$a, functi
 
 # Main entrypoint of the script
 # prediction_model should be glm to accord with rest of methods?
-main <- function(mae_path, dataset_name, design="full", prediction_model = "lda", par_type="sparsity", 
+# NOTE: par_type should not be sparsity, as it will filter out most features
+main <- function(mae_path, dataset_name, design="full", prediction_model = "lda", par_type="tau", 
                  validation = "kfold", nfolds=5, reps=1, metric="Balanced_Accuracy",
                  criteria_order = "top") {
   # PARAMS
-  method <- "rgcca"
+  #method <- "rgcca"
   # Log the params used
   args_used <- c(as.list(environment()))
   logging_params(args_used)
@@ -195,9 +196,12 @@ main <- function(mae_path, dataset_name, design="full", prediction_model = "lda"
   message("\nDimension of cols here: ", X |> sapply(ncol))
 
   # Runs the cv 
+  # RGGCA library requires sparse method to select method at rcgga_stability
+  # hence during cv, need to provide the "sgcca" method instead
   cv_out <- rgcca_cv(
     blocks = rgcca_input, response = length(rgcca_input),
     connection = connection,
+    method = "sgcca", # This is bit is must, plain RGCCA would not work
     par_type = par_type,
     prediction_model = prediction_model,
     validation = validation,
@@ -232,7 +236,8 @@ main <- function(mae_path, dataset_name, design="full", prediction_model = "lda"
     filter(!is.na( !!sym ( criteria_order) ))  %>%
     # Add metadata in for downstream merge
     mutate(
-      method = paste(method, design, sep="-"), 
+      # While in here, coerce it as RGCCA for downstream processing
+      method = paste("rgcca", design, sep="-"), 
       dataset_name = dataset_name
     ) %>%
     dplyr::rename(
