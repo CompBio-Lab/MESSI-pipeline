@@ -42,6 +42,7 @@ main <- function(model_path, test_path, label, output_ext, method_name="mofa",
   # Load test data (from same fold test portion)
   test_data <- readRDS(test_path) # NOTE here data is n x p
   test_x <- test_data$X$embeddings
+  print(test_x)
   # Then make predictions using the previous glmnet model
   predictions <- stats::predict(
     object=model,

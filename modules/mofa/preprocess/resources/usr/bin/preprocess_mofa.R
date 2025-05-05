@@ -9,9 +9,10 @@ Usage:
   preprocess_mofa.R [options]
 
 Options:
-  --mae_path=MAE_PATH     Path to read full mae data
+  --mae_path=MAE_PATH       Path to read full mae data
   --split_dir=SPLIT_DIR     Directory containing list of txt file [default: empty]
   --dataset_name=NAME       Name of dataset that is splitting     [default: empty]
+  --num_factors=NUM_FACTOR  Number of factors to supply into MOFA [default: 1]
 "
 
 # Parse cli args
@@ -72,7 +73,7 @@ reconstruct_mae <- function(mae) {
 
 # =================================================================================
 # MAIN entrance point
-main <- function(mae_path, split_dir, dataset_name) {
+main <- function(mae_path, split_dir, dataset_name, num_factors) {
   # Should be a list of splits
   cat("Splitting data for", dataset_name, "\n")
   cat("\nThe data is located in:", mae_path, "\n")
@@ -95,8 +96,15 @@ main <- function(mae_path, split_dir, dataset_name) {
   # Get model options
   # num_factors might be tuneable
   model_opts <- get_default_model_options(mofa_obj)
-  # TODO: Currently to use number factors to be 2 x the numbers of views
-  model_opts$num_factors <- 2 * mofa_obj@dimensions$M
+  
+  # THIS IS LATEST
+  # Num factor is default to 1
+  model_opts$num_factors <- num_factors # Now this parameter is controlled from nextflow
+
+  # ~~TODO: Currently to use number factors to be 2 x the numbers of views~~
+  # model_opts$num_factors <- 2 * mofa_obj@dimensions$M
+
+
   # Get train options
   # maxiter: number of iterations. Default is 1000.
   # convergence_mode: fast, medium, slow? not sure which one affects? tuneable?
@@ -148,4 +156,9 @@ main <- function(mae_path, split_dir, dataset_name) {
 }
 
 # Then execute the main function here
-main(mae_path=opt$mae_path, split_dir=opt$split_dir, dataset_name=opt$dataset_name)
+main(
+  mae_path=opt$mae_path, 
+  split_dir=opt$split_dir, 
+  dataset_name=opt$dataset_name, 
+  num_factors=as.numeric(opt$num_factors)
+  )
