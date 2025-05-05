@@ -237,7 +237,7 @@ main <- function(mae_path, dataset_name, design="full", prediction_model = "lda"
     # Add metadata in for downstream merge
     mutate(
       # While in here, coerce it as RGCCA for downstream processing
-      method = paste("rgcca", design, sep="-"), 
+      method = paste("rgcca", design, sep="-"), # Method here is always rgcca
       dataset_name = dataset_name
     ) %>%
     dplyr::rename(
@@ -258,7 +258,9 @@ main <- function(mae_path, dataset_name, design="full", prediction_model = "lda"
     #ungroup() %>%
   
   # write it to disk
-  comb_name <- paste(method, design, dataset_name, sep="-")
+  # comb_name <- paste(method, design, dataset_name, sep="-") # Method is not required anymore
+  # Since method is included inside 'design' object
+  comb_name <- paste(design, dataset_name, sep="-")
   feats_file <- paste0(comb_name, "_", "features_selected", ".", "csv")
   write.csv(x=feats_df, file=feats_file, row.names=FALSE)
   return(feats_df)
