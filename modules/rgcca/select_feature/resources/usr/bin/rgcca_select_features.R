@@ -209,7 +209,7 @@ main <- function(mae_path, dataset_name, design="full", prediction_model = "lda"
   
   # Plot cv result
   par(mar=c(1,1,1,1))
-  getPlotDevice(name = paste0(method, "_cv_plot"), dataset_name=dataset_name, 
+  getPlotDevice(name = paste0(design, "_cv_plot"), dataset_name=dataset_name, 
                 height=8, width=8, device="svg")
   plot(cv_out)
   dev.off()
