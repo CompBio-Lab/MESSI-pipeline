@@ -52,7 +52,6 @@ mofa_pre <- function(mae, num_factors, scale_views=FALSE) {
 
 # Main entrypoint here
 main <- function(mae_path, dataset_name, num_factors,
-                 factor_levels = c("Factor1"), 
                  scale_views=FALSE, method="mofa") {
   # ============================================================================
   raw_mae <- loadHDF5MultiAssayExperiment(mae_path)
@@ -71,11 +70,13 @@ main <- function(mae_path, dataset_name, num_factors,
 
   #ddd <- get_weights(mofa_emb, as.data.frame=T)
   #write.csv(ddd, file=paste0(paste("dummy", method, dataset_name, sep="-"), ".csv"), row.names=FALSE)
-
+  factor_levels = c("Factor1", "Factor2")
   feats_df <- get_weights(mofa_emb, as.data.frame = T) %>%
     filter(factor %in% factor_levels) %>%
     # Add metadata for downstream usage
     mutate(method = method, dataset_name = dataset_name) %>%
+    # Add factor inside view to tell which factor feature correspond to
+    mutate(view = paste0(view, "-", factor)) %>%
     dplyr::rename(coef = value) %>%
     select(feature, view, coef, method, dataset_name) 
     

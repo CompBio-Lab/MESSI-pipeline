@@ -34,7 +34,6 @@ source(here(pipeline_dir, "bin/wrangling/get_result_table.R"))
 # Parse docopt
 opt <- docopt::docopt(doc)
 
-# Default to use AveragedPredict and max.dist
 main <- function(model_path, test_path, label, output_ext, method_name="mofa",
                 digit = 3, s = 0) {
   # Load model (from same fold train portion)
