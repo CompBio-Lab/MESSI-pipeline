@@ -12,6 +12,7 @@ Options:
   --mae_path=MAE_PATH     Path to read full mae data
   --label=LABEL           Label of id and fold of data [default: data]
   --fold_path=FOLD_PATH   Path to read current test fold
+  --ncomp=NCOMP           Number of component to run diablo [default: 2]
   --prefix=PREFIX         Prefix to read HDF5 [default: pre]
   --run_inner_cv          Run inner cv with train data or not [default: false]
   --design=DESIGN         Strength of relationship to model blocks. One of full or null [default: full]
@@ -52,7 +53,7 @@ load_utils(here(pipeline_dir, "bin/misc_utils"))
 opt <- docopt::docopt(doc)
 
 # Main function to run
-main <- function(mae_path, label, fold_path, design, run_inner_cv, prefix) {
+main <- function(mae_path, label, fold_path, design, ncomp, run_inner_cv, prefix) {
   # Log the params used
   args_used <- c(as.list(environment()))
   logging_params(args_used)
@@ -101,7 +102,7 @@ main <- function(mae_path, label, fold_path, design, run_inner_cv, prefix) {
     cat("\nNot running inner cv per fold\n")
     # use default settings
     # Use a fully connected design on def , could also use null
-    model <- mixOmics::block.splsda(X = train_data$X, Y = train_data$Y, design=design_mat)
+    model <- mixOmics::block.splsda(X = train_data$X, Y = train_data$Y, design=design_mat, ncomp=ncomp)
     cat("\nFitted model\n")
   }
 
@@ -120,6 +121,7 @@ main <- function(mae_path, label, fold_path, design, run_inner_cv, prefix) {
 main(mae_path  = opt$mae_path,
      label     = opt$label,
      fold_path = opt$fold_path,
+     ncomp     = as.numeric(opt$ncomp),
      prefix    = opt$prefix,
      design    = opt$design,
      run_inner_cv  = opt$run_inner_cv

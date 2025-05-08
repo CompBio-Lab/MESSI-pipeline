@@ -12,6 +12,7 @@ workflow DIABLO {
   design     = params.diablo_design_connection
   take:
     mae_copy // ch of tuple dataset, path of mae data, directories of fold, containing all txts
+    ncomp    // Number of components to run for DIABLO
   main:
     // Might have some preprocessing steps
     log.info "Starting DIABLO workflow"    
@@ -55,7 +56,7 @@ workflow DIABLO {
     // runInnerCV: boolean, true or false
     // These are possible design matrices for the method
     ch_design = Channel.fromList( design )
-    DIABLO_TRAIN( train_input, runInnerCV, ch_design )
+    DIABLO_TRAIN( train_input, runInnerCV, ncomp, ch_design )
     // Transform certain outputs here to use in prediction
     // Join outputs from trained models and prepare for prediction
     DIABLO_TRAIN.out.model

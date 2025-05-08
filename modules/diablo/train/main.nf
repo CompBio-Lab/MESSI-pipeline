@@ -8,7 +8,7 @@ process DIABLO_TRAIN {
 	// Vars stuff
 	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	def method_name = "diablo"
-	tag "${dataset_name}-${fold_path.name}-${design}"
+	tag "${dataset_name}-${fold_path.name}-design_${design}-ncomp_${ncomp}"
 	//debug	"${params.debug}"
 	debug true
 	label 'process_medium'
@@ -34,6 +34,7 @@ process DIABLO_TRAIN {
 	input:
 		tuple val(dataset_name), path(mae_path), path(fold_path)
 		val(run_inner_cv)
+		val(ncomp)
 		each(design)
 	output:
 		tuple val(dataset_name), val(fold_path.name), val("${method_name}-${design}"), path('*model.rds'),			 	emit: model
@@ -58,6 +59,7 @@ process DIABLO_TRAIN {
 				--mae_path=${mae_path} \
 				--label=${data_label} \
 				--design=${design} \
+				--ncomp=${ncomp} \
 				--fold_path=${fold_path} > \
 				${data_label}-${getPublishPath(task.process).tokenize('/')[-1].toLowerCase()}.log
 			echo ${dataset_name} > dataset_name
