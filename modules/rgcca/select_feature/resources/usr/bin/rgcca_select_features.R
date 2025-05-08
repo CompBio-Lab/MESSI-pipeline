@@ -14,7 +14,8 @@ Options:
   --nfolds=NFOLDS               Number of folds to perform CV to perform feature selection [default: 5]
   --prediction_model=PRED_MOD   Prediction model from caret [default: lda]
   --metric=METRIC               Metric to perform CV on [default: Balanced_Accuracy]
-  --design=DESIGN		Design matrix of the method one of full or null [default: full]
+  --design=DESIGN		            Design matrix of the method one of full or null [default: full]
+  --ncomp=NCOMP                 Number of component to run diablo [default: 2]
 "
 # Parse cli docs
 opt <- docopt::docopt(doc)
@@ -156,7 +157,7 @@ custom_rgcca_stability <- function (rgcca_res, keep = vapply(rgcca_res$a, functi
 # Main entrypoint of the script
 # prediction_model should be glm to accord with rest of methods?
 # NOTE: par_type should not be sparsity, as it will filter out most features
-main <- function(mae_path, dataset_name, design="full", prediction_model = "lda", par_type="tau", 
+main <- function(mae_path, dataset_name, ncomp=2, design="full", prediction_model = "lda", par_type="tau", 
                  validation = "kfold", nfolds=5, reps=1, metric="Balanced_Accuracy",
                  criteria_order = "top") {
   # PARAMS
@@ -203,6 +204,7 @@ main <- function(mae_path, dataset_name, design="full", prediction_model = "lda"
     connection = connection,
     method = "sgcca", # This is bit is must, plain RGCCA would not work
     par_type = par_type,
+    ncomp = ncomp,
     prediction_model = prediction_model,
     validation = validation,
     k = nfolds, n_run = reps, metric = metric)
@@ -267,10 +269,11 @@ main <- function(mae_path, dataset_name, design="full", prediction_model = "lda"
 }
 
 # Then call the function above
-main(mae_path=opt$mae_path, dataset_name=opt$dataset_name, 
-  nfolds=as.numeric(opt$nfolds),
+main(mae_path = opt$mae_path, dataset_name = opt$dataset_name, 
+  nfolds = as.numeric(opt$nfolds),
   prediction_model = opt$prediction_model, metric=opt$metric,
-  design=opt$design
+  design = opt$design,
+  ncomp = as.numeric(opt$ncomp)
 )
 
 

@@ -15,7 +15,8 @@ Options:
   --inner_cv              Run inner cv with train data or not [default: false]
   --prefix=PREFIX         Prefix to read HDF5 [default: pre]
   --method=METHOD         RGCCA method to run [default: rgcca]
-  --design=DESIGN	  Connection matrix of omics, one of full or null [default: full]
+  --design=DESIGN	        Connection matrix of omics, one of full or null [default: full]
+  --ncomp=NCOMP           Number of component to run diablo [default: 2]
 "
 
 # Load libraries
@@ -44,7 +45,7 @@ source(here(rp, "parse_rgcca_input.R"))
 opt <- docopt::docopt(doc)
 
 # Main function to run
-main <- function(mae_path, label, fold_path, inner_cv, prefix, method, design, tau=1) {
+main <- function(mae_path, label, fold_path, inner_cv, prefix, method, design, ncomp=2, tau=1) {
   # Log the params used
   args_used <- c(as.list(environment()))
   logging_params(args_used)
@@ -99,7 +100,7 @@ main <- function(mae_path, label, fold_path, inner_cv, prefix, method, design, t
     # use default settings
     # The response block is always set at the end of the list of data
     model <- rgcca(train_data, tau=tau, connection=connection, 
-                   method=method, response=length(train_data)
+                   method=method, response=length(train_data), ncomp=ncomp
                    )
     message("\nFitted model\n")
   }
@@ -120,7 +121,8 @@ main(mae_path  = opt$mae_path,
      inner_cv  = opt$inner_cv,
      prefix    = opt$prefix,
      method    = opt$method,
-     design    = opt$design
+     design    = opt$design,
+     ncomp     = as.numeric(opt$ncomp)
      )
 
 message("Done")

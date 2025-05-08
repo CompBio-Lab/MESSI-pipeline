@@ -94,10 +94,12 @@ main <- function(model_path, test_path, label, design, output_ext, method,
   test_data <- parse_rgcca_test(test_data)
   # Then make some changes to our test data back to the format of X and Y
   # Merge to summary table
+  ncomp <- unique(model$call$ncomp)
   result_table <- get_result_table(probs=pred_probs, label=label, 
                                   method_name=method_name,
                                   test_data=test_data, digit=digit
-                                  )
+                                  ) |>
+                                  mutate(method_name = paste0(method_name, "_", "ncomp", "-", ncomp))
   
   # Write to files
   message("\nSaving as ", output_ext, " format\n")
