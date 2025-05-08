@@ -13,7 +13,7 @@ Options:
   --output_ext=EXT          Extension of output table to save [default: csv]
   --n_percent=N_PER         N percent of features per view to select [default: 100]
   --design=DESIGN           Connection in design matrix, one of full or null [default: full]
-  --ncomp=NCOMP           Number of component to run diablo [default: 2]
+  --ncomp=NCOMP             Number of component to run diablo [default: 2]
 "
 # Parse cli docs
 opt <- docopt::docopt(doc)
