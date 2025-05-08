@@ -24,6 +24,10 @@ workflow FEATURE_SELECTION {
   skip_mofa     = params.skip_mofa    // boolean: true/false
 	skip_mogonet  = params.skip_mogonet // boolean: true/false
   skip_sklearn  = params.skip_sklearn // boolean: true/false
+
+  // Other method param
+  num_comps     = params.num_comps
+
   // DIABLO param
   diablo_design_connection = params.diablo_design_connection
   // Sklearn param
@@ -58,13 +62,13 @@ workflow FEATURE_SELECTION {
     if (!skip_diablo) {
       // Connection for its design matrix
       ch_design = Channel.fromList( diablo_design_connection )
-      DIABLO_SELECT_FEATURE ( mae_data, ch_design)
+      DIABLO_SELECT_FEATURE ( mae_data, num_comps, ch_design)
       diablo_features = DIABLO_SELECT_FEATURE.out.features
     }
 
     mofa_features = Channel.empty()
     if (!skip_mofa) {
-      MOFA_SELECT_FEATURE ( mae_data)
+      MOFA_SELECT_FEATURE ( mae_data, num_comps )
       mofa_features = MOFA_SELECT_FEATURE.out.features
     }
 
@@ -72,7 +76,7 @@ workflow FEATURE_SELECTION {
     if (!skip_rgcca) {
       // RGCCA can use same design matrices like full or null as if in DIABLO
       ch_design = Channel.fromList ( diablo_design_connection )
-      RGCCA_SELECT_FEATURE (mae_data, ch_design)
+      RGCCA_SELECT_FEATURE (mae_data, num_comps, ch_design)
       rgcca_features = RGCCA_SELECT_FEATURE.out.features
     }
 
