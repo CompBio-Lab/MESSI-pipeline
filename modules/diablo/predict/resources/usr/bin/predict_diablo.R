@@ -51,8 +51,8 @@ main <- function(model_path, test_path, label, design, output_ext, method_name="
   cat("\nRead model from", model_path, "\n")
   cat("\nRead test data from", test_path, "\n")
   # Other parameters to use
-  ncomp <- max(model$ncomp) # Take largest number of component
-  dim <- paste0("dim", ncomp) # This is the dimension of predicted vals to get
+  #ncomp <- max(model$ncomp) # Take largest number of component
+  #dim <- paste0("dim", ncomp) # This is the dimension of predicted vals to get
   # Predict and get result by max of ncomp
   # TODO: This needs a more unified way from upstream to
   #       have all use binary 01 or just character yes no  
@@ -62,9 +62,16 @@ main <- function(model_path, test_path, label, design, output_ext, method_name="
   pred_obj <- predict(model, newdata = test_data$X)
   # Gather true labels, and predicted labels, probability, weights
   # This is always 3 columns, sample_name is first
-  pred_probs <- pred_obj[[pred]][, , dim] %>%
+  ncomp <- as.numeric(model$ncomp['Y'])
+
+  # For each ncomp output get the pred probs
+  pred_probs <- purrr:::map_dfr(seq_len(ncomp), function(dim) {
+    pred_obj[[pred]][, , dim] %>%
     as.data.frame() %>%
-    tibble::rownames_to_column(var = "sample_name")
+    tibble::rownames_to_column(var = "sample_name") %>%
+    mutate("ncomp" = dim)
+    })
+
   # TODO: this bit is very bad and hardcoded .....
   if (rename_chr) {
     pred_probs <- pred_probs %>%
@@ -91,7 +98,12 @@ main <- function(model_path, test_path, label, design, output_ext, method_name="
   result_table <- get_result_table(probs=pred_probs, label=label, 
                                   method_name=method_name, 
                                   test_data=test_data, digit=digit
-                                  )
+                                  ) |>
+                                  # Then add the ncomp component into method_name before sending to downstream
+                  mutate(method_name = paste0(method_name, "_", "ncomp", "-", ncomp)) |>
+                  select(-c("ncomp"))
+
+         
   # Write to files
   cat("\nSaving as", output_ext, "format\n")
   result_file <- paste(label, paste0("result_table.", output_ext), sep="-")

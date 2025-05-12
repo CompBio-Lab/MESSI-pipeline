@@ -31,7 +31,7 @@ process MOFA_PREPROCESS {
   // process level configuration
   debug "${params.debug}" // debugs true or false by param in MESSI.config
   label 'process_single'
-  tag "${dataset_name}" // identifier of process when ran in parallel
+  tag "${dataset_name}-num_factor_${num_factors}" // identifier of process when ran in parallel
   // By var before to determine what container to use
   // Uses apptainer if true otherwise docker
   container "${ onSockeye ?
@@ -49,6 +49,7 @@ process MOFA_PREPROCESS {
   input:
     /* data name identifier, MAE portion of data , and dir that contains txt in it" */
     tuple val(dataset_name), path(mae_path), path(split_dir)
+    val(num_factors)
   // TODO: This part could be different dependent on method
   output:
     /*
@@ -66,7 +67,8 @@ process MOFA_PREPROCESS {
     preprocess_mofa.R \
       --mae_path=${mae_path} \
       --split_dir=${split_dir} \
-      --dataset_name=${dataset_name} > \
+      --dataset_name=${dataset_name} \
+      --num_factors=${num_factors} > \
       ${dataset_name}-${getPublishPath(task.process).tokenize('/')[-1].toLowerCase()}.log
     
     echo ${dataset_name} > dataset_name

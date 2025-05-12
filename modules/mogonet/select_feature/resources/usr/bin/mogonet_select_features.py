@@ -33,6 +33,19 @@ def get_view_list(data_folder):
     view_list = [csv.replace(pattern, "") for csv in csvs]
     return view_list
 
+# Function to set a seed
+def seed_everything(seed: int):
+    import random, os
+    import numpy as np
+    import torch
+    
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True
 
 # TODO: The feat importance is always 0?
 # and make sure to have topn to be big number
@@ -75,9 +88,12 @@ def main(mu_path, dataset_name, n_percent, random_state=123, block_num=0, test_s
     for rep in range(reps):
         # Use a different random state to mimic "new splitting" for different repetitions
         new_random_state = random_state + rep
+        seed_everything(new_random_state)
+
+
         data_folder = prepare_mogonet_feat_select(mdata, dataset_name, random_state=new_random_state, 
                                         block_num=block_num, test_size=test_size)
-        print("Data folder is", data_folder)
+        print(f"Seed number: '{new_random_state}' for '{data_folder}'")
         # =====================================================================================
         # This is the list of feature importance in single rep
         # he_base_dim is the dim of each he per omic, more like hidden layers?

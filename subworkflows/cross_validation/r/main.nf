@@ -21,6 +21,9 @@ workflow CV_R {
   skip_rgcca  = params.skip_rgcca   // boolean: true/false
   skip_sgmr   = params.skip_sgmr    // boolean: true/false
   skip_mofa   = params.skip_mofa    // boolean: true/false
+
+  // Method specific parameters
+  num_comps = params.num_comps
   take:
     mae_copy 	//  channel of (key, key/path_to_mae, split_indices),
               // 	where each split_indices/ contains
@@ -57,21 +60,21 @@ workflow CV_R {
     // DIABLO
     diablo_results = Channel.empty()
     if (!skip_diablo) {
-      DIABLO ( mae_copy )
+      DIABLO ( mae_copy, num_comps )
       diablo_results = DIABLO.out.csv_results
     }
 
     // MOFA
     mofa_results = Channel.empty()
     if (!skip_mofa) {
-      MOFA ( mae_copy )
+      MOFA ( mae_copy, num_comps )
       mofa_results = MOFA.out.csv_results
     }
 
     // RGCCA
     rgcca_results = Channel.empty()
     if (!skip_rgcca) {
-      RGCCA ( mae_copy )
+      RGCCA ( mae_copy, num_comps )
       rgcca_results = RGCCA.out.csv_results
     }
     

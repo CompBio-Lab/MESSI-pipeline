@@ -34,7 +34,6 @@ source(here(pipeline_dir, "bin/wrangling/get_result_table.R"))
 # Parse docopt
 opt <- docopt::docopt(doc)
 
-# Default to use AveragedPredict and max.dist
 main <- function(model_path, test_path, label, output_ext, method_name="mofa",
                 digit = 3, s = 0) {
   # Load model (from same fold train portion)
@@ -42,6 +41,7 @@ main <- function(model_path, test_path, label, output_ext, method_name="mofa",
   # Load test data (from same fold test portion)
   test_data <- readRDS(test_path) # NOTE here data is n x p
   test_x <- test_data$X$embeddings
+  print(test_x)
   # Then make predictions using the previous glmnet model
   predictions <- stats::predict(
     object=model,

@@ -74,6 +74,17 @@ main <- function(mae_path, label, fold_path, run_inner_cv, prefix) {
     # Print head of embeddings
     cat( train_x |> head() )
     train_y <- train_data$Y
+
+    # Do an additional check if train_x only has 1 column then add a dummy 0 column
+    # to it, since glmnet expect X to be at least N x 2
+    if (ncol(train_x) == 1) {
+      train_x <- cbind(train_x, dummy_zero=0)
+      # Now since adding dummy col, test data needs to be updated too
+      test_emb <- as.matrix(test_data$X$embeddings)
+      test_emb <- cbind(test_emb, dummy_zero=0)
+      test_data$X$embeddings <- test_emb
+    } 
+
     # Glmnet model (ACTUALLY using this to predict)
     model <- glmnet(
       x = train_x,

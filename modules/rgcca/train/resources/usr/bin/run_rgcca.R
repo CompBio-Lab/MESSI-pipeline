@@ -15,6 +15,8 @@ Options:
   --inner_cv              Run inner cv with train data or not [default: false]
   --prefix=PREFIX         Prefix to read HDF5 [default: pre]
   --method=METHOD         RGCCA method to run [default: rgcca]
+  --design=DESIGN	        Connection matrix of omics, one of full or null [default: full]
+  --ncomp=NCOMP           Number of component to run diablo [default: 2]
 "
 
 # Load libraries
@@ -43,7 +45,7 @@ source(here(rp, "parse_rgcca_input.R"))
 opt <- docopt::docopt(doc)
 
 # Main function to run
-main <- function(mae_path, label, fold_path, inner_cv, prefix, method, tau=1) {
+main <- function(mae_path, label, fold_path, inner_cv, prefix, method, design, ncomp=2, tau=1) {
   # Log the params used
   args_used <- c(as.list(environment()))
   logging_params(args_used)
@@ -68,6 +70,26 @@ main <- function(mae_path, label, fold_path, inner_cv, prefix, method, tau=1) {
   sample_names <- check_common_samples(train_data)
   cat("\nTotal of", length(sample_names), "samples:\n", sample_names)
   
+  # Also make up the connection matrix based on the design chosen
+  # one of full or null
+  # This is number of omics including the response block, so H + 1
+  J <- length(train_data)
+  # Set up the connection matrix
+  if (design == "full") {
+    # Full means 1 everywhere not of diagonal, meaning every omics
+    # is related with other
+    message("\nUsing full design, diagonal 0, 1 everywhere else")
+    connection <- 1 - diag(J)
+  } else if (design == "null") {
+    # Everywhere 0 except diagonal, meaning only associate to itself
+    message("\nUsing null design, diagonal 1, 0 everywhere else")
+    connection <- diag(J)
+  } else {
+    message("\nProvide another design, one of 'full' or 'null'")
+    message("\nCoerced connection to NULL now")
+    connection <- NULL
+  }
+  
   # Train a modelel modele to run inner cv or not
   if (inner_cv) {
     cat("\nTraining with inner cv per single fold, this could take more time\n")
@@ -77,12 +99,14 @@ main <- function(mae_path, label, fold_path, inner_cv, prefix, method, tau=1) {
     message("\nNot running inner cv per fold\n")
     # use default settings
     # The response block is always set at the end of the list of data
-    model <- rgcca(train_data, tau=tau, method=method, response=length(train_data))
+    model <- rgcca(train_data, tau=tau, connection=connection, 
+                   method=method, response=length(train_data), ncomp=ncomp
+                   )
     message("\nFitted model\n")
   }
 
   # Filenames to write out
-  model_file <- paste(label, paste0(method, "_model.rds"), sep="-")
+  model_file <- paste(label, paste(method, design,"model.rds", sep="_"), sep="-")
   test_file <- paste(label, paste0(method, "_test_data.rds"), sep="-")
   cat("\nSaving files to", label, "\n")
   # Write out to disk
@@ -96,7 +120,9 @@ main(mae_path  = opt$mae_path,
      fold_path = opt$fold_path,
      inner_cv  = opt$inner_cv,
      prefix    = opt$prefix,
-     method    = opt$method
+     method    = opt$method,
+     design    = opt$design,
+     ncomp     = as.numeric(opt$ncomp)
      )
 
 message("Done")

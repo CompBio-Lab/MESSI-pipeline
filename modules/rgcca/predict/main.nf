@@ -38,7 +38,7 @@ process RGCCA_PREDICT {
   */
   output:
     tuple val(dataset_name), val(fold_name), val(method), path("*result*"),  emit: result_table
-		tuple val(dataset_name), val(fold_name), val(method), path('*log*'),     emit: log
+    tuple val(dataset_name), val(fold_name), val(method), path('*log*'),     emit: log
 	
   /*
   TODO:
@@ -48,13 +48,16 @@ process RGCCA_PREDICT {
   */
   script:
 		def data_label = "${dataset_name}-${fold_name}-${method}"
+		// TODO: temporal fix here
+		def design = method.tokenize('-')[-1]
 		"""
     predict_rgcca.R \
       --model=${model} \
       --test_path=${test_path} \
       --method=${method} \
-			--label=${data_label} > \
-			${data_label}-${getPublishPath(task.process).tokenize('/')[-1]}.log
+      --label=${data_label} \
+      --design=${design} > \
+      ${data_label}-${getPublishPath(task.process).tokenize('/')[-1]}.log
 		"""
   stub:
     """

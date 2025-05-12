@@ -11,6 +11,7 @@ workflow MOFA {
   runInnerCV = params.runInnerCV
   take:
     mae_copy // ch of tuple dataset, path of mae data, directories of fold, containing all txts
+    num_factors // Number of factors to tune in mofa model
   main:
     // Might have some preprocessing steps
     log.info "Starting MOFA workflow"    
@@ -25,7 +26,7 @@ workflow MOFA {
       // MOFA_DOWNSTREAM ( mae_copy )
     }
     
-    MOFA_PREPROCESS ( mae_copy )
+    MOFA_PREPROCESS ( mae_copy, num_factors )
 
     /*
     ==========================================================================

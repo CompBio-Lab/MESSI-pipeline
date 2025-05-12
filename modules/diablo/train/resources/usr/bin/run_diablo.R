@@ -12,6 +12,7 @@ Options:
   --mae_path=MAE_PATH     Path to read full mae data
   --label=LABEL           Label of id and fold of data [default: data]
   --fold_path=FOLD_PATH   Path to read current test fold
+  --ncomp=NCOMP           Number of component to run diablo [default: 2]
   --prefix=PREFIX         Prefix to read HDF5 [default: pre]
   --run_inner_cv          Run inner cv with train data or not [default: false]
   --design=DESIGN         Strength of relationship to model blocks. One of full or null [default: full]
@@ -52,7 +53,7 @@ load_utils(here(pipeline_dir, "bin/misc_utils"))
 opt <- docopt::docopt(doc)
 
 # Main function to run
-main <- function(mae_path, label, fold_path, design, run_inner_cv, prefix) {
+main <- function(mae_path, label, fold_path, design, ncomp, run_inner_cv, prefix) {
   # Log the params used
   args_used <- c(as.list(environment()))
   logging_params(args_used)
@@ -66,6 +67,17 @@ main <- function(mae_path, label, fold_path, design, run_inner_cv, prefix) {
   sample_names <- check_common_samples(train_data)
   cat("\nTotal of", length(sample_names), "samples:\n", sample_names)
   
+
+  # Get the design matrix here
+  if (design == "full") {
+    corr <- 1
+  } else if (design == "null") {
+    corr <- 0  
+  } else {
+    stop("Design can only be one of 'full' or 'null'")
+  }
+  design_mat <- getDesign(train_data$X, corr = corr)
+
   # Train a modelel modele to run inner cv or not
   if (run_inner_cv) {
     cat("\nTraining with inner cv per single fold, this could take more time\n")
@@ -77,20 +89,20 @@ main <- function(mae_path, label, fold_path, design, run_inner_cv, prefix) {
     #---------------------------------------------------------------------------
     # Design matrix, with diagonals 0, rest 0.1 (default)
     # Then this overrides the default full design of the script
-    design <- getDesign(X = X)
+    #design <- getDesign(X = X)
     # run component number tuning with repeated CV
-    tuned_output <- tune_diablo(base_model = base_model, design=design)
+    tuned_output <- tune_diablo(base_model = base_model, design=design_mat)
     # Train the final model
     model <- mixOmics::block.splsda(X = X, Y = Y, 
                                     ncomp = tuned_output$ncomp, 
                                     keepX = tuned_output$keepX, 
-                                    design = design)
+                                    design = design_mat)
     #---------------------------------------------------------------------------
   } else {
     cat("\nNot running inner cv per fold\n")
     # use default settings
     # Use a fully connected design on def , could also use null
-    model <- mixOmics::block.splsda(X = train_data$X, Y = train_data$Y, design=design)
+    model <- mixOmics::block.splsda(X = train_data$X, Y = train_data$Y, design=design_mat, ncomp=ncomp)
     cat("\nFitted model\n")
   }
 
@@ -109,6 +121,7 @@ main <- function(mae_path, label, fold_path, design, run_inner_cv, prefix) {
 main(mae_path  = opt$mae_path,
      label     = opt$label,
      fold_path = opt$fold_path,
+     ncomp     = as.numeric(opt$ncomp),
      prefix    = opt$prefix,
      design    = opt$design,
      run_inner_cv  = opt$run_inner_cv
