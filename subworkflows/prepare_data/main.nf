@@ -32,9 +32,6 @@ workflow PREPARE_DATA {
     samplesheet
     
     main:
-    // Do some logging first
-    printBanner()
-    log.info "Running prepare data"
     //log.info "Read in real data from: ${real_data_dir}"
     /*
       Notice this is the simulated data that should be appended together  with real data later

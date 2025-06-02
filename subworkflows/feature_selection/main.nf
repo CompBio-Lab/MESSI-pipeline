@@ -40,7 +40,6 @@ workflow FEATURE_SELECTION {
 	main:
 		//Special function to join maps (like hash map)
 		//Source: https://github.com/nextflow-io/nextflow/issues/559
-		printBanner()
     
 		
     // Then it should fit the full data for each model and get features selected out from there

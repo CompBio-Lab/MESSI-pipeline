@@ -48,8 +48,7 @@ workflow CROSS_VALIDATION {
 		splits_indices
 
 	main:
-		printBanner()
-        // Special function to join maps (like hash map)
+    // Special function to join maps (like hash map)
 		// Source: https://github.com/nextflow-io/nextflow/issues/559
 		// datasets
 		mae_data.join(mu_data, by:0)

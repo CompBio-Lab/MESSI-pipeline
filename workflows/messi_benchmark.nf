@@ -29,6 +29,8 @@ include {  FEATURE_SELECTION }  from "${subworkflowDir}/feature_selection"
 
 
 workflow MESSI_BENCHMARK {
+  // Upon starting the workflow, print parameters of the workflow
+  printParameters()
   //
   // SUBWORKFLOW: Run prepare_data to transform mae/h5mu accordingly
   //

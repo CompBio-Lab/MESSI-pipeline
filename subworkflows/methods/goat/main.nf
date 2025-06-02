@@ -11,7 +11,6 @@ workflow GOAT {
     // Might have some preprocessing steps
     //(prep_data, prep_name, ... ) = PREPROCESS_METHOD_NAME ( dataset, name )
 
-    log.info "Workflow of goat starts here"
   emit:
     csv_results = Channel.empty()
 }
