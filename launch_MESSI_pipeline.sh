@@ -67,12 +67,14 @@ PROFILE=sockeye,real_data
 # Could be done in a for-loop fashion for different OUTDIR
 timestamp=$(date +"%Y%m%d_%H%M%S")
 OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results
+# Samplesheet should maybe have it in profile only and not with CLI as it overrides it
+#SAMPLESHEET=data/samplesheet_simulated_data.csv
 #SAMPLESHEET=data/samplesheet_feat_selection.csv
 SAMPLESHEET=data/samplesheet_test_full.csv
 #SAMPLESHEET=data/samplesheet_test_small.csv
 #SAMPLESHEET=data/samplesheet_325-405.csv
-echo "Running pipeline with ${NXF_SRC_MAIN}"
-echo "Running data under '${SAMPLESHEET}'"
+#echo "Running pipeline with ${NXF_SRC_MAIN}"
+#echo "Running data under '${SAMPLESHEET}'"
 # =============================================================================
 # 4. Run the pipeline on the work dir
 # The ansi-log option is used for redirecting output
