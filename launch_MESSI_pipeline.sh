@@ -66,7 +66,9 @@ PROFILE=sockeye,real_data
 # Modify this option if you want to run several times
 # Could be done in a for-loop fashion for different OUTDIR
 timestamp=$(date +"%Y%m%d_%H%M%S")
-OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results
+PROFILE_SUFFIX=${PROFILE#sockeye,}
+PROFILE_SUFFIX="${PROFILE_SUFFIX//,/–}"
+OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results-${PROFILE_SUFFIX}
 # Samplesheet should maybe have it in profile only and not with CLI as it overrides it
 #SAMPLESHEET=data/samplesheet_simulated_data.csv
 #SAMPLESHEET=data/samplesheet_feat_selection.csv
