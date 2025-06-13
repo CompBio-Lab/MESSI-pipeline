@@ -21,7 +21,7 @@ Author: Tony Liang, Amrit Singh
 include { MESSI_BENCHMARK} from './workflows/messi_benchmark'
 
 //
-// WORKFLOW: Run main nf-core/vsearchpipeline analysis pipeline
+// WORKFLOW: Run main nf-core/messi-benchmark pipeline
 //
 
 workflow NFCORE_MESSI_BENCHMARK {

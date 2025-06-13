@@ -15,14 +15,12 @@ workflow DIABLO {
     ncomp    // Number of components to run for DIABLO
   main:
     // Might have some preprocessing steps
-    log.info "Starting DIABLO workflow"    
     /*
     ===========================================================================
           Calls this to preprocess and prepare input for diablo
     ===========================================================================
     */
     if ( params.runDownstreamAnalysis ) {
-      log.info "Running downstream analysis with DIABLO"
       DIABLO_DOWNSTREAM ( mae_copy )
     }
     

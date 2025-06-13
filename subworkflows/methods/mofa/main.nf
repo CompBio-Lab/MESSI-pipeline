@@ -14,17 +14,15 @@ workflow MOFA {
     num_factors // Number of factors to tune in mofa model
   main:
     // Might have some preprocessing steps
-    log.info "Starting MOFA workflow"    
     /*
     ===========================================================================
           Calls this to preprocess and prepare input for mofa
     ===========================================================================
     */
-    if ( params.runDownstreamAnalysis ) {
-      // log.info "Running downstream analysis with MOFA"
-      log.info "Not implemented the downstream analysis for MOFA"
-      // MOFA_DOWNSTREAM ( mae_copy )
-    }
+    // if ( params.runDownstreamAnalysis ) {
+    //   // log.info "Running downstream analysis with MOFA"
+    //   // MOFA_DOWNSTREAM ( mae_copy )
+    // }
     
     MOFA_PREPROCESS ( mae_copy, num_factors )
 

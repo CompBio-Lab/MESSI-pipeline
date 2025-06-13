@@ -27,7 +27,6 @@ workflow MOGONET {
 							// list of txt files.
   main:
     // Might have some preprocessing steps
-    log.info "Starting MOGONET workflow"
     /*
       1. Go through a specific preprocess step to get data ready for training
 

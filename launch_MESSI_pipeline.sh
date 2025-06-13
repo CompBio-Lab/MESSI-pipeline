@@ -58,21 +58,28 @@ export NXF_OFFLINE='true'
 # The NXF script to run, located on the repo root directory
 NXF_SRC_MAIN=$PIPELINE_DIR/main.nf
 # Profile order matters, since the later one overrides the prior ones
-#PROFILE=sockeye,simulated_data
-PROFILE=sockeye,real_data
+PROFILE=sockeye,simulated_data
+#PROFILE=sockeye,real_data
 # Or use this one for development usage
 #PROFILE=sockeye,test,debug
 #PARAMS_FILE=remote_params.yaml
 # Modify this option if you want to run several times
 # Could be done in a for-loop fashion for different OUTDIR
 timestamp=$(date +"%Y%m%d_%H%M%S")
-OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results
+PROFILE_SUFFIX=${PROFILE#sockeye,}
+PROFILE_SUFFIX="${PROFILE_SUFFIX//,/–}"
+OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results-${PROFILE_SUFFIX}
+# Samplesheet should maybe have it in profile only and not with CLI as it overrides it
+#SAMPLESHEET=data/samplesheet_simulated_data.csv
+#SAMPLESHEET=data/samplesheet_simulated_part1.csv
+#SAMPLESHEET=data/samplesheet_simulated_part2.csv
+SAMPLESHEET=data/samplesheet_simulated_part3.csv
 #SAMPLESHEET=data/samplesheet_feat_selection.csv
-SAMPLESHEET=data/samplesheet_test_full.csv
+#SAMPLESHEET=data/samplesheet_test_full.csv
 #SAMPLESHEET=data/samplesheet_test_small.csv
 #SAMPLESHEET=data/samplesheet_325-405.csv
-echo "Running pipeline with ${NXF_SRC_MAIN}"
-echo "Running data under '${SAMPLESHEET}'"
+#echo "Running pipeline with ${NXF_SRC_MAIN}"
+#echo "Running data under '${SAMPLESHEET}'"
 # =============================================================================
 # 4. Run the pipeline on the work dir
 # The ansi-log option is used for redirecting output

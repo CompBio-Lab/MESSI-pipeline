@@ -22,8 +22,6 @@ workflow CV_PYTHON {
               // where each split_indices/ contains
               // list of txt files.
   main:
-    printBanner()
-    log.info("This is the training python")
     /*
       Need to first allocate empty output for each of the methods
       TODO: need a smarter way to do it

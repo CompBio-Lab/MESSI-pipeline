@@ -23,7 +23,6 @@ workflow RGCCA {
             // TODO: third part is a bit confusing, better description
     ncomp  // Number of component to fit for each block
   main:
-    log.info "This is RGCCA"
     // This if here is just to quickly disable a run of method
     // Run a select feature process only, otherwise treat as cross validation
     // TODO: Could be optional such method dont have it
