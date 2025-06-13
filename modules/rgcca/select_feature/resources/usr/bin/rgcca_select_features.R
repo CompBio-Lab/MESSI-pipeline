@@ -141,7 +141,7 @@ main <- function(mae_path, dataset_name, ncomp=2, design="full", prediction_mode
       method = paste("rgcca", design, sep="-"), # Method here is always rgcca
       dataset_name = dataset_name,
       # Remove extra characters in comp
-      view = paste(view, paste0("ncomp-", str_remove(comp, "V")), sep="-")
+      view = paste(view, paste0("ncomp-", stringr::str_remove(comp, "V")), sep="-")
     ) %>%
     select(feature, view, coef, method, dataset_name)
   
