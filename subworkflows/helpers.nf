@@ -68,31 +68,20 @@ def printParameters() {
     ===========================================================================
     General parameters:
     ===========================================================================
-    // Directory to save output files
     outdir              : ${params.outdir}
     pipeline_dir        : ${params.pipeline_dir}
-    // Publish final results only and not keep intermediate files
     publish_relevant    : ${params.publish_relevant}
-    // Samplesheet containing dataset information
     samplesheet         : ${params.samplesheet}
-    // Directory containing data files
     data_dir            : ${params.data_dir}
-    // Print help message if true
     help                : ${params.help}
     verbose             : ${params.verbose}
-    // Directory to apptainer images (.sif format)
     apptainer_cache_dir : ${params.apptainer_cache_dir}
     ===========================================================================
     Resource parameters:
     ===========================================================================
-    // Maximum resources for the workflow
     max_memory                      : ${params.max_memory}
     max_cpus                        : ${params.max_cpus}
     max_time                        : ${params.max_time}
-    // Array sizes for different tasks
-    // These are used to control how many jobs can run concurrently
-    // and how many tasks are grouped together in a single job
-    // GPU jobs are typically smaller to avoid GPU queue bottlenecks
     cpu_generic_array_size          : ${params.cpu_generic_array_size}
     cpu_preprocess_array_size       : ${params.cpu_preprocess_array_size}
     cpu_training_array_size         : ${params.cpu_training_array_size}
@@ -111,22 +100,15 @@ def printParameters() {
     ===========================================================================
     Preprocessing parameters:
     ===========================================================================
-    // Number of splits to use in cross-validation
     k_fold_number  : ${params.k_fold_number}
-    // Directory to save split data
     split_dir      : ${params.split_dir}
-    // Whether to filter low variance features
     filter_low_var : ${params.filter_low_var}
     ===========================================================================
     Method related parameters:
     ===========================================================================
-    // Number of components to use in component-based methods
     num_comps                   : ${params.num_comps}
-    // Connection to the DIABLO design matrix
     diablo_design_connection    : ${params.diablo_design_connection}
-    // List of sklearn classifiers to use
     sklearn_claissifer_names    : ${params.sklearn_classifier_names}
-    // Threshold for prediction performance evaluation
     threshold                   : ${params.threshold}
     ===========================================================================
     END of MESSI_BENCHMARK Pipeline Parameters
