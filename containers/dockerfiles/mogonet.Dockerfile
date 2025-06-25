@@ -13,4 +13,4 @@ RUN pip install \
         pytest==7.4.2
 
 # Install mogonet in separate layer as this could be changing over time
-RUN pip install Mogonet==2.0.0
+RUN pip install Mogonet==2.0.1
