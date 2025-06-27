@@ -1,6 +1,7 @@
 # Environment for Mogonet
 # Need to bind path to get data and script of mogonet
-FROM tverous/pytorch-notebook:latest
+#FROM tverous/pytorch-notebook:latest
+FROM quay.io/jupyter/pytorch-notebook:cuda12-notebook-7.1.0
 
 # Install python base packages
 RUN pip install \
