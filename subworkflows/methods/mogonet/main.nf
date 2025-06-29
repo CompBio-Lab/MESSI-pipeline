@@ -25,6 +25,7 @@ workflow MOGONET {
     mu_copy 	//  channel of (key, key/path_to_mu, split_indices), 
 							// where each split_indices/ contains
 							// list of txt files.
+    he_base_dim // base dimension for the HE layer, default is 2 for real data, 1 for sim data
   main:
     // Might have some preprocessing steps
     /*
@@ -60,7 +61,7 @@ workflow MOGONET {
     */    
     
     // Training stepp
-    MOGONET_TRAIN ( train_input )
+    MOGONET_TRAIN ( train_input, he_base_dim )
     // Predicting step
     MOGONET_PREDICT (
       MOGONET_TRAIN.out.model,

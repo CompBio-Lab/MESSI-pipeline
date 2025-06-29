@@ -8,11 +8,12 @@ Usage:
   mogonet_select_features.py [options]
 
 Options:
-  -h --help               Show this message
-  --mu_path=MU_PATH       Path that contains full portion of MuData [default: empty]
-  --dataset_name=DNAME    Label of the dataset [default: empty]
-  --n_percent=N_PER       N percent of features selected [default: 10]
-  --reps=REPS             Repetitions to run "to mimic cv" [default: 5]
+  -h --help                 Show this message
+  --mu_path=MU_PATH         Path that contains full portion of MuData [default: empty]
+  --dataset_name=DNAME      Label of the dataset [default: empty]
+  --n_percent=N_PER         N percent of features selected [default: 10]
+  --reps=REPS               Repetitions to run "to mimic cv" [default: 5]
+  --he_base_dim=HE_BASE_DIM Base dimension of hidden embedding [default: 2]
 """
 
 from docopt import docopt
@@ -25,13 +26,13 @@ from prepare_mogonet_single_split import prepare_mogonet_feat_select
 from feature_importance import  cal_feat_imp, summarize_imp_feat
 
 
-def get_view_list(data_folder):
-    # First list all *_featname.csv in current data folder
-    pattern = "_featname.csv"
-    csvs = [csv for csv in os.listdir(data_folder) if pattern in csv]
-    # Remove the pattern, so left should be block name
-    view_list = [csv.replace(pattern, "") for csv in csvs]
-    return view_list
+# def get_view_list(data_folder):
+#     # First list all *_featname.csv in current data folder
+#     pattern = "_featname.csv"
+#     csvs = [csv for csv in os.listdir(data_folder) if pattern in csv]
+#     # Remove the pattern, so left should be block name
+#     view_list = [csv.replace(pattern, "") for csv in csvs]
+#     return view_list
 
 # Function to set a seed
 def seed_everything(seed: int):
@@ -50,7 +51,7 @@ def seed_everything(seed: int):
 # TODO: The feat importance is always 0?
 # and make sure to have topn to be big number
 # like 10% of datasize
-def main(mu_path, dataset_name, n_percent, random_state=123, block_num=0, test_size=0.25, reps=5, num_class=2):
+def main(mu_path, dataset_name, n_percent, random_state=123, block_num=0, test_size=0.25, reps=5, num_class=2, he_base_dim=2, adj_parameter=5, num_epoch=200):
     """
     Parameters
     ----------
@@ -62,7 +63,8 @@ def main(mu_path, dataset_name, n_percent, random_state=123, block_num=0, test_s
     block_num:      n-th block of all blocks to use to stratify from?
     test_size:      size of the test data
     reps:           repetition to run the select feature
-      
+    he_base_dim:    base dimension of hidden layers in MOGONET, 2 for real data, 1 for simulated data
+    adj_parameter:  adjacency parameter for MOGONET 
     """
 
 
@@ -70,8 +72,7 @@ def main(mu_path, dataset_name, n_percent, random_state=123, block_num=0, test_s
     # PARAMS
     # ---------------
     method = "mogonet"
-    he_base_dim = 100
-    adj_parameter = 5 # This has to be small, otherwise fails at somewhere when calculating adj matrix for tensors
+    # Adjancy parameter has to be small, otherwise fails at somewhere when calculating adj matrix for tensors
     # --------------------
     # IMPLEMENTATION
     # --------------------
@@ -82,29 +83,14 @@ def main(mu_path, dataset_name, n_percent, random_state=123, block_num=0, test_s
     # Get top n from mdata
     # TODO: ...
     # It still needs to be splitted as specified format of mogonet
-
-    # Allocate empty list to store result of different rep
-    featimp_list_list = []
-    for rep in range(reps):
-        # Use a different random state to mimic "new splitting" for different repetitions
-        new_random_state = random_state + rep
-        seed_everything(new_random_state)
-
-
-        data_folder = prepare_mogonet_feat_select(mdata, dataset_name, random_state=new_random_state, 
-                                        block_num=block_num, test_size=test_size)
-        print(f"Seed number: '{new_random_state}' for '{data_folder}'")
-        # =====================================================================================
-        # This is the list of feature importance in single rep
-        # he_base_dim is the dim of each he per omic, more like hidden layers?
-        # adj_parameter needs to be tuned?
-        featimp_list = cal_feat_imp(data_folder=data_folder, view_list=view_list, 
-                                    num_class=num_class, he_base_dim = he_base_dim, adj_parameter = adj_parameter)
-        # Add to the earlier allocated list
-        featimp_list_list.append(copy.deepcopy(featimp_list))
-    # Then run a summary on this list of lists
-    feats_df = summarize_imp_feat(featimp_list_list=featimp_list_list, view_list=view_list,
-                                  dataset_name=dataset_name, n_percent=n_percent)
+    seed_everything(random_state)
+    # Prepare the data to run MOGONET
+    data_folder = prepare_mogonet_feat_select(mdata, dataset_name, random_state=random_state, 
+                                    block_num=block_num, test_size=test_size)
+    # Then run the feature importance calculation
+    final_model_dict = cal_feat_imp(data_folder, view_list, num_class, he_base_dim=he_base_dim, adj_parameter=adj_parameter, num_epoch=num_epoch)
+    # Then summarize the feature importance
+    feats_df = summarize_imp_feat(model_dict=final_model_dict, mdata=mdata, view_list=view_list, dataset_name=dataset_name, method=method, he_base_dim=he_base_dim)
     filename = f"{method}-{dataset_name}_features_selected.csv"
     # And write it to file
     feats_df.to_csv(filename, index=False)
@@ -119,5 +105,32 @@ if __name__ == '__main__':
   main(mu_path=args['--mu_path'], 
   dataset_name=args['--dataset_name'],
   n_percent=int(args['--n_percent']),
-  reps=int(args['--reps'])
+  reps=int(args['--reps']),
+  he_base_dim=int(args['--he_base_dim'])
   )
+
+
+# =================================
+# LEGACY CODE
+# =================================
+    
+# for rep in range(reps):
+#     # Use a different random state to mimic "new splitting" for different repetitions
+#     new_random_state = random_state + rep
+#     seed_everything(new_random_state)
+
+
+#     data_folder = prepare_mogonet_feat_select(mdata, dataset_name, random_state=new_random_state, 
+#                                     block_num=block_num, test_size=test_size)
+#     print(f"Seed number: '{new_random_state}' for '{data_folder}'")
+#     # =====================================================================================
+#     # This is the list of feature importance in single rep
+#     # he_base_dim is the dim of each he per omic, more like hidden layers?
+#     # adj_parameter needs to be tuned?
+#     featimp_list = cal_feat_imp(data_folder=data_folder, view_list=view_list, 
+#                                 num_class=num_class, he_base_dim = he_base_dim, adj_parameter = adj_parameter)
+#     # Add to the earlier allocated list
+#     featimp_list_list.append(copy.deepcopy(featimp_list))
+# # Then run a summary on this list of lists
+# feats_df = summarize_imp_feat(featimp_list_list=featimp_list_list, view_list=view_list,
+#                               dataset_name=dataset_name, n_percent=n_percent)
