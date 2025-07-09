@@ -137,7 +137,7 @@ def summarize_imp_feat(model_dict, mdata, view_list, dataset_name, method="mogon
         weights = model_dict[f"E{i}"]["gc1.weight"].cpu().numpy().ravel()
         feats = mdata[view].var.index.tolist()
         for feat, weight in zip(feats, weights):
-            records.append({"feature": feat, "coef": weight, "view": weight})
+            records.append({"feature": feat, "coef": weight, "view": view})
     feats_df = pd.DataFrame(records)
     # Then add other metadata
     feats_df["method"] = method
