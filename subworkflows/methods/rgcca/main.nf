@@ -66,7 +66,8 @@ workflow RGCCA {
       RGCCA is more special, given this contained various submethods to choose,
       so we need a second channel of list of methods
     */
-    ch_methods = Channel.fromList(["rgcca", "sgcca"])
+    //ch_methods = Channel.fromList(["rgcca", "sgcca"])
+    ch_methods = Channel.fromList(["rgcca"]) // Skip sgcca for now
     // These are possible design matrices for the method
     ch_design = Channel.fromList(["full", "null"])
     RGCCA_TRAIN ( train_input, ncomp, ch_methods, ch_design )
