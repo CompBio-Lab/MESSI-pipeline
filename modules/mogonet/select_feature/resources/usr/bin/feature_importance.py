@@ -147,7 +147,7 @@ def summarize_imp_feat(model_dict, mdata, view_list, dataset_name, method="mogon
     try:
       feats_df = feats_df[right_order]
     except KeyError as e:
-      print(f"Mogonet select feature for '{dataset_name}', '{model_lower}' column not found: {e}")
+      print(f"Mogonet select feature for '{dataset_name}', column not found: {e}")
     return feats_df
 # TODO: remove this old function
 # def cal_feat_imp(data_folder, view_list, num_class, he_base_dim = 100, adj_parameter = 10, lr_e_pretrain=1e-3,
