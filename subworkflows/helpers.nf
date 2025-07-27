@@ -110,6 +110,7 @@ def printParameters() {
     diablo_design_connection    : ${params.diablo_design_connection}
     sklearn_claissifer_names    : ${params.sklearn_classifier_names}
     threshold                   : ${params.threshold}
+    mogonet_he_base_dim         : ${params.he_base_dim}
     ===========================================================================
     END of MESSI_BENCHMARK Pipeline Parameters
     ===========================================================================
