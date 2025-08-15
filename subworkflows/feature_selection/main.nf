@@ -26,8 +26,9 @@ workflow FEATURE_SELECTION {
   skip_sklearn  = params.skip_sklearn // boolean: true/false
 
   // Other method param
-  num_comps     = params.num_comps
-
+  num_comps           = params.num_comps
+  // Mogonet param
+  he_base_dim = params.he_base_dim
   // DIABLO param
   diablo_design_connection = params.diablo_design_connection
   // Sklearn param
@@ -40,7 +41,6 @@ workflow FEATURE_SELECTION {
 	main:
 		//Special function to join maps (like hash map)
 		//Source: https://github.com/nextflow-io/nextflow/issues/559
-		printBanner()
     
 		
     // Then it should fit the full data for each model and get features selected out from there
@@ -83,7 +83,7 @@ workflow FEATURE_SELECTION {
     /* The ones in Python */
     mogonet_features = Channel.empty()
     if (!skip_mogonet) {
-      MOGONET_SELECT_FEATURE (mu_data)
+      MOGONET_SELECT_FEATURE ( mu_data, he_base_dim)
       mogonet_features = MOGONET_SELECT_FEATURE.out.features
     }
 

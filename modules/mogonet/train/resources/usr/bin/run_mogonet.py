@@ -12,6 +12,7 @@ Options:
   --fold_path=FOLD_PATH       Directory containing one split directory of relevant input [default: None] 
   --label=LABEL               Label of dataset and fold iteration [default: empty]
   --seed=SEED                 Seed number to reproduce it [default: 0]
+  --he_base_dim=HE_BASE_DIM   Base dimension of hidden embedding [default: 2]
 """
 
 from docopt import docopt
@@ -77,6 +78,7 @@ def main(
     num_epoch_pretrain=50,
     num_epoch=200,
     test_interval=50,
+    he_base_dim=2,
     adj_parameter=5
     ):
   # Do something with mogonet here
@@ -107,6 +109,7 @@ def main(
         lr_c                = lr_c, 
         num_epoch_pretrain  = num_epoch_pretrain, 
         num_epoch           = num_epoch, 
+        he_base_dim         = he_base_dim,
         adj_parameter       = adj_parameter
   )
   # Parse label and choose output file to write
@@ -137,7 +140,8 @@ if __name__ == '__main__':
   # Execute the main function
   main(
     data_folder = args["--fold_path"],
-    label       = args["--label"]
+    label       = args["--label"],
+    he_base_dim = int(args["--he_base_dim"])
   )
 
 # Runner for Mogonet

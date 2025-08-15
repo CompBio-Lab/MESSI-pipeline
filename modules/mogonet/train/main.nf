@@ -13,7 +13,7 @@ process MOGONET_TRAIN {
 	// Vars stuff
 	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	// Process configurations
-	tag "${dataset_name}-${fold_path.name}"
+	tag "${dataset_name}-${fold_path.name}-he${he_base_dim}"
 	label 'python'
 	label 'process_medium'
 	label 'gpu'
@@ -31,6 +31,7 @@ process MOGONET_TRAIN {
 	// Input and output blocks
 	input:
 		tuple val(dataset_name), path(fold_path) // complete dir is directory containing X and y separated
+		val(he_base_dim) // base dimension for the HE layer
 	output:
 		tuple val(dataset_name), val(fold_path.name), path('*.pt'), 	emit: model
 		tuple val(dataset_name), val(fold_path.name), path('*.pkl'), 	emit: test_data
@@ -44,7 +45,8 @@ process MOGONET_TRAIN {
 		"""
 		run_mogonet.py \
 			--fold_path=${fold_path} \
-			--label=${data_label} > \
+			--label=${data_label} \
+			--he_base_dim=${he_base_dim} > \
 			${data_label}-${getPublishPath(task.process).tokenize('/')[-1].toLowerCase()}.log
 		"""
 	stub:

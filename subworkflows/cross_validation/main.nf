@@ -25,6 +25,27 @@ include { printBanner } 				from "${modulesDir}/functions"
 // 	return(csv_results)
 // }
 
+// Function to determine if Python methods should run
+def shouldRunPython() {
+    return !params.skip_mogonet
+}
+
+// Function to determine if R methods should run
+def shouldRunR() {
+    return !(
+        params.skip_cplr && 
+        params.skip_diablo && 
+        params.skip_mofa &&
+        params.skip_rgcca
+    )
+}
+
+// Function to determine if all methods should run
+def shouldRunAllMethods() {
+    return shouldRunPython() && shouldRunR()
+}
+
+
 // Workflow variables to use
 def saveMode 	= "language"
 def lang 		= "all_langs"
@@ -37,9 +58,9 @@ workflow CROSS_VALIDATION {
 	Moreover, this is ongoing for all methods, so it would crazily hard to fix
 	due to its parallelization
 	*/
-    runAllMethods   = params.runAllMethods
-    runPython       = params.runPython
-    runR            = params.runR 
+    // runAllMethods   = params.runAllMethods
+    // runPython       = params.runPython
+    // runR            = params.runR 
     // inputs of workflow
 	take:
 		// datasets
@@ -48,8 +69,13 @@ workflow CROSS_VALIDATION {
 		splits_indices
 
 	main:
-		printBanner()
-        // Special function to join maps (like hash map)
+		// runAllMethods   = params.runAllMethods
+    // Determine if should run python or R or both
+		runPython       = shouldRunPython()
+    runR            = shouldRunR()
+		runBothLangs    = runPython && runR
+
+    // Special function to join maps (like hash map)
 		// Source: https://github.com/nextflow-io/nextflow/issues/559
 		// datasets
 		mae_data.join(mu_data, by:0)
@@ -83,7 +109,7 @@ workflow CROSS_VALIDATION {
 		// Note, this cannot be viewed, you need ch_data.mae.view() or ch_data.mu.view()
 		// Execute these two (they should be in parallel)
 		// Execute language workflows or specific only
-		if ( !runAllMethods ) {
+		if ( !runBothLangs ) {
 			log.info "Running one of the language only from R and Python"
 			if ( runR ) {
 				log.info "Running methods in R only"

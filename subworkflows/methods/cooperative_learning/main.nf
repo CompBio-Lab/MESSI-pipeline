@@ -17,8 +17,6 @@ workflow COOPERATIVE_LEARNING {
   take:
     mae_copy // ch of tuple dataset, path of mae data, directories of fold, containing all txts
   main:
-    log.info "Starting Cooperative Learning workflow"
-
     // Run a select feature process only, otherwise treat as cross validation
     // if (params.selectFeature == true) {
     //   // TODO: This bit sounds very redundant

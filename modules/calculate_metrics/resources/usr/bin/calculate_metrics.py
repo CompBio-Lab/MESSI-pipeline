@@ -83,7 +83,8 @@ def calculate_metrics(group, threshold, average='binary', round_digit=3):
 def main(result_path, threshold):
   df = pd.read_csv(result_path)
   # Apply the custom metric calculation fun for each method, dataset comb, fold
-  grouping_cols = ['method_name', 'dataset', 'fold']
+  grouping_cols = ['method_name', 'dataset'] # Should not be using fold specific due to big variation
+  #grouping_cols = ['method_name', 'dataset', 'fold']
   metrics_df = df.groupby(grouping_cols).apply(
     # The custom fun
     calculate_metrics,

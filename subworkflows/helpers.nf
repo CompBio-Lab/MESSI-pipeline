@@ -51,11 +51,69 @@ def helpMessage() {
 //=============================================================================
 // WORKFLOW RUN PARAMETERS
 def printParameters() {
-    log.info """
-        MESSI PIPELINE
-        ==============
-        train_data : ${params.train_data}
-        outdir     : ${params.outdir}
+    println """
+    MESSI_BENCHMARK Pipeline Parameters
+    ===========================================================================
+    This pipeline is designed to benchmark classification methods on multi-omics data.
+    ===========================================================================
+    Workflow metadata:
+    =========================================================================== 
+    Pipeline Name   : ${workflow.manifest.name}
+    Author          : ${workflow.manifest.author}
+    Version         : ${workflow.manifest.version}
+    Description     : ${workflow.manifest.description}
+    Run Name        : ${workflow.runName}
+    Container       : ${workflow.containerEngine}
+    Profile         : ${workflow.profile}
+    ===========================================================================
+    General parameters:
+    ===========================================================================
+    outdir              : ${params.outdir}
+    pipeline_dir        : ${params.pipeline_dir}
+    publish_relevant    : ${params.publish_relevant}
+    samplesheet         : ${params.samplesheet}
+    data_dir            : ${params.data_dir}
+    help                : ${params.help}
+    verbose             : ${params.verbose}
+    apptainer_cache_dir : ${params.apptainer_cache_dir}
+    ===========================================================================
+    Resource parameters:
+    ===========================================================================
+    max_memory                      : ${params.max_memory}
+    max_cpus                        : ${params.max_cpus}
+    max_time                        : ${params.max_time}
+    cpu_generic_array_size          : ${params.cpu_generic_array_size}
+    cpu_preprocess_array_size       : ${params.cpu_preprocess_array_size}
+    cpu_training_array_size         : ${params.cpu_training_array_size}
+    cpu_prediction_array_size       : ${params.cpu_prediction_array_size}
+    gpu_array_size                  : ${params.gpu_array_size}
+    feature_selection_array_size    : ${params.feature_selection_array_size}
+    ===========================================================================
+    Skip methods parameters:
+    ===========================================================================
+    skip_cplr      : ${params.skip_cplr}
+    skip_diablo    : ${params.skip_diablo}
+    skip_rgcca     : ${params.skip_rgcca}
+    skip_mogonet   : ${params.skip_mogonet}
+    skip_mofa      : ${params.skip_mofa}
+    skip_sklearn   : ${params.skip_sklearn}
+    ===========================================================================
+    Preprocessing parameters:
+    ===========================================================================
+    k_fold_number  : ${params.k_fold_number}
+    split_dir      : ${params.split_dir}
+    filter_low_var : ${params.filter_low_var}
+    ===========================================================================
+    Method related parameters:
+    ===========================================================================
+    num_comps                   : ${params.num_comps}
+    diablo_design_connection    : ${params.diablo_design_connection}
+    sklearn_claissifer_names    : ${params.sklearn_classifier_names}
+    threshold                   : ${params.threshold}
+    mogonet_he_base_dim         : ${params.he_base_dim}
+    ===========================================================================
+    END of MESSI_BENCHMARK Pipeline Parameters
+    ===========================================================================
     """.stripIndent()
 }
 //=============================================================================

@@ -25,7 +25,7 @@ process DIABLO_SELECT_FEATURE {
     each(design)
   output:
     path("*.csv"),    emit: features
-    path("*plot*"),   emit: plot
+    path("*plot*"),   emit: plot, optional: true
     path("*.log"),    emit: log
 
   script:

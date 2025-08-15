@@ -74,6 +74,8 @@ reconstruct_mae <- function(mae) {
 # =================================================================================
 # MAIN entrance point
 main <- function(mae_path, split_dir, dataset_name, num_factors) {
+  # Seed for reproducibility
+  set.seed(sum(utf8ToInt(dataset_name))) 
   # Should be a list of splits
   cat("Splitting data for", dataset_name, "\n")
   cat("\nThe data is located in:", mae_path, "\n")
@@ -82,6 +84,7 @@ main <- function(mae_path, split_dir, dataset_name, num_factors) {
   # Note the prefix "" is required here?
   raw_mae <- MultiAssayExperiment::loadHDF5MultiAssayExperiment(dir=mae_path, prefix="")
   raw_col_data <- raw_mae@colData |> as.data.frame()
+  
   # Then starting to use mofa here
   mofa_obj <- create_mofa(raw_mae)
   # TODO: ADD A manual scaling to the train data, possibly in a fun, so that it could be applied on the test data as well

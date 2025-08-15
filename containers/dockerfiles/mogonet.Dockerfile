@@ -1,6 +1,7 @@
 # Environment for Mogonet
 # Need to bind path to get data and script of mogonet
-FROM tverous/pytorch-notebook:latest
+#FROM tverous/pytorch-notebook:latest
+FROM quay.io/jupyter/pytorch-notebook:cuda12-notebook-7.1.0
 
 # Install python base packages
 RUN pip install \
@@ -13,4 +14,4 @@ RUN pip install \
         pytest==7.4.2
 
 # Install mogonet in separate layer as this could be changing over time
-RUN pip install Mogonet==2.0.0
+RUN pip install Mogonet==2.0.1

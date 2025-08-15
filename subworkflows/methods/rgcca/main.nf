@@ -23,7 +23,6 @@ workflow RGCCA {
             // TODO: third part is a bit confusing, better description
     ncomp  // Number of component to fit for each block
   main:
-    log.info "This is RGCCA"
     // This if here is just to quickly disable a run of method
     // Run a select feature process only, otherwise treat as cross validation
     // TODO: Could be optional such method dont have it
@@ -67,7 +66,8 @@ workflow RGCCA {
       RGCCA is more special, given this contained various submethods to choose,
       so we need a second channel of list of methods
     */
-    ch_methods = Channel.fromList(["rgcca", "sgcca"])
+    //ch_methods = Channel.fromList(["rgcca", "sgcca"])
+    ch_methods = Channel.fromList(["rgcca"]) // Skip sgcca for now
     // These are possible design matrices for the method
     ch_design = Channel.fromList(["full", "null"])
     RGCCA_TRAIN ( train_input, ncomp, ch_methods, ch_design )

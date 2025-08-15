@@ -17,13 +17,14 @@ workflow CV_PYTHON {
   skip_sklearn  = params.skip_sklearn // boolean: true/false
   skip_mogonet	= params.skip_mogonet	// boolean: true/false
   skip_goat 		= params.skip_goat		// boolean: true/false
+  // Method specific parameters
+  he_base_dim = params.he_base_dim
+  // Inputs of workflow
   take:
     mu_copy 	//  channel of (key, key/path_to_mu, split_indices), 
               // where each split_indices/ contains
               // list of txt files.
   main:
-    printBanner()
-    log.info("This is the training python")
     /*
       Need to first allocate empty output for each of the methods
       TODO: need a smarter way to do it
@@ -40,7 +41,7 @@ workflow CV_PYTHON {
     // MOGONET
     mogonet_results = Channel.empty()
     if (!skip_mogonet) {
-      MOGONET ( mu_copy )
+      MOGONET ( mu_copy, he_base_dim )
       mogonet_results = MOGONET.out.csv_results
     }
 

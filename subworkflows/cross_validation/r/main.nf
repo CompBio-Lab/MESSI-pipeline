@@ -29,7 +29,6 @@ workflow CV_R {
               // 	where each split_indices/ contains
               // 	list of txt files.
   main:
-    printBanner()
     // ========================================================================
     /*
     Notice every method here is considered as a workflow of preprocessing and 

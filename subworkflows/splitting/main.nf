@@ -13,9 +13,8 @@ workflow SPLITTING {
 		mu_data // tuple of identifier, path of mu data
 	main:
 		// TODO: Add some checks inside here and add more verbose
-		printBanner()
-		log.info("Start to split now with K: ${num_splits}")
-		log.info "Indices are saved into a subfolder called: ${output_dir}"
+		// log.info("Start to split now with K: ${num_splits}")
+		// log.info "Indices are saved into a subfolder called: ${output_dir}"
 		// TODO: Add a option to determine when to use seed if pipeline needs to be ran
 		//			 several times
 		SPLIT_TRAIN_TEST ( mu_data , num_splits, output_dir	)
