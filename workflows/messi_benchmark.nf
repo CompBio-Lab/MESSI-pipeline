@@ -29,12 +29,20 @@ include {  FEATURE_SELECTION }  from "${subworkflowDir}/feature_selection"
 
 
 workflow MESSI_BENCHMARK {
+
+  // nextflow run main.nf -profile --fold-flag "gskfold" --num_splits 5 
+  // nextflow run main.nf -profile --fold-flag "logo"
+  // IF not specified,
+  // StratifiedGroupKFold 
+  // If id column 
+  // Logo
   // Upon starting the workflow, print parameters of the workflow
   printParameters()
   //
   // SUBWORKFLOW: Run prepare_data to transform mae/h5mu accordingly
   //
   PREPARE_DATA ( params.samplesheet ) // Channel of [ dateset_name, mae_path, mu_path ]
+  // 
   // TODO: fix this here?
   //
   // SUBWORKFLOW: Run feature selection if provided as option
@@ -52,7 +60,7 @@ workflow MESSI_BENCHMARK {
       // SUBWORKFLOW: Perform splitting with stratification to the response
       // variable on each dataset
       //
-      SPLITTING (	PREPARE_DATA.out.mu_data )
+      SPLITTING (	PREPARE_DATA.out.mu_data, params.split_type )
       //
       // SUBWORKFLOW: Perform cross validation for each dataset using these indices
       //
