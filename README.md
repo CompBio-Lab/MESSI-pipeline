@@ -106,10 +106,6 @@ MESSI-pipeline/
 
 ## Installation & Setup
 
-> [!NOTE]
-> This pipeline have only tested under UBC ARC Sockeye's high performance cluster (SLURM), hence all instructions here might not apply to others.
-
-
 
 ### Local Machine Setup
 
@@ -198,6 +194,8 @@ USER=REPLACE # This should be your cwl
 MAIL_USER=REPLACE # This should be the email to receive notification of the pipeline
 ```
 
+> [!Warning]
+> Make sure you do NOT track this .env file onto git
 
 #### Clone the repository in login node
 
@@ -245,7 +243,73 @@ ls /arc/project/${ALLOCATION_CODE}/${USER}/MESSI-apptainer-images
 # save_simulate.sif
 ```
 
+## Create your samplesheet
+
+The pipeline expects a samplesheet in CSV format specifying dataset names and paths. A sample is provided at `data/samplesheet_test_small.csv`. The paths should be absolute paths to the `tar.gz` files containing your datasets.
+
+
+**Local samplesheet example**:
+
+Create a samplesheet for local testing named `data/local_samplesheet.csv`:
+```csv
+dataset_name,tar_path
+rosmap,/local_absolute_path/MESSI_pipeline/data/rosmap.tar.gz
+```
+
+**HPC samplesheet example**:
+
+Use any of provided samples at `data/samplesheet_test_small.csv` or `data/samplesheet_test_full.csv`. The first one is for quick run of 1 dataset, while the latter contains multiple datasets for full benchmarking.
+
+
 ## Running the Pipeline
+
+### Local Execution
+
+For testing and small runs on local machine with Docker. This is useful for development and debugging.
+
+Currently works on linux **amd64** systems with Docker installed. Future support for **arm64** planned.
+
+#### Basic Run
+
+Run the pipeline with the following command using data from [`data/local_samplesheet.csv`](#create-your-samplesheet):
+
+```bash
+nextflow run main.nf \
+      -c nextflow.config \
+      -profile standard,docker,test  \
+      --samplesheet data/local_samplesheet.csv \
+      --outdir results \
+      --pipeline_dir ./
+```
+
+This runs the pipeline with the `standard`, `docker`, and `test` profiles for local execution using Docker containers and a small test dataset. Outputs are saved to the `results/` directory. 
+
+#### Advanced Options
+
+```bash
+# Specify number of CPUs and memory
+nextflow run main.nf \
+  -profile local \
+  -profile standard,docker,test  \
+  --samplesheet data/local_samplesheet.csv \
+  --outdir results \
+  --pipeline_dir ./
+  --max_cpus 8 \
+  --max_memory 32.GB
+
+# Enable resume (skip completed tasks)
+nextflow run main.nf \
+  -profile local \
+  -profile standard,docker,test  \
+  --samplesheet data/local_samplesheet.csv \
+  --outdir results \
+  --pipeline_dir ./
+  -resume
+```
+
+The cli args have higher priority than config file settings. For example, `--max_cpus` here would override the cpu settings in the config files. For detailed explanation of order of precedence, refer to the [Nextflow documentation](https://www.nextflow.io/docs/latest/config.html). For more details on available parameters, refer to the [Configuration](#configuration) section.
+
+
 
 #### Request an interactive session
 
@@ -285,7 +349,6 @@ Then edit the contents of the new `.env` file instead:
 nano .env
 ```
 
-## Running
 
 
 #### 3. Clone the repository
