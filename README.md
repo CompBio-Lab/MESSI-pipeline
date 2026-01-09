@@ -879,37 +879,114 @@ nextflow run main.nf -profile standard,my_custom_run1
 
 ## Result inspection
 
-For viewing the log of current runtime status of the pipeline, you could check the latest `MESSI-main-<job-id>.log` file in the root dir of the repo:
+### Monitoring Pipeline Progress
+
+#### Real-time Monitoring
 
 ```bash
-# <job id> is the one generated from SLURM
-# Usually numeric, for example 1234567 is a job id here:
-cat MESSI-main-1234567.log
+# Tail main log (local execution)
+cat .nextflow.log | less
+
+# For HPC batch jobs
+cat MESSI-main-<job-id>.log | less
 ```
 
-In order to see the results of the pipeline, you could inspect the final results in this directory as it progresses using this command:
+## Troubleshooting
 
+### Common Issues
+
+#### 1. "No space left on device" (HPC)
+
+**Problem**: Apptainer cache fills home directory
+
+**Solution**:
 ```bash
-# Assuming you are in the root dir of the repo
-ls MESSI_results
+# Clear cache
+rm -rf ~/.apptainer/cache
 ```
 
-The directory structure of the `MESSI_results/` should be like the following once the pipeline have completed:
+#### 2. "Command not found: nextflow"
 
+**Problem**: Nextflow not in PATH
+
+**Solution**:
 ```bash
-MESSI_results
+# Find nextflow
+which nextflow
+
+# Add to PATH
+export PATH=$PATH:/path/to/nextflow
 ```
 
+#### 3. Pipeline Fails on Specific Task
 
+**Problem**: Individual method execution fails
 
-
-There's option to change this default directory by changing the `OUTDIR` param in the `launch_MESSI_pipeline.sh` script:
-
+**Solution**:
 ```bash
-# It is possible to use a for loop in the bash script to pass multiple OUTDIR and run as a monte carlo cross validation
-OUTDIR=another_directory_that_you_like
+# Check work directory for failed task
+cd work///
+cat .command.log
+cat .command.err
+# Check .nextflow.log for overall errors
+cat .nextflow.log | less
+
+# Re-run with that specific task resumed
+nextflow run main.nf -profile sockeye --samplesheet data/samplesheet.csv -resume
 ```
 
+#### 4. Container Pull Fails
+
+**Problem**: Network issues or authentication
+
+**Solution**:
+```bash
+# For Apptainer/Singularity
+apptainer pull docker://tonyliang19/mixdiablo:latest
+
+# For Docker
+docker pull tonyliang19/mixdiablo:latest
+
+# Check container registry status
+curl -I https://hub.docker.com/
+```
+
+#### 5. Out of Memory Errors
+
+**Problem**: Task exceeds allocated memory
+
+**Solution**:
+```bash
+# Increase memory in config
+# Edit configs/sockeye.config
+process {
+    withName: 'PROBLEM_PROCESS' {
+        memory = '128.GB'
+    }
+}
+
+# Or pass via command line
+nextflow run main.nf --max_memory 256.GB
+```
+
+#### 6. Samplesheet Format Errors
+
+**Problem**: CSV parsing fails
+
+**Solution**:
+```bash
+# Verify no quotes
+cat data/samplesheet.csv | grep '"'
+
+# Verify absolute paths
+cat data/samplesheet.csv | grep -v '^/'
+
+# Check line endings (should be Unix LF, not Windows CRLF)
+file data/samplesheet.csv
+
+# Convert if needed
+dos2unix data/samplesheet.csv
+```
 
 ## License
 
