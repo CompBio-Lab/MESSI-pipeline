@@ -1,14 +1,31 @@
-# Multiomics Experiments with SyStematic Interrogation (MESSI)
+# MESSI: Multimodal Experiments with SyStematic Interrogation
 
-**Table of contents**:
+
+A Nextflow pipeline for benchmarking multimodal (genomics, proteomics, metabolomics, imaging, clinical) data integration methods with systematic evaluation for classification tasks.
+
+
+---
+
+## Table of contents
 
 1. [Overview](#overview)
-2. [Project Structure](#project-structure)
-3. [Setup the project](#setup)
-4. [Running the pipeline](#running-the-pipeline)
-5. [Preparing Data](#preparing-the-data)
-5. [Result Inspection](#result-inspection)
-5. [References](#reference)
+2. [Prerequisites](#prerequisites)
+3. [Project Structure](#project-structure)
+4. [Installation & Setup](#installation--setup)
+   - [Local Machine Setup](#local-machine-setup)
+   - [HPC Setup (UBC ARC Sockeye)](#hpc-setup-ubc-arc-sockeye)
+5. [Running the Pipeline](#running-the-pipeline)
+   - [Local Execution](#local-execution)
+   - [HPC Interactive Node](#hpc-interactive-node)
+   - [HPC Batch Submission](#hpc-batch-submission)
+   - [HPC Array Jobs](#hpc-array-jobs-monte-carlo-cv)
+6. [Data Preparation](#data-preparation)
+7. [Configuration](#configuration)
+8. [Result Inspection](#result-inspection)
+9. [Troubleshooting](#troubleshooting)
+10. [References](#references)
+
+---
 
 ## Overview
 
