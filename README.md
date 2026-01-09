@@ -4,7 +4,7 @@
 A Nextflow pipeline for benchmarking multimodal (genomics, proteomics, metabolomics, imaging, clinical) data integration methods with systematic evaluation for classification tasks.
 
 
-![](assets/MESSI_workflow_overview.png)
+![](assets/MESSI_workflow_overview_diagram.png)
 
 ---
 
