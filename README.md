@@ -798,6 +798,85 @@ SAMPLESHEET=data/my_data.csv
 bash launcher_sockeye.sh
 ```
 
+## Configuration
+
+### Pipeline CLI Parameters
+
+```bash
+# Via command line
+nextflow run main.nf --param_name value
+```
+
+Common parameters:
+
+| Parameter | Default | Description |
+|:-:|:-:|:-:|
+| `--samplesheet` | `data/samplesheet_test_small.csv` | Path to samplesheet |
+| `--outdir` | `results` | Output directory |
+| `--max_cpus` | 16 | Maximum CPUs per task |
+| `--max_memory` | 64.GB | Maximum memory per task |
+| `--selectFeature` | true | Runs feature selection (takes longer time to finish) |
+| `k_fold_number` | 5 | Number of folds for cross-validation |
+| `split_type` | "skf" | Data splitting strategy: "skf" (stratified k-fold) or "logo" (Leave One Group Out) by sample name |
+
+For full list of available parameters, refer to [`nextflow.config`](./nextflow.config)
+
+### Profile Configuration
+
+Profiles are defined in `nextflow.config` and `configs/*.config`:
+
+```bash
+# Use single profile
+nextflow run main.nf -profile standard
+
+# Chain multiple profiles (no spaces!)
+nextflow run main.nf -profile standard,test,gpu,your_custom_profile
+```
+
+You could create your own custom profile by adding a new config file in `conf/` and specifying it in the `-profile` argument. This allows your to set for specific parameters to records experiment runs.
+
+Create `configs/my_custom_run1.config`:
+```groovy
+profiles {
+    my_custom {
+        params {
+            max_cpus = 32
+            max_memory = 128.GB
+            n_folds = 10
+        }
+        
+        process {
+            executor = 'slurm'
+            queue = 'gpu'
+            
+            withLabel: 'gpu' {
+                clusterOptions = '--gpus=1'
+            }
+        }
+    }
+}
+```
+
+Include it as a profile in `nextflow.config`:
+```groovy
+profiles {
+    standard {
+        includeConfig 'configs/standard.config'
+    }
+    // Add in your custom profile
+    my_custom_run1 {
+        includeConfig 'configs/my_custom.config'
+    }
+}
+```
+
+When running the pipeline, specify your custom profile:
+
+```bash
+nextflow run main.nf -profile standard,my_custom_run1
+```
+
+
 ## Result inspection
 
 For viewing the log of current runtime status of the pipeline, you could check the latest `MESSI-main-<job-id>.log` file in the root dir of the repo:
@@ -820,6 +899,8 @@ The directory structure of the `MESSI_results/` should be like the following onc
 ```bash
 MESSI_results
 ```
+
+
 
 
 There's option to change this default directory by changing the `OUTDIR` param in the `launch_MESSI_pipeline.sh` script:
