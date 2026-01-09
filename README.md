@@ -66,16 +66,40 @@ The **MESSI Pipeline** provides a standardized benchmarking framework for multim
 
 ## Project Structure
 
-Some important locations:
+```bash
+MESSI-pipeline/
+├── LICENSE
+├── Makefile # Automated setup commands
+├── README.md
+├── bin/ # Setup and Utility scripts
+├── conf/
+│   ├── base.config # Basic resource settings designed to be overridden
+│   ├── local.config # Local machine profile
+│   ├── sockeye.config # HPC profile for UBC ARC Sockeye
+│   └── test.config # Minimal test profile (quick run)
+├── containers/ # Container definitions and build scripts
+│   ├── README.md
+│   ├── dockerfiles # Source Dockerfiles for each method
+│   └── scripts # Build scripts for containers
+├── data/ # Samplesheets (input of pipeline) and test data (tar.gz)
+│   ├── README.md
+│   ├── rosmap.tar.gz # Example dataset
+│   └── samplesheet_test_small.csv # Example samplesheet of 1 data only
+├── docs/ # Documentation and tutorials
+├── launch_MESSI_pipeline.sh # Wrapper script to launch the pipeline
+├── launcher_sockeye.sh  # HPC batch submission script
+├── main.nf # Main Nextflow pipeline script
+├── modules/ # Method and utility source codes
+├── nextflow.config # Nextflow configuration file (loads other conf files through profiles)
+├── sample.env # Sample environment variable template to modify for HPC usage
+├── subworkflows/ # Subworkflows for high-level pipeline structure
+├── templates/ # Templates for method implementations
+│   ├── cli_scripts
+│   └── nxf_scripts
+└── workflows # High-level workflow definitions
+    └── messi_benchmark.nf # Main benchmarking workflow
 
-- Shell scripts for setting up the project is located at `bin/`
-- Main configuration for the pipeline is at `nextflow.config`. Other parameters, resources settings are found under `configs/`.
-- Python and R source codes of methods are located in `modules/`
-- Software environment definitions (containers) are under `containers/`
-- `docs/` contain several demos and explanations of the pipeline usage and keynotes.
-- High level abstraction of the flow of pipeline is found under `subworkflows/`. These often trigger codes under `modules/`
-- Nextflow, R, and Python templates for method implementation could be found under `templates/`
-
+```
 
 ## Setup
 
