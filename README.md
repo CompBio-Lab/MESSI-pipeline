@@ -7,24 +7,21 @@ A Nextflow pipeline for benchmarking multimodal (genomics, proteomics, metabolom
 ---
 
 ## Table of contents
-
 1. [Overview](#overview)
 2. [Prerequisites](#prerequisites)
 3. [Project Structure](#project-structure)
-4. [Installation & Setup](#installation--setup)
+4. [Installation & Setup](#installation-and-setup)
    - [Local Machine Setup](#local-machine-setup)
    - [HPC Setup (UBC ARC Sockeye)](#hpc-setup-ubc-arc-sockeye)
-5. [Running the Pipeline](#running-the-pipeline)
+5. [Data Preparation](#data-preparation)
+6. [Running the Pipeline](#running-the-pipeline)
    - [Local Execution](#local-execution)
    - [HPC Interactive Node](#hpc-interactive-node)
    - [HPC Batch Submission](#hpc-batch-submission)
-   - [HPC Array Jobs](#hpc-array-jobs-monte-carlo-cv)
-6. [Data Preparation](#data-preparation)
 7. [Configuration](#configuration)
 8. [Result Inspection](#result-inspection)
 9. [Troubleshooting](#troubleshooting)
 10. [References](#references)
-
 ---
 
 ## Overview
@@ -104,7 +101,7 @@ MESSI-pipeline/
 
 ```
 
-## Installation & Setup
+## Installation and Setup
 
 
 ### Local Machine Setup
