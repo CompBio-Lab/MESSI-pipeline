@@ -29,7 +29,40 @@ A Nextflow pipeline for benchmarking multimodal (genomics, proteomics, metabolom
 
 ## Overview
 
-The **MESSI Pipeline** is a nextflow pipeline designed for benchmarking multiomics (genomics, proteomics, metabolomics) data integration methods. These methods are often implemented in R/Python, with the task of classification/regression, factor analysis, clustering and others.
+The **MESSI Pipeline** provides a standardized benchmarking framework for multimodal data integration methods implemented in R and Python. It supports:
+
+- **Multiple computational backends**: Local machines, HPC interactive sessions, HPC batch jobs, and job arrays
+
+- **Containerized environments**: Docker (local) and Apptainer/Singularity (HPC)
+
+- **Reproducible workflows**: Nextflow-based execution with comprehensive logging
+
+- **Flexible data formats**: MultiAssayExperiment (R) and MuData (Python)
+
+## Prerequisites
+
+### Minimum System Requirements
+
+| Software | Version | Purpose |
+|:-:|:-:|:-:|
+| Nextflow | $\geq$ 22.10.7 | Workflow orchestration |
+| Java (OpenJDK) | 11-18 | Nextflow runtime |
+| Bash | $\geq$ 4.2.46 | Shell scripting |
+| Git | $\geq$ 2.31.8 | Version control |
+| Make | $\geq$ 3.82 | Build automation (**Optional**) |
+
+### Container Runtime (choose one)
+
+- **Local**: Docker $\geq$ 0.10.23, build 715524
+- **HPC**: Apptainer $\geq$ 1.1.4
+
+### System Resources (Recommended)
+
+- **Local**: 16GB RAM, 4+ CPU cores, 16GB storage
+
+- **HPC**: Varies by dataset (configured in profiles at `conf/*.config`)
+
+
 
 ## Project Structure
 
