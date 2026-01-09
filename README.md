@@ -506,83 +506,101 @@ sbatch run_messi.sh
 
 Given ARC Sockeye have no internet connection on compute nodes, which means user cannot pull data during the pipeline computation. Hence, the data have to be previouly stored in a common directory.
 
-## Running the pipeline
 
-You could start the pipeline by submitting the wrapper script that sends the batch script to SLURM using default parameters:
 
-```bash
-# If you see any complains from this script, then is likely you did not setup properly
-# NOTE: this only works on the UBC ARC Sockeye platform for now
-bash launcher_sockeye.sh
-```
+## Data Preparation
 
-Actual parameters of the pipeline are set under the `launch_MESSI_pipeline.sh` script, speficifically these variables:
+### Creating a Samplesheet
 
-```bash
-# This tells nextflow to use pre-defined configuration found at conf/
-# Could chain more profiles like prof1,prof2,... NOTE: no space between ,
-PROFILE=sockeye
-# This sets the output directory to store final outputs of the pipeline
-# If not like this way of adding timestamp, you could simply set it to a simpler path
-timestamp=$(date +"%Y%m%d_%H%M%S")
-OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results
-# This is MAIN input file of the pipeline, where it defines the path to find data, and its metadata idetifiers like dataset name
-SAMPLESHEET=data/samplesheet_test_full.csv
-```
+The samplesheet is a CSV file that tells MESSI which datasets to process and where to find them. This is the **main input** to the pipeline.
 
-The most important variable here is `SAMPLESHEET`, where this is the main input file of pipeline. It's simply a csv where it specifies name of dataset and path to locate it like:
+#### Samplesheet Format
 
+A samplesheet is a simple CSV with two required columns:
+
+| Column | Description | Example |
+|--------|-------------|---------|
+| `dataset_name` | Unique identifier for dataset | `my_dataset` |
+| `tar_path` | Absolute path to `.tar.gz` file | `/path/to/my_dataset.tar.gz` |
+
+#### Important Samplesheet Rules
+
+| Rule | Wrong | Correct |
+|------|---------|-----------|
+| **No quotes** | `"dataset","path"` | `dataset,path` |
+| **Absolute paths** | `datasets/data.tar.gz` | `/full/path/datasets/data.tar.gz` |
+| **Exact column names** | `name,file_path` | `dataset_name,tar_path` |
+| **No spaces in names** | `my dataset` | `my_dataset` |
+| **Unix line endings** | Windows CRLF | Unix LF |
+| **No trailing commas** | `dataset,path,` | `dataset,path` |
+
+#### Common Samplesheet Errors
+
+**Error 1: Quoted fields**
 ```csv
+# Wrong
+"dataset_name","tar_path"
+"my_data","/path/to/data.tar.gz"
+
+# Correct
 dataset_name,tar_path
-rosmap,/arc/project/st-singha53-1/datasets/messi_demo_data/rosmap.tar.gz
-tcga-blca,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-blca.tar.gz
+my_data,/path/to/data.tar.gz
 ```
 
-> [!NOTE]
-> The csv content here MUST be UNQUOTED. `tar_path` MUST be absolute path leading to `tar.gz` of dataset
->
-
-For a detailted instruction on how to setup and add your own samplesheet to explore method performance under different datasets, please see this [section](#preparing-the-data).
-
-
-Other meaningful variable is `PROFILE`, this is more of a nextflow feature, where you could read over the [nextflow official doc](https://www.nextflow.io/docs/latest/config.html#config-profiles) and set your own set of profile to override these default one. Suggested to use this `sockeye` profile, and add another one just to set some of the hyperpameters of the pipeline.
-
-
-### Preparing the data
-
-To use different data to evaluate methods, you must store the raw data in `tar.gz` format, where it is just a compressed archive of multiple files. The content of the `tar.gz` would be a directory to store the `MultiAssayExperiment` and file to store the `MuData` formats of multiomics data. Then list these as a `csv`, where each row is a different dataset, columns being metadata identifier (still in progress) and path to the tar gz. 
-
-Here is a sample csv input file:
-
+**Error 2: Relative paths**
 ```csv
+# Wrong
 dataset_name,tar_path
-rosmap,/arc/project/st-singha53-1/datasets/messi_demo_data/rosmap.tar.gz
-tcga-blca,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-blca.tar.gz
+my_data,../datasets/my_data.tar.gz
+
+# Correct
+dataset_name,tar_path
+my_data,/arc/project/st-yourpi-1/datasets/my_data.tar.gz
 ```
 
+**Error 3: Windows line endings**
+```bash
+# Check line endings
+file samplesheet.csv
+# Output: "ASCII text, with CRLF line terminators" 
+# Fix with dos2unix
+dos2unix samplesheet.csv
 
-You could verify the content and file structure of these tar to match the described above using these commands:
+# Or with sed
+sed -i 's/\r$//' samplesheet.csv
+```
+
+#### Using Your Samplesheet
+
+Once created, specify it when running the pipeline:
 
 ```bash
-# Looking at the rosmap data only
-cd /arc/project/st-singha53-1/datasets/messi_demo_data/
-tar -xzf rosmap.tar.gz
+nextflow run main.nf \
+  ... \
+  --samplesheet /full/path/to/your_samplesheet.csv
 ```
 
-The uncompressed archive is a directory named `rosmap` with the following contents:
 
-```bash
-rosmap
-├── mae_data
-│   ├── experiments.h5
-│   └── mae.rds
-└── rosmap.h5mu
+### Data Input Format Requirements
+
+MESSI requires data in two formats packaged as compressed archives (`.tar.gz`):
+
+1. **MultiAssayExperiment (MAE)** - for R-based methods
+2. **MuData** - for Python-based methods
+
+### Directory Structure in Archive
+
 ```
+dataset_name.tar.gz
+└── dataset_name/
+    ├── mae_data/
+    │   ├── experiments.h5
+    │   └── mae.rds
+    └── dataset_name.h5mu
+```
+### Creating MESSI-Compatible Data
 
-These MAE and MuData could be saved using these helpers files and instructions:
-
-
-Saving it into MAE
+A dummy example of how to create these data formats from raw matrices and metadata in R and Python is provided below using helper functions.
 
 ```R
 # mae related
