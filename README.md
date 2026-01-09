@@ -192,6 +192,8 @@ When editing the `.env` file, replace the following variables accordingly:
 ALLOCATION_CODE=REPLACE # This should be the account to deduct computing resources usage
 USER=REPLACE # This should be your cwl
 MAIL_USER=REPLACE # This should be the email to receive notification of the pipeline
+# This needs to be set for future use in the pipeline
+APPTAINER_IMAGE_CACHE_DIR=/arc/project/${ALLOCATION_CODE}/${USER}/MESSI-apptainer-images
 ```
 
 > [!Warning]
@@ -208,10 +210,11 @@ git clone git@github.com:CompBio-Lab/MESSI-pipeline.git
 
 ```bash
 # ALLOCATION_CODE and USER should be non null/empty from the .env file you have set above if done correctly
-export MESSI_APPTAINER_IMAGE_DIR=/arc/project/${ALLOCATION_CODE}/${USER}/MESSI-apptainer-images
-mkdir -p $MESSI_APPTAINER_IMAGE_DIR
+# Export once more time here for this terminal session
+export APPTAINER_IMAGE_CACHE_DIR=/arc/project/${ALLOCATION_CODE}/${USER}/MESSI-apptainer-images
+mkdir -p $APPTAINER_IMAGE_CACHE_DIR
 # Run this command under the this same pipeline root dir ~/scratch/<ALLOCATION_CODE>/<USER>/MESSI-pipeline
-# Trigger the setup to pull apptainer images into above ${MESSI_APPTAINER_IMAGE_DIR}
+# Trigger the setup to pull apptainer images into above ${APPTAINER_IMAGE_CACHE_DIR}
 make setup
 ```
 
@@ -282,7 +285,16 @@ nextflow run main.nf \
       --pipeline_dir ./
 ```
 
-This runs the pipeline with the `standard`, `docker`, and `test` profiles for local execution using Docker containers and a small test dataset. Outputs are saved to the `results/` directory. 
+This runs the pipeline with the `standard`, `docker`, and `test` profiles for local execution using Docker containers and a small test dataset. Outputs are saved to the `results/` directory.  
+
+You could supply other parameters as needed via `--<param_name> <value>`, or edit that `<param_nanme>` in the `nextflow.config` file directly. 
+
+**NOTES**: 
+
+- No space in the profile part has to be this: `profile1,profile2`, not this: `profile1, profile2`
+- Ensure Docker Desktop is running before executing the pipeline.
+- Pipeline options are supplied with two dash `--` , while Nextflow options use single dash `-`
+
 
 #### Advanced Options
 
@@ -311,153 +323,93 @@ The cli args have higher priority than config file settings. For example, `--max
 
 
 
-#### Request an interactive session
+
+
+
+### HPC Interactive Node
+
+For development, testing, and medium-sized datasets on HPC. Serves as a middle ground between local and batch execution. Not suitable for large-scale benchmarking due to resource constraints (mainly time limits). Better for quick iteration of pipeline before launching full batch jobs.
+
+#### Request Interactive Session
+
+Running the following command in the login node would request an interactive session:
 
 ```bash
-salloc --time=3:00:00 --mem=6G nodes=1 --ntasks=4 --account=<ALLOCATION_CODE>
+# Request cpu interactive node (3 hours, 4 CPUs, 6GB RAM, no GPU)
+# Again ALLOCATION_CODE should be non null/empty from the .env file you have set above if done correctly
+salloc \
+  --time=3:00:00 \
+  --ntasks=4 \
+  --mem=6G \
+  --account=${ALLOCATION_CODE}
 ```
 
-This requests a 3-hour interactive session with 6GB memory and 4 CPU cores. Adjust these parameters based on your needs and allocation. 
+Once inside the interactive node after SLURM allocates resources, your hostname should change to something like `se123` , where `123` is the node number assigned to you.
 
-> [!NOTE]
-> Replace `<ALLOCATION_CODE>` with your actual allocation code for requesting resources via SLURM. 
+#### Load modules in interactive node
 
-
+Clean the module environment to avoid conflicts and load compute canada modules (This command should be run first after entering the interactive node):
 
 ```bash
-# This would unload the current modules that you are using (could be easily reverted)
 module purge
-# Then load relevant modules
-module load gcc/9.4.0 git/2.31.8
-# Choose a place you like to clone the repo, ideally the scratch space
-git clone git@github.com:CompBio-Lab/MESSI-pipeline.git
-# Then go into the directory of the repo
+modue load CVMFS_CC
 ```
 
-Then, create a `.env` file in the current directory and use the following template:
-
-This is exactly what's inside `sample.env`, simply replace the file to `.env` using this command:
+Then, load relevant modules to start nextflow:
 
 ```bash
-mv sample.env .env
+module load apptainer/1.3.4
+module load java/17.0.6
+module load nextflow/24.04.4
 ```
 
-Then edit the contents of the new `.env` file instead:
+Verify nextflow loads correctly:
 
 ```bash
-# You could also use vi or vim
-nano .env
+which nextflow
+nextflow info
 ```
 
+#### Run the pipeline in HPC interactive node
 
-
-#### 3. Clone the repository
+Loads previous configured environment variables from `.env` file:
 
 ```bash
-git clone https://github.com/CompBio-Lab/MESSI-pipeline.git
-cd MESSI-pipeline
+# Source the .env file to load env variables
+source .env
 ```
 
-#### 4. Create your samplesheet
-
-The pipeline expects a samplesheet in CSV format specifying dataset names and paths. A sample is provided at `data/samplesheet_test_small.csv`. The paths should be absolute paths to the `tar.gz` files containing your datasets.
-
-Here, we create another samplesheet for demonstration named `data/local_samplesheet.csv`:
-
-
-```csv
-dataset_name,tar_path
-rosmap,/home/tonyliang19/MESSI-pipeline/data/rosmap.tar.gz
-```
+Need to specify an extra variable at runtime to tell nextflow to skip auto-update check as Sockeye has no internet access on compute nodes:
 
 ```bash
-# ----------------------------------------------
-# INSIDE THE .env file
-# ----------------------------------------------
-# The renamed file should not be tracked by git
-# Important variables to replace the value
-ALLOCATION_CODE=REPLACE # This should be the account to deduct computing resources usage
-USER=REPLACE # This should be your cwl 
-MAIL_USER=REPLACE # This should be the email to receive notification of the pipeline
+export NXF_OFFLINE='true'
 ```
 
-For example the `.env` could be like the following:
+Run the pipeline with the following command using data from `data/samplesheet_test_small.csv`:
 
 ```bash
-# NOTICE there's no space between the `=` in VAR=VALUE 
-ALLOCATION_CODE=st-myuser-123
-USER=my_cwl_username
-MAIL_USER=dummy_name@gmail.com
-```
-
-> [!Warning]
-> Make sure you do not track this .env file onto git
-
-Then, you could start to setup the required apptainer images (This could take a while to run, better to hang it in a `tmux`/`screen` session) for the pipeline by the following command:
-
-```bash
-# Run this command under the this same pipeline root dir
-make setup
-```
-> [!TIP]
-> If you see an error of `no space left`, this is due to the apptainer cache that it creates in your home dir, which you could clean it by the following command:
->
-> `rm -r ~/.apptainer/cache`
-
-Then, you could resume the setup command after have encountered and solved the `no space error`:
-
-```bash
-make setup
-```
-
-Once you see the log:
-```bash
-Finished setting up environment
-```
-This means all required images have successfully downlaoded and stored under `/arc/project/<ALLOCATION_CODE>/<USER>/MESSI-apptainer-images`, this could be verified if this directory contains the following:
-
-```bash
-# ./ is /arc/project/<ALLOCATION_CODE>/<USER>/MESSI-apptainer-images
-./
-├── codia.sif
-├── cooperative_learning.sif
-├── intersim.sif
-├── mae_mudata.sif
-├── mixdiablo.sif
-├── mofa.sif
-├── mogonet.sif
-├── mowgli.sif
-├── muon-py.sif
-├── rgcca.sif
-└── save_simulate.sif
-```
-
-### Running
-
-#### Local
-
-#### 5. Run the pipeline
-
-The pipeline can be executed using the following command:
-
-```bash
+# Run with HPC-local profile
+# Uses local executor (no batch submission) but with HPC resource settings
+# The profile built-in with apptainer
 nextflow run main.nf \
-      -c nextflow.config \
-      -profile standard,docker,test  \
-      --samplesheet data/local_samplesheet.csv \
-      --outdir results \
-      --pipeline_dir ./
+  -c nextflow.config \
+  -profile arc_local,test  \
+  --samplesheet data/samplesheet_test_small.csv \
+  --outdir results_hpc_interactive \
+  --pipeline_dir ./
 ```
 
-Here, we use the `standard`, `docker`, and `test` profiles for run on local machine with docker containers and smallest test dataset + minimal resources.
+The above command runs the pipeline with the `arc_local` and `test` profiles for interactive execution on Sockeye using Apptainer containers and a small test dataset. Outputs are saved to the `results_hpc_interactive/` directory. This setting should look similar to local execution but with HPC resource configurations.
 
-You could supply other parameters as needed via `--<param_name> <value>`, or edit that `<param_nanme>` in the `nextflow.config` file directly. **NOTE**: cli args have higher priority than config file settings. 
+#### Exit interactive node
 
-**NOTES**: 
+```bash
+# When finished
+exit
+```
 
-- No space in the profile part has to be this: `profile1,profile2`, not this: `profile1, profile2`
-- Ensure Docker Desktop is running before executing the pipeline.
-- Pipeline options are supplied with two dash `--` , while Nextflow options use single dash `-`
+This should prompt your from `se123` back to the login node hostname like `login1`.
+
 
 
 ### Data Source
