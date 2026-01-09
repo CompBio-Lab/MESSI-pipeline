@@ -411,6 +411,96 @@ exit
 This should prompt your from `se123` back to the login node hostname like `login1`.
 
 
+### HPC Batch Submission
+
+For large-scale benchmarking on HPC. Suitable for long-running jobs and multiple datasets. Utilizes SLURM for job scheduling and resource management.
+
+> [!NOTE]
+> This requires prior setup of environment variables and Apptainer images as described in the [HPC Setup](#hpc-setup-ubc-arc-sockeye) section. Should properly tested using interactive node before submitting batch jobs to avoid wasting compute resources.
+
+The key idea here is to create a SLURM batch script that requests resources and runs the Nextflow pipeline with appropriate parameters. The submitted batch job will execute the pipeline (serving as a head monitoring job) and spawns multiple single or array jobs as needed without further user intervention. Making sure the head job is submitted for long enough time, if it expires, then remaining ongoing jobs will be terminated by HPC system.
+
+Here are two ways to run it as batch mode:
+
+#### Method 1: Using Launcher Script (Recommended)
+
+```bash
+# Edit launch script parameters
+# This script has nextflow call inside it with proper SLURM resource allocation
+# Should be generic enough for other SLURM systems too with minor modifications
+nano launch_MESSI_pipeline.sh
+```
+
+Key variables to configure inside `launch_MESSI_pipeline.sh`:
+```bash
+# Nextflow profile(s) - can chain multiple: sockeye,test
+PROFILE=sockeye,real_data
+
+# Output directory with timestamp
+timestamp=$(date +"%Y%m%d_%H%M%S")
+OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results
+
+# Input samplesheet
+SAMPLESHEET=data/samplesheet_test_full.csv
+```
+
+**Submit the job**:
+```bash
+# Submit to SLURM
+# This is a wrapper for settings specific to Sockeye
+# launch_MESSI_pipeline.sh internally
+bash launcher_sockeye.sh
+
+# Check job status
+squeue -u $USER
+
+# View job output log
+cat MESSI-main-<job-id>.log | less
+```
+
+#### Method 2: Direct SLURM Submission
+
+```bash
+# Create custom SLURM script
+# NOTE: when using this way, you need to manually set allocation code, as it would not read from .env file
+cat > run_messi.sh <<'EOF'
+#!/bin/bash
+#SBATCH --job-name=MESSI
+#SBATCH --account=st-yourpi-1
+#SBATCH --time=24:00:00
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=16G
+#SBATCH --output=MESSI-%j.out
+#SBATCH --error=MESSI-%j.err
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=your.email@ubc.ca
+
+module purge
+module load CVMFS_CC
+module load apptainer/1.3.4
+module load java/17.0.6
+module load nextflow/24.04.4
+
+cd /scratch/${ALLOCATION_CODE}/${USER}/MESSI-pipeline
+
+PIPELINE_DIR=$(eval pwd)
+# AS per nextflow expert, work/ CANNOT be under /tmp
+export NXF_WORK="${PIPELINE_DIR}/work"
+export NXF_HOME="${PIPELINE_DIR}"
+export NXF_OFFLINE='true'
+
+nextflow run main.nf \
+  -profile sockeye \
+  --samplesheet data/samplesheet_test_full.csv \
+  --outdir results_${SLURM_JOB_ID} \
+  -ansi-log false \
+  -resume
+EOF
+
+# Submit as a batch job
+sbatch run_messi.sh
+```
 
 ### Data Source
 
