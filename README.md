@@ -51,6 +51,7 @@ The **MESSI Pipeline** provides a standardized benchmarking framework for multim
 | Git | $\geq$ 2.31.8 | Version control |
 | Make | $\geq$ 3.82 | Build automation (**Optional**) |
 
+
 ### Container Runtime (choose one)
 
 - **Local**: Docker $\geq$ 0.10.23, build 715524
@@ -61,6 +62,8 @@ The **MESSI Pipeline** provides a standardized benchmarking framework for multim
 - **Local**: 16GB RAM, 4+ CPU cores, 16GB storage
 
 - **HPC**: Varies by dataset (configured in profiles at `conf/*.config`)
+
+
 
 
 
@@ -101,24 +104,161 @@ MESSI-pipeline/
 
 ```
 
-## Setup
+## Installation & Setup
 
 > [!NOTE]
 > This pipeline have only tested under UBC ARC Sockeye's high performance cluster (SLURM), hence all instructions here might not apply to others.
 
-The main software dependencies are the following:
 
-**Requirements**:
 
-- [Nextflow 22.10.7 or above](https://www.nextflow.io/)
-- Bash `4.2.46`
-- Java 11 (or later, up to 18), recommend using openJDK `11.0.18` 
-- Docker/Apptainer `1.1.4` (formerly Singularity `3.8.5`)
-- make `>= 3.82`
-- git `>= 2.31.8`
+### Local Machine Setup
 
-Once you have these requirements setup, then you could clone the project with `git` in your desired place and
-change the directory to the clone repo:
+#### Install dependencies
+
+Install Nextflow in unix-like system (Linux/macOS):
+
+```bash
+curl -s https://get.nextflow.io | bash
+# If not have sudo, you could move it to a directory in your PATH variable of shell
+sudo mv nextflow /usr/local/bin/
+```
+
+Install Docker from [here](https://docs.docker.com/get-docker/).
+
+---
+
+Install [other dependencies](#minimum-system-requirements) using your system's package manager.
+
+
+Example installation commands for macOS:
+
+**macOS (Homebrew)**:
+```bash
+brew install openjdk@11 make git
+# Ensure Docker Desktop is installed and running
+```
+
+Example installation commands for Ubuntu/Debian:
+
+**Linux (Ubuntu/Debian)**:
+```bash
+# Install Java
+sudo apt update
+sudo apt install openjdk-11-jdk make git
+```
+
+#### Verify installations
+
+```bash
+# Test Nextflow
+nextflow info
+# Test docker 
+docker --version
+```
+
+> [!NOTE]
+> If `nextflow info` returns error, then likely Java is not properly installed or configured as it relies heavily on Java runtime.
+>
+> Also, docker images will be pulled during the pipeline execution, ensure Docker Desktop is running before executing the pipeline.
+
+
+### HPC Setup (UBC ARC Sockeye)
+
+#### Login and Load modules
+
+```bash
+# SSH into Sockeye
+# replace cwl with your actual username
+ssh cwl@sockeye.arc.ubc.ca
+
+# Navigate to scratch space (IMPORTANT: not home directory)
+cd /scratch/<ALLOCATION_CODE>/<USER>/
+
+# Clean module environment
+module purge
+
+# Load required modules
+module load gcc/9.4.0 git/2.31.8 apptainer/1.1.4
+```
+
+
+#### Configure environment variables
+
+```bash
+# Copy the sample env file to .env to modify
+cp sample.env .env
+nano .env
+```
+
+When editing the `.env` file, replace the following variables accordingly:
+
+```bash
+ALLOCATION_CODE=REPLACE # This should be the account to deduct computing resources usage
+USER=REPLACE # This should be your cwl
+MAIL_USER=REPLACE # This should be the email to receive notification of the pipeline
+```
+
+
+#### Clone the repository in login node
+
+```bash
+# Important: this has to be done in the login node, otherwise you won't have internet access during computation nodes
+git clone git@github.com:CompBio-Lab/MESSI-pipeline.git
+```
+
+#### Pull Apptainer images
+
+```bash
+# ALLOCATION_CODE and USER should be non null/empty from the .env file you have set above if done correctly
+export MESSI_APPTAINER_IMAGE_DIR=/arc/project/${ALLOCATION_CODE}/${USER}/MESSI-apptainer-images
+mkdir -p $MESSI_APPTAINER_IMAGE_DIR
+# Run this command under the this same pipeline root dir ~/scratch/<ALLOCATION_CODE>/<USER>/MESSI-pipeline
+# Trigger the setup to pull apptainer images into above ${MESSI_APPTAINER_IMAGE_DIR}
+make setup
+```
+
+> [!NOTE]
+> This should be run on login node only as it requires internet, otherwise would fail at compute node. This step could take a while depending on your internet speed, better to run it in a `tmux` or `screen` session to avoid disconnection. 
+
+
+**Troubleshooting "no space left" errors**:
+```bash
+# Clear Apptainer cache in your user home directory
+cd ~
+rm -rf .apptainer/cache # DANGER: recursive delete, be careful with wrong path
+```
+
+#### Verify Apptainer images
+
+```bash
+# Check images directory
+ls /arc/project/${ALLOCATION_CODE}/${USER}/MESSI-apptainer-images
+
+# Expected contents:
+# codia.sif
+# cooperative_learning.sif
+# mae_mudata.sif
+# mixdiablo.sif
+# mofa.sif
+# mogonet.sif
+# rgcca.sif
+# save_simulate.sif
+```
+
+## Running the Pipeline
+
+#### Request an interactive session
+
+```bash
+salloc --time=3:00:00 --mem=6G nodes=1 --ntasks=4 --account=<ALLOCATION_CODE>
+```
+
+This requests a 3-hour interactive session with 6GB memory and 4 CPU cores. Adjust these parameters based on your needs and allocation. 
+
+> [!NOTE]
+> Replace `<ALLOCATION_CODE>` with your actual allocation code for requesting resources via SLURM. 
+
+
 
 ```bash
 # This would unload the current modules that you are using (could be easily reverted)
@@ -143,6 +283,28 @@ Then edit the contents of the new `.env` file instead:
 ```bash
 # You could also use vi or vim
 nano .env
+```
+
+## Running
+
+
+#### 3. Clone the repository
+
+```bash
+git clone https://github.com/CompBio-Lab/MESSI-pipeline.git
+cd MESSI-pipeline
+```
+
+#### 4. Create your samplesheet
+
+The pipeline expects a samplesheet in CSV format specifying dataset names and paths. A sample is provided at `data/samplesheet_test_small.csv`. The paths should be absolute paths to the `tar.gz` files containing your datasets.
+
+Here, we create another samplesheet for demonstration named `data/local_samplesheet.csv`:
+
+
+```csv
+dataset_name,tar_path
+rosmap,/home/tonyliang19/MESSI-pipeline/data/rosmap.tar.gz
 ```
 
 ```bash
@@ -206,6 +368,34 @@ This means all required images have successfully downlaoded and stored under `/a
 ├── rgcca.sif
 └── save_simulate.sif
 ```
+
+### Running
+
+#### Local
+
+#### 5. Run the pipeline
+
+The pipeline can be executed using the following command:
+
+```bash
+nextflow run main.nf \
+      -c nextflow.config \
+      -profile standard,docker,test  \
+      --samplesheet data/local_samplesheet.csv \
+      --outdir results \
+      --pipeline_dir ./
+```
+
+Here, we use the `standard`, `docker`, and `test` profiles for run on local machine with docker containers and smallest test dataset + minimal resources.
+
+You could supply other parameters as needed via `--<param_name> <value>`, or edit that `<param_nanme>` in the `nextflow.config` file directly. **NOTE**: cli args have higher priority than config file settings. 
+
+**NOTES**: 
+
+- No space in the profile part has to be this: `profile1,profile2`, not this: `profile1, profile2`
+- Ensure Docker Desktop is running before executing the pipeline.
+- Pipeline options are supplied with two dash `--` , while Nextflow options use single dash `-`
+
 
 ### Data Source
 
