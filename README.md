@@ -1,219 +1,601 @@
-# Multiomics Experiments with SyStematic Interrogation (MESSI)
+# MESSI: Multimodal Experiments with SyStematic Interrogation
 
-**Table of contents**:
 
+A Nextflow pipeline for benchmarking multimodal (genomics, proteomics, metabolomics, imaging, clinical) data integration methods with systematic evaluation for classification tasks.
+
+
+---
+
+## Table of contents
 1. [Overview](#overview)
-2. [Project Structure](#project-structure)
-3. [Setup the project](#setup)
-4. [Running the pipeline](#running-the-pipeline)
-5. [Preparing Data](#preparing-the-data)
-5. [Result Inspection](#result-inspection)
-5. [References](#reference)
+2. [Prerequisites](#prerequisites)
+3. [Project Structure](#project-structure)
+4. [Installation & Setup](#installation-and-setup)
+   - [Local Machine Setup](#local-machine-setup)
+   - [HPC Setup (UBC ARC Sockeye)](#hpc-setup-ubc-arc-sockeye)
+5. [Data Preparation](#data-preparation)
+6. [Running the Pipeline](#running-the-pipeline)
+   - [Local Execution](#local-execution)
+   - [HPC Interactive Node](#hpc-interactive-node)
+   - [HPC Batch Submission](#hpc-batch-submission)
+7. [Configuration](#configuration)
+8. [Result Inspection](#result-inspection)
+9. [Troubleshooting](#troubleshooting)
+10. [References](#references)
+---
 
 ## Overview
 
-The **MESSI Pipeline** is a nextflow pipeline designed for benchmarking multiomics (genomics, proteomics, metabolomics) data integration methods. These methods are often implemented in R/Python, with the task of classification/regression, factor analysis, clustering and others.
+The **MESSI Pipeline** provides a standardized benchmarking framework for multimodal data integration methods implemented in R and Python. It supports:
+
+- **Multiple computational backends**: Local machines, HPC interactive sessions, HPC batch jobs, and job arrays
+
+- **Containerized environments**: Docker (local) and Apptainer/Singularity (HPC)
+
+- **Reproducible workflows**: Nextflow-based execution with comprehensive logging
+
+- **Flexible data formats**: MultiAssayExperiment (R) and MuData (Python)
+
+## Prerequisites
+
+### Minimum System Requirements
+
+| Software | Version | Purpose |
+|:-:|:-:|:-:|
+| Nextflow | $\geq$ 22.10.7 | Workflow orchestration |
+| Java (OpenJDK) | 11-18 | Nextflow runtime |
+| Bash | $\geq$ 4.2.46 | Shell scripting |
+| Git | $\geq$ 2.31.8 | Version control |
+| Make | $\geq$ 3.82 | Build automation (**Optional**) |
+
+
+### Container Runtime (choose one)
+
+- **Local**: Docker $\geq$ 0.10.23, build 715524
+- **HPC**: Apptainer $\geq$ 1.1.4
+
+### System Resources (Recommended)
+
+- **Local**: 16GB RAM, 4+ CPU cores, 16GB storage
+
+- **HPC**: Varies by dataset (configured in profiles at `conf/*.config`)
+
+
+
+
 
 ## Project Structure
 
-Some important locations:
+```bash
+MESSI-pipeline/
+├── LICENSE
+├── Makefile # Automated setup commands
+├── README.md
+├── bin/ # Setup and Utility scripts
+├── conf/
+│   ├── base.config # Basic resource settings designed to be overridden
+│   ├── local.config # Local machine profile
+│   ├── sockeye.config # HPC profile for UBC ARC Sockeye
+│   └── test.config # Minimal test profile (quick run)
+├── containers/ # Container definitions and build scripts
+│   ├── README.md
+│   ├── dockerfiles # Source Dockerfiles for each method
+│   └── scripts # Build scripts for containers
+├── data/ # Samplesheets (input of pipeline) and test data (tar.gz)
+│   ├── README.md
+│   ├── rosmap.tar.gz # Example dataset
+│   └── samplesheet_test_small.csv # Example samplesheet of 1 data only
+├── docs/ # Documentation and tutorials
+├── launch_MESSI_pipeline.sh # Wrapper script to launch the pipeline
+├── launcher_sockeye.sh  # HPC batch submission script
+├── main.nf # Main Nextflow pipeline script
+├── modules/ # Method and utility source codes
+├── nextflow.config # Nextflow configuration file (loads other conf files through profiles)
+├── sample.env # Sample environment variable template to modify for HPC usage
+├── subworkflows/ # Subworkflows for high-level pipeline structure
+├── templates/ # Templates for method implementations
+│   ├── cli_scripts
+│   └── nxf_scripts
+└── workflows # High-level workflow definitions
+    └── messi_benchmark.nf # Main benchmarking workflow
 
-- Shell scripts for setting up the project is located at `bin/`
-- Main configuration for the pipeline is at `nextflow.config`. Other parameters, resources settings are found under `configs/`.
-- Python and R source codes of methods are located in `modules/`
-- Software environment definitions (containers) are under `containers/`
-- `docs/` contain several demos and explanations of the pipeline usage and keynotes.
-- High level abstraction of the flow of pipeline is found under `subworkflows/`. These often trigger codes under `modules/`
-- Nextflow, R, and Python templates for method implementation could be found under `templates/`
+```
+
+## Installation and Setup
 
 
-## Setup
+### Local Machine Setup
+
+#### Install dependencies
+
+Install Nextflow in unix-like system (Linux/macOS):
+
+```bash
+curl -s https://get.nextflow.io | bash
+# If not have sudo, you could move it to a directory in your PATH variable of shell
+sudo mv nextflow /usr/local/bin/
+```
+
+Install Docker from [here](https://docs.docker.com/get-docker/).
+
+---
+
+Install [other dependencies](#minimum-system-requirements) using your system's package manager.
+
+
+Example installation commands for macOS:
+
+**macOS (Homebrew)**:
+```bash
+brew install openjdk@11 make git
+# Ensure Docker Desktop is installed and running
+```
+
+Example installation commands for Ubuntu/Debian:
+
+**Linux (Ubuntu/Debian)**:
+```bash
+# Install Java
+sudo apt update
+sudo apt install openjdk-11-jdk make git
+```
+
+#### Verify installations
+
+```bash
+# Test Nextflow
+nextflow info
+# Test docker 
+docker --version
+```
 
 > [!NOTE]
-> This pipeline have only tested under UBC ARC Sockeye's high performance cluster (SLURM), hence all instructions here might not apply to others.
+> If `nextflow info` returns error, then likely Java is not properly installed or configured as it relies heavily on Java runtime.
+>
+> Also, docker images will be pulled during the pipeline execution, ensure Docker Desktop is running before executing the pipeline.
 
-The main software dependencies are the following:
 
-**Requirements**:
+### HPC Setup (UBC ARC Sockeye)
 
-- [Nextflow 22.10.7 or above](https://www.nextflow.io/)
-- Bash `4.2.46`
-- Java 11 (or later, up to 18), recommend using openJDK `11.0.18` 
-- Docker/Apptainer `1.1.4` (formerly Singularity `3.8.5`)
-- make `>= 3.82`
-- git `>= 2.31.8`
-
-Once you have these requirements setup, then you could clone the project with `git` in your desired place and
-change the directory to the clone repo:
+#### Login and Load modules
 
 ```bash
-# This would unload the current modules that you are using (could be easily reverted)
+# SSH into Sockeye
+# replace cwl with your actual username
+ssh cwl@sockeye.arc.ubc.ca
+
+# Navigate to scratch space (IMPORTANT: not home directory)
+cd /scratch/<ALLOCATION_CODE>/<USER>/
+
+# Clean module environment
 module purge
-# Then load relevant modules
-module load gcc/9.4.0 git/2.31.8
-# Choose a place you like to clone the repo, ideally the scratch space
-git clone git@github.com:CompBio-Lab/MESSI-pipeline.git
-# Then go into the directory of the repo
+
+# Load required modules
+module load gcc/9.4.0 git/2.31.8 apptainer/1.1.4
 ```
 
-Then, create a `.env` file in the current directory and use the following template:
 
-This is exactly what's inside `sample.env`, simply replace the file to `.env` using this command:
-
-```bash
-mv sample.env .env
-```
-
-Then edit the contents of the new `.env` file instead:
+#### Configure environment variables
 
 ```bash
-# You could also use vi or vim
+# Copy the sample env file to .env to modify
+cp sample.env .env
 nano .env
 ```
 
+When editing the `.env` file, replace the following variables accordingly:
+
 ```bash
-# ----------------------------------------------
-# INSIDE THE .env file
-# ----------------------------------------------
-# The renamed file should not be tracked by git
-# Important variables to replace the value
 ALLOCATION_CODE=REPLACE # This should be the account to deduct computing resources usage
-USER=REPLACE # This should be your cwl 
+USER=REPLACE # This should be your cwl
 MAIL_USER=REPLACE # This should be the email to receive notification of the pipeline
-```
-
-For example the `.env` could be like the following:
-
-```bash
-# NOTICE there's no space between the `=` in VAR=VALUE 
-ALLOCATION_CODE=st-myuser-123
-USER=my_cwl_username
-MAIL_USER=dummy_name@gmail.com
+# This needs to be set for future use in the pipeline
+APPTAINER_IMAGE_CACHE_DIR=/arc/project/${ALLOCATION_CODE}/${USER}/MESSI-apptainer-images
 ```
 
 > [!Warning]
-> Make sure you do not track this .env file onto git
+> Make sure you do NOT track this .env file onto git
 
-Then, you could start to setup the required apptainer images (This could take a while to run, better to hang it in a `tmux`/`screen` session) for the pipeline by the following command:
+#### Clone the repository in login node
 
 ```bash
-# Run this command under the this same pipeline root dir
+# Important: this must be done in the login node, otherwise you wiil not have internet access during computation nodes
+git clone git@github.com:CompBio-Lab/MESSI-pipeline.git
+```
+
+#### Pull Apptainer images
+
+```bash
+# ALLOCATION_CODE and USER should be non null/empty from the .env file you have set above if done correctly
+# Export once more time here for this terminal session
+export APPTAINER_IMAGE_CACHE_DIR=/arc/project/${ALLOCATION_CODE}/${USER}/MESSI-apptainer-images
+mkdir -p $APPTAINER_IMAGE_CACHE_DIR
+# Run this command under the this same pipeline root dir ~/scratch/<ALLOCATION_CODE>/<USER>/MESSI-pipeline
+# Trigger the setup to pull apptainer images into above ${APPTAINER_IMAGE_CACHE_DIR}
 make setup
 ```
-> [!TIP]
-> If you see an error of `no space left`, this is due to the apptainer cache that it creates in your home dir, which you could clean it by the following command:
->
-> `rm -r ~/.apptainer/cache`
 
-Then, you could resume the setup command after have encountered and solved the `no space error`:
+> [!NOTE]
+> This should be run on login node only as it requires internet, otherwise would fail at compute node. This step could take a while depending on your internet speed, better to run it in a `tmux` or `screen` session to avoid disconnection. 
 
+
+**Troubleshooting "no space left" errors**:
 ```bash
-make setup
+# Clear Apptainer cache in your user home directory
+cd ~
+rm -rf .apptainer/cache # DANGER: recursive delete, be careful with wrong path
 ```
 
-Once you see the log:
-```bash
-Finished setting up environment
-```
-This means all required images have successfully downlaoded and stored under `/arc/project/<ALLOCATION_CODE>/<USER>/MESSI-apptainer-images`, this could be verified if this directory contains the following:
+#### Verify Apptainer images
 
 ```bash
-# ./ is /arc/project/<ALLOCATION_CODE>/<USER>/MESSI-apptainer-images
-./
-├── codia.sif
-├── cooperative_learning.sif
-├── intersim.sif
-├── mae_mudata.sif
-├── mixdiablo.sif
-├── mofa.sif
-├── mogonet.sif
-├── mowgli.sif
-├── muon-py.sif
-├── rgcca.sif
-└── save_simulate.sif
+# Check images directory
+ls /arc/project/${ALLOCATION_CODE}/${USER}/MESSI-apptainer-images
+
+# Expected contents:
+# codia.sif
+# cooperative_learning.sif
+# mae_mudata.sif
+# mixdiablo.sif
+# mofa.sif
+# mogonet.sif
+# rgcca.sif
+# save_simulate.sif
+```
+
+## Create your samplesheet
+
+The pipeline expects a samplesheet in CSV format specifying dataset names and paths. A sample is provided at `data/samplesheet_test_small.csv`. The paths should be absolute paths to the `tar.gz` files containing your datasets.
+
+
+**Local samplesheet example**:
+
+Create a samplesheet for local testing named `data/local_samplesheet.csv`:
+```csv
+dataset_name,tar_path
+rosmap,/local_absolute_path/MESSI_pipeline/data/rosmap.tar.gz
+```
+
+**HPC samplesheet example**:
+
+Use any of provided samples at `data/samplesheet_test_small.csv` or `data/samplesheet_test_full.csv`. The first one is for quick run of 1 dataset, while the latter contains multiple datasets for full benchmarking.
+
+
+## Running the Pipeline
+
+### Local Execution
+
+For testing and small runs on local machine with Docker. This is useful for development and debugging.
+
+Currently works on linux **amd64** systems with Docker installed. Future support for **arm64** planned.
+
+#### Basic Run
+
+Run the pipeline with the following command using data from [`data/local_samplesheet.csv`](#create-your-samplesheet):
+
+```bash
+nextflow run main.nf \
+      -c nextflow.config \
+      -profile standard,docker,test  \
+      --samplesheet data/local_samplesheet.csv \
+      --outdir results \
+      --pipeline_dir ./
+```
+
+This runs the pipeline with the `standard`, `docker`, and `test` profiles for local execution using Docker containers and a small test dataset. Outputs are saved to the `results/` directory.  
+
+You could supply other parameters as needed via `--<param_name> <value>`, or edit that `<param_name>` in the `nextflow.config` file directly. 
+
+**NOTES**: 
+
+- No space in the profile part has to be this: `profile1,profile2`, not this: `profile1, profile2`
+- Ensure Docker Desktop is running before executing the pipeline.
+- Pipeline options are supplied with two dash `--` , while Nextflow options use single dash `-`
+
+
+#### Advanced Options
+
+```bash
+# Specify number of CPUs and memory
+nextflow run main.nf \
+  -profile standard,docker,test  \
+  --samplesheet data/local_samplesheet.csv \
+  --outdir results \
+  --pipeline_dir ./
+  --max_cpus 8 \
+  --max_memory 32.GB
+
+# Enable resume (skip completed tasks)
+nextflow run main.nf \
+  -profile standard,docker,test  \
+  --samplesheet data/local_samplesheet.csv \
+  --outdir results \
+  --pipeline_dir ./
+  -resume
+```
+
+The cli args have higher priority than config file settings. For example, `--max_cpus` here would override the cpu settings in the config files. For detailed explanation of order of precedence, refer to the [Nextflow documentation](https://www.nextflow.io/docs/latest/config.html). For more details on available parameters, refer to the [Configuration](#configuration) section.
+
+
+
+
+
+
+### HPC Interactive Node
+
+For development, testing, and medium-sized datasets on HPC. Serves as a middle ground between local and batch execution. Not suitable for large-scale benchmarking due to resource constraints (mainly time limits). Better for quickly iterating on the pipeline before launching full batch jobs.
+
+#### Request Interactive Session
+
+Running the following command in the login node would request an interactive session:
+
+```bash
+# Request cpu interactive node (3 hours, 4 CPUs, 6GB RAM, no GPU)
+# Again ALLOCATION_CODE should be non null/empty from the .env file you have set above if done correctly
+salloc \
+  --time=3:00:00 \
+  --ntasks=4 \
+  --mem=6G \
+  --account=${ALLOCATION_CODE}
+```
+
+Once inside the interactive node after SLURM allocates resources, your hostname should change to something like `se123` , where `123` is the node number assigned to you.
+
+#### Load modules in interactive node
+
+Clean the module environment to avoid conflicts and load compute canada modules (This command should be run first after entering the interactive node):
+
+```bash
+module purge
+module load CVMFS_CC
+```
+
+Then, load relevant modules to start nextflow:
+
+```bash
+module load apptainer/1.3.4
+module load java/17.0.6
+module load nextflow/24.04.4
+```
+
+Verify nextflow loads correctly:
+
+```bash
+which nextflow
+nextflow info
+```
+
+#### Run the pipeline in HPC interactive node
+
+Loads previous configured environment variables from `.env` file:
+
+```bash
+# Source the .env file to load env variables
+source .env
+```
+
+Need to specify an extra variable at runtime to tell nextflow to skip auto-update check as Sockeye has no internet access on compute nodes:
+
+```bash
+export NXF_OFFLINE='true'
+```
+
+Run the pipeline with the following command using data from `data/samplesheet_test_small.csv`:
+
+```bash
+# Run with HPC-local profile
+# Uses local executor (no batch submission) but with HPC resource settings
+# The profile built-in with apptainer
+nextflow run main.nf \
+  -c nextflow.config \
+  -profile arc_local,test  \
+  --samplesheet data/samplesheet_test_small.csv \
+  --outdir results_hpc_interactive \
+  --pipeline_dir ./
+```
+
+The above command runs the pipeline with the `arc_local` and `test` profiles for interactive execution on Sockeye using Apptainer containers and a small test dataset. Outputs are saved to the `results_hpc_interactive/` directory. This setting should look similar to local execution but with HPC resource configurations.
+
+#### Exit interactive node
+
+```bash
+# When finished
+exit
+```
+
+This should prompt you from `se123` back to the login node hostname like `login1`.
+
+
+### HPC Batch Submission
+
+For large-scale benchmarking on HPC. Suitable for long-running jobs and multiple datasets. Utilizes SLURM for job scheduling and resource management.
+
+> [!NOTE]
+> This requires prior setup of environment variables and Apptainer images as described in the [HPC Setup](#hpc-setup-ubc-arc-sockeye) section. Should be properly tested using interactive node before submitting batch jobs to avoid wasting compute resources.
+
+The key idea here is to create a SLURM batch script that requests resources and runs the Nextflow pipeline with appropriate parameters. The submitted batch job will execute the pipeline (serving as a head monitoring job) and spawns multiple single or array jobs as needed without further user intervention. Make sure the head job is submitted for a long enough time; if it expires, the remaining ongoing jobs will be terminated by the HPC system.
+
+Here are two ways to run it as batch mode:
+
+#### Method 1: Using Launcher Script (Recommended)
+
+```bash
+# Edit launch script parameters
+# This script has nextflow call inside it with proper SLURM resource allocation
+# Should be generic enough for other SLURM systems too with minor modifications
+nano launch_MESSI_pipeline.sh
+```
+
+Key variables to configure inside `launch_MESSI_pipeline.sh`:
+```bash
+# Nextflow profile(s) - can chain multiple: sockeye,test
+PROFILE=sockeye,real_data
+
+# Output directory with timestamp
+timestamp=$(date +"%Y%m%d_%H%M%S")
+OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results
+
+# Input samplesheet
+SAMPLESHEET=data/samplesheet_test_full.csv
+```
+
+**Submit the job**:
+```bash
+# Submit to SLURM
+# This is a wrapper for settings specific to Sockeye
+# launch_MESSI_pipeline.sh internally
+bash launcher_sockeye.sh
+
+# Check job status
+squeue -u $USER
+
+# View job output log
+cat MESSI-main-<job-id>.log | less
+```
+
+#### Method 2: Direct SLURM Submission
+
+```bash
+# Create custom SLURM script
+# NOTE: when using this way, you need to manually set allocation code, as it would not read from .env file
+cat > run_messi.sh <<'EOF'
+#!/bin/bash
+#SBATCH --job-name=MESSI
+#SBATCH --account=st-yourpi-1
+#SBATCH --time=24:00:00
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=16G
+#SBATCH --output=MESSI-%j.out
+#SBATCH --error=MESSI-%j.err
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=your.email@ubc.ca
+
+module purge
+module load CVMFS_CC
+module load apptainer/1.3.4
+module load java/17.0.6
+module load nextflow/24.04.4
+
+cd /scratch/${ALLOCATION_CODE}/${USER}/MESSI-pipeline
+
+PIPELINE_DIR=$(eval pwd)
+# AS per nextflow expert, work/ CANNOT be under /tmp
+export NXF_WORK="${PIPELINE_DIR}/work"
+export NXF_HOME="${PIPELINE_DIR}"
+export NXF_OFFLINE='true'
+
+nextflow run main.nf \
+  -profile sockeye \
+  --samplesheet data/samplesheet_test_full.csv \
+  --outdir results_${SLURM_JOB_ID} \
+  -ansi-log false \
+  -resume
+EOF
+
+# Submit as a batch job
+sbatch run_messi.sh
 ```
 
 ### Data Source
 
-Given ARC Sockeye have no internet connection on compute nodes, which means user cannot pull data during the pipeline computation. Hence, the data have to be previouly stored in a common directory.
+Given ARC Sockeye have no internet connection on compute nodes, which means user cannot pull data during the pipeline computation. Hence, the data have to be previously stored in a common directory.
 
-## Running the pipeline
 
-You could start the pipeline by submitting the wrapper script that sends the batch script to SLURM using default parameters:
 
-```bash
-# If you see any complains from this script, then is likely you did not setup properly
-# NOTE: this only works on the UBC ARC Sockeye platform for now
-bash launcher_sockeye.sh
-```
+## Data Preparation
 
-Actual parameters of the pipeline are set under the `launch_MESSI_pipeline.sh` script, speficifically these variables:
+### Creating a Samplesheet
 
-```bash
-# This tells nextflow to use pre-defined configuration found at conf/
-# Could chain more profiles like prof1,prof2,... NOTE: no space between ,
-PROFILE=sockeye
-# This sets the output directory to store final outputs of the pipeline
-# If not like this way of adding timestamp, you could simply set it to a simpler path
-timestamp=$(date +"%Y%m%d_%H%M%S")
-OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results
-# This is MAIN input file of the pipeline, where it defines the path to find data, and its metadata idetifiers like dataset name
-SAMPLESHEET=data/samplesheet_test_full.csv
-```
+The samplesheet is a CSV file that tells MESSI which datasets to process and where to find them. This is the **main input** to the pipeline.
 
-The most important variable here is `SAMPLESHEET`, where this is the main input file of pipeline. It's simply a csv where it specifies name of dataset and path to locate it like:
+#### Samplesheet Format
 
+A samplesheet is a simple CSV with two required columns:
+
+| Column | Description | Example |
+|--------|-------------|---------|
+| `dataset_name` | Unique identifier for dataset | `my_dataset` |
+| `tar_path` | Absolute path to `.tar.gz` file | `/path/to/my_dataset.tar.gz` |
+
+#### Important Samplesheet Rules
+
+| Rule | Wrong | Correct |
+|------|---------|-----------|
+| **No quotes** | `"dataset","path"` | `dataset,path` |
+| **Absolute paths** | `datasets/data.tar.gz` | `/full/path/datasets/data.tar.gz` |
+| **Exact column names** | `name,file_path` | `dataset_name,tar_path` |
+| **No spaces in names** | `my dataset` | `my_dataset` |
+| **Unix line endings** | Windows CRLF | Unix LF |
+| **No trailing commas** | `dataset,path,` | `dataset,path` |
+
+#### Common Samplesheet Errors
+
+**Error 1: Quoted fields**
 ```csv
+# Wrong
+"dataset_name","tar_path"
+"my_data","/path/to/data.tar.gz"
+
+# Correct
 dataset_name,tar_path
-rosmap,/arc/project/st-singha53-1/datasets/messi_demo_data/rosmap.tar.gz
-tcga-blca,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-blca.tar.gz
+my_data,/path/to/data.tar.gz
 ```
 
-> [!NOTE]
-> The csv content here MUST be UNQUOTED. `tar_path` MUST be absolute path leading to `tar.gz` of dataset
->
-
-For a detailted instruction on how to setup and add your own samplesheet to explore method performance under different datasets, please see this [section](#preparing-the-data).
-
-
-Other meaningful variable is `PROFILE`, this is more of a nextflow feature, where you could read over the [nextflow official doc](https://www.nextflow.io/docs/latest/config.html#config-profiles) and set your own set of profile to override these default one. Suggested to use this `sockeye` profile, and add another one just to set some of the hyperpameters of the pipeline.
-
-
-### Preparing the data
-
-To use different data to evaluate methods, you must store the raw data in `tar.gz` format, where it is just a compressed archive of multiple files. The content of the `tar.gz` would be a directory to store the `MultiAssayExperiment` and file to store the `MuData` formats of multiomics data. Then list these as a `csv`, where each row is a different dataset, columns being metadata identifier (still in progress) and path to the tar gz. 
-
-Here is a sample csv input file:
-
+**Error 2: Relative paths**
 ```csv
+# Wrong
 dataset_name,tar_path
-rosmap,/arc/project/st-singha53-1/datasets/messi_demo_data/rosmap.tar.gz
-tcga-blca,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-blca.tar.gz
+my_data,../datasets/my_data.tar.gz
+
+# Correct
+dataset_name,tar_path
+my_data,/arc/project/st-yourpi-1/datasets/my_data.tar.gz
 ```
 
+**Error 3: Windows line endings**
+```bash
+# Check line endings
+file samplesheet.csv
+# Output: "ASCII text, with CRLF line terminators" 
+# Fix with dos2unix
+dos2unix samplesheet.csv
 
-You could verify the content and file structure of these tar to match the described above using these commands:
+# Or with sed
+sed -i 's/\r$//' samplesheet.csv
+```
+
+#### Using Your Samplesheet
+
+Once created, specify it when running the pipeline:
 
 ```bash
-# Looking at the rosmap data only
-cd /arc/project/st-singha53-1/datasets/messi_demo_data/
-tar -xzf rosmap.tar.gz
+nextflow run main.nf \
+  ... \
+  --samplesheet /full/path/to/your_samplesheet.csv
 ```
 
-The uncompressed archive is a directory named `rosmap` with the following contents:
 
-```bash
-rosmap
-├── mae_data
-│   ├── experiments.h5
-│   └── mae.rds
-└── rosmap.h5mu
+### Data Input Format Requirements
+
+MESSI requires data in two formats packaged as compressed archives (`.tar.gz`):
+
+1. **MultiAssayExperiment (MAE)** - for R-based methods
+2. **MuData** - for Python-based methods
+
+### Directory Structure in Archive
+
 ```
+dataset_name.tar.gz
+└── dataset_name/
+    ├── mae_data/
+    │   ├── experiments.h5
+    │   └── mae.rds
+    └── dataset_name.h5mu
+```
+### Creating MESSI-Compatible Data
 
-These MAE and MuData could be saved using these helpers files and instructions:
-
-
-Saving it into MAE
+A dummy example of how to create these data formats from raw matrices and metadata in R and Python is provided below using helper functions.
 
 ```R
 # mae related
@@ -411,37 +793,195 @@ SAMPLESHEET=data/my_data.csv
 bash launcher_sockeye.sh
 ```
 
+## Configuration
+
+### Pipeline CLI Parameters
+
+```bash
+# Via command line
+nextflow run main.nf --param_name value
+```
+
+Common parameters:
+
+| Parameter | Default | Description |
+|:-:|:-:|:-:|
+| `--samplesheet` | `data/samplesheet_test_small.csv` | Path to samplesheet |
+| `--outdir` | `results` | Output directory |
+| `--max_cpus` | 16 | Maximum CPUs per task |
+| `--max_memory` | 64.GB | Maximum memory per task |
+| `--selectFeature` | true | Runs feature selection (takes longer time to finish) |
+| `k_fold_number` | 5 | Number of folds for cross-validation |
+| `split_type` | "skf" | Data splitting strategy: "skf" (stratified k-fold) or "logo" (Leave One Group Out) by sample name |
+
+For full list of available parameters, refer to [`nextflow.config`](./nextflow.config)
+
+### Profile Configuration
+
+Profiles are defined in `nextflow.config` and `configs/*.config`:
+
+```bash
+# Use single profile
+nextflow run main.nf -profile standard
+
+# Chain multiple profiles (no spaces!)
+nextflow run main.nf -profile standard,test,gpu,your_custom_profile
+```
+
+You could create your own custom profile by adding a new config file in `conf/` and specifying it in the `-profile` argument. This allows you to set for specific parameters to record experiment runs.
+
+Create `configs/my_custom_run1.config`:
+```groovy
+profiles {
+    my_custom {
+        params {
+            max_cpus = 32
+            max_memory = 128.GB
+            n_folds = 10
+        }
+        
+        process {
+            executor = 'slurm'
+            queue = 'gpu'
+            
+            withLabel: 'gpu' {
+                clusterOptions = '--gpus=1'
+            }
+        }
+    }
+}
+```
+
+Include it as a profile in `nextflow.config`:
+```groovy
+profiles {
+    standard {
+        includeConfig 'configs/standard.config'
+    }
+    // Add in your custom profile
+    my_custom_run1 {
+        includeConfig 'configs/my_custom.config'
+    }
+}
+```
+
+When running the pipeline, specify your custom profile:
+
+```bash
+nextflow run main.nf -profile standard,my_custom_run1
+```
+
+
 ## Result inspection
 
-For viewing the log of current runtime status of the pipeline, you could check the latest `MESSI-main-<job-id>.log` file in the root dir of the repo:
+### Monitoring Pipeline Progress
+
+#### Real-time Monitoring
 
 ```bash
-# <job id> is the one generated from SLURM
-# Usually numeric, for example 1234567 is a job id here:
-cat MESSI-main-1234567.log
+# Tail main log (local execution)
+cat .nextflow.log | less
+
+# For HPC batch jobs
+cat MESSI-main-<job-id>.log | less
 ```
 
-In order to see the results of the pipeline, you could inspect the final results in this directory as it progresses using this command:
+## Troubleshooting
 
+### Common Issues
+
+#### 1. "No space left on device" (HPC)
+
+**Problem**: Apptainer cache fills home directory
+
+**Solution**:
 ```bash
-# Assuming you are in the root dir of the repo
-ls MESSI_results
+# Clear cache
+rm -rf ~/.apptainer/cache
 ```
 
-The directory structure of the `MESSI_results/` should be like the following once the pipeline have completed:
+#### 2. "Command not found: nextflow"
 
+**Problem**: Nextflow not in PATH
+
+**Solution**:
 ```bash
-MESSI_results
+# Find nextflow
+which nextflow
+
+# Add to PATH
+export PATH=$PATH:/path/to/nextflow
 ```
 
+#### 3. Pipeline Fails on Specific Task
 
-There's option to change this default directory by changing the `OUTDIR` param in the `launch_MESSI_pipeline.sh` script:
+**Problem**: Individual method execution fails
 
+**Solution**:
 ```bash
-# It is possible to use a for loop in the bash script to pass multiple OUTDIR and run as a monte carlo cross validation
-OUTDIR=another_directory_that_you_like
+# Check work directory for failed task
+cd work///
+cat .command.log
+cat .command.err
+# Check .nextflow.log for overall errors
+cat .nextflow.log | less
+
+# Re-run with that specific task resumed
+nextflow run main.nf -profile sockeye --samplesheet data/samplesheet.csv -resume
 ```
 
+#### 4. Container Pull Fails
+
+**Problem**: Network issues or authentication
+
+**Solution**:
+```bash
+# For Apptainer/Singularity
+apptainer pull docker://tonyliang19/mixdiablo:latest
+
+# For Docker
+docker pull tonyliang19/mixdiablo:latest
+
+# Check container registry status
+curl -I https://hub.docker.com/
+```
+
+#### 5. Out of Memory Errors
+
+**Problem**: Task exceeds allocated memory
+
+**Solution**:
+```bash
+# Increase memory in config
+# Edit configs/sockeye.config
+process {
+    withName: 'PROBLEM_PROCESS' {
+        memory = '128.GB'
+    }
+}
+
+# Or pass via command line
+nextflow run main.nf --max_memory 256.GB
+```
+
+#### 6. Samplesheet Format Errors
+
+**Problem**: CSV parsing fails
+
+**Solution**:
+```bash
+# Verify no quotes
+cat data/samplesheet.csv | grep '"'
+
+# Verify absolute paths
+cat data/samplesheet.csv | grep -v '^/'
+
+# Check line endings (should be Unix LF, not Windows CRLF)
+file data/samplesheet.csv
+
+# Convert if needed
+dos2unix data/samplesheet.csv
+```
 
 ## License
 
