@@ -199,7 +199,7 @@ APPTAINER_IMAGE_CACHE_DIR=/arc/project/${ALLOCATION_CODE}/${USER}/MESSI-apptaine
 #### Clone the repository in login node
 
 ```bash
-# Important: this has to be done in the login node, otherwise you won't have internet access during computation nodes
+# Important: this must be done in the login node, otherwise you wiil not have internet access during computation nodes
 git clone git@github.com:CompBio-Lab/MESSI-pipeline.git
 ```
 
@@ -284,7 +284,7 @@ nextflow run main.nf \
 
 This runs the pipeline with the `standard`, `docker`, and `test` profiles for local execution using Docker containers and a small test dataset. Outputs are saved to the `results/` directory.  
 
-You could supply other parameters as needed via `--<param_name> <value>`, or edit that `<param_nanme>` in the `nextflow.config` file directly. 
+You could supply other parameters as needed via `--<param_name> <value>`, or edit that `<param_name>` in the `nextflow.config` file directly. 
 
 **NOTES**: 
 
@@ -298,7 +298,6 @@ You could supply other parameters as needed via `--<param_name> <value>`, or edi
 ```bash
 # Specify number of CPUs and memory
 nextflow run main.nf \
-  -profile local \
   -profile standard,docker,test  \
   --samplesheet data/local_samplesheet.csv \
   --outdir results \
@@ -308,7 +307,6 @@ nextflow run main.nf \
 
 # Enable resume (skip completed tasks)
 nextflow run main.nf \
-  -profile local \
   -profile standard,docker,test  \
   --samplesheet data/local_samplesheet.csv \
   --outdir results \
@@ -325,7 +323,7 @@ The cli args have higher priority than config file settings. For example, `--max
 
 ### HPC Interactive Node
 
-For development, testing, and medium-sized datasets on HPC. Serves as a middle ground between local and batch execution. Not suitable for large-scale benchmarking due to resource constraints (mainly time limits). Better for quick iteration of pipeline before launching full batch jobs.
+For development, testing, and medium-sized datasets on HPC. Serves as a middle ground between local and batch execution. Not suitable for large-scale benchmarking due to resource constraints (mainly time limits). Better for quickly iterating on the pipeline before launching full batch jobs.
 
 #### Request Interactive Session
 
@@ -349,7 +347,7 @@ Clean the module environment to avoid conflicts and load compute canada modules 
 
 ```bash
 module purge
-modue load CVMFS_CC
+module load CVMFS_CC
 ```
 
 Then, load relevant modules to start nextflow:
@@ -405,7 +403,7 @@ The above command runs the pipeline with the `arc_local` and `test` profiles for
 exit
 ```
 
-This should prompt your from `se123` back to the login node hostname like `login1`.
+This should prompt you from `se123` back to the login node hostname like `login1`.
 
 
 ### HPC Batch Submission
@@ -413,9 +411,9 @@ This should prompt your from `se123` back to the login node hostname like `login
 For large-scale benchmarking on HPC. Suitable for long-running jobs and multiple datasets. Utilizes SLURM for job scheduling and resource management.
 
 > [!NOTE]
-> This requires prior setup of environment variables and Apptainer images as described in the [HPC Setup](#hpc-setup-ubc-arc-sockeye) section. Should properly tested using interactive node before submitting batch jobs to avoid wasting compute resources.
+> This requires prior setup of environment variables and Apptainer images as described in the [HPC Setup](#hpc-setup-ubc-arc-sockeye) section. Should be properly tested using interactive node before submitting batch jobs to avoid wasting compute resources.
 
-The key idea here is to create a SLURM batch script that requests resources and runs the Nextflow pipeline with appropriate parameters. The submitted batch job will execute the pipeline (serving as a head monitoring job) and spawns multiple single or array jobs as needed without further user intervention. Making sure the head job is submitted for long enough time, if it expires, then remaining ongoing jobs will be terminated by HPC system.
+The key idea here is to create a SLURM batch script that requests resources and runs the Nextflow pipeline with appropriate parameters. The submitted batch job will execute the pipeline (serving as a head monitoring job) and spawns multiple single or array jobs as needed without further user intervention. Make sure the head job is submitted for a long enough time; if it expires, the remaining ongoing jobs will be terminated by the HPC system.
 
 Here are two ways to run it as batch mode:
 
@@ -501,7 +499,7 @@ sbatch run_messi.sh
 
 ### Data Source
 
-Given ARC Sockeye have no internet connection on compute nodes, which means user cannot pull data during the pipeline computation. Hence, the data have to be previouly stored in a common directory.
+Given ARC Sockeye have no internet connection on compute nodes, which means user cannot pull data during the pipeline computation. Hence, the data have to be previously stored in a common directory.
 
 
 
@@ -830,7 +828,7 @@ nextflow run main.nf -profile standard
 nextflow run main.nf -profile standard,test,gpu,your_custom_profile
 ```
 
-You could create your own custom profile by adding a new config file in `conf/` and specifying it in the `-profile` argument. This allows your to set for specific parameters to records experiment runs.
+You could create your own custom profile by adding a new config file in `conf/` and specifying it in the `-profile` argument. This allows you to set for specific parameters to record experiment runs.
 
 Create `configs/my_custom_run1.config`:
 ```groovy
