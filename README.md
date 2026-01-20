@@ -173,7 +173,7 @@ cd /scratch/<ALLOCATION_CODE>/<USER>/
 module purge
 
 # Load required modules
-module load gcc/9.4.0 git/2.31.8 apptainer/1.1.4
+module load gcc/9.4.0 git/2.31.8 apptainer/1.3.1
 ```
 
 
@@ -197,7 +197,6 @@ When editing the `.env` file, replace the following variables accordingly:
 
 ```bash
 ALLOCATION_CODE=REPLACE # This should be the account to deduct computing resources usage
-USER=REPLACE # This should be your cwl
 MAIL_USER=REPLACE # This should be the email to receive notification of the pipeline
 # This needs to be set for future use in the pipeline
 APPTAINER_IMAGE_CACHE_DIR=/arc/project/${ALLOCATION_CODE}/${USER}/MESSI-apptainer-images
@@ -210,10 +209,11 @@ APPTAINER_IMAGE_CACHE_DIR=/arc/project/${ALLOCATION_CODE}/${USER}/MESSI-apptaine
 #### Pull Apptainer images
 
 ```bash
-# ALLOCATION_CODE and USER should be non null/empty from the .env file you have set above if done correctly
-# Export once more time here for this terminal session
-export APPTAINER_IMAGE_CACHE_DIR=/arc/project/${ALLOCATION_CODE}/${USER}/MESSI-apptainer-images
-mkdir -p $APPTAINER_IMAGE_CACHE_DIR
+# ALLOCATION_CODE should be non null/empty from the .env file you have set above if done correctly
+# USER is native from ARC (everyone's cwl)
+# Load the configured environment variables
+source .env
+mkdir -p ${APPTAINER_IMAGE_CACHE_DIR}
 # Run this command under the this same pipeline root dir ~/scratch/<ALLOCATION_CODE>/<USER>/MESSI-pipeline
 # Trigger the setup to pull apptainer images into above ${APPTAINER_IMAGE_CACHE_DIR}
 make setup
