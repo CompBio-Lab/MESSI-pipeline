@@ -160,8 +160,7 @@ interactive:
 	@echo "Remeber to 'module purge', then 'module load CVMFS_CC to load CC stuff"
 	@echo "Then just simply run 'sh run_remote.sh' after you loaded new modules"
 	@echo ""
-	@salloc --time=4:0:0 --mem=8G --nodes=1 --ntasks=8 --account=${ALLOC}
-
+	@bash -c 'source .env && salloc --time=4:0:0 --mem=8G --nodes=1 --ntasks=8 --account=$$ALLOCATION_CODE'
 OUTPUT_DIR ?= results/slurm_output
 OUTPUT_NAME="${OUTPUT_DIR}/MESSI-main_$(shell date +%Y-%m-%d_%H-%M-%S).log"
 
