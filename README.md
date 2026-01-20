@@ -345,6 +345,9 @@ salloc --time=3:00:00 --ntasks=4 --mem=6G --nodes=1 --account=${ALLOCATION_CODE}
 
 Once inside the interactive node after SLURM allocates resources, your hostname should change to something like `se123` , where `123` is the node number assigned to you.
 
+![](assets/load_interactive_node.png)
+
+
 #### Load modules in interactive node
 
 Clean the module environment to avoid conflicts and load compute canada modules (This command should be run first after entering the interactive node):
