@@ -4,7 +4,9 @@ Each method has cross-validation from Nextflow, such that the folds are created 
 
 ## Guides for Adding Methods
 
-- **[Complete Guide for Adding Methods](adding_method_guide.md)** - Comprehensive guide covering:
+- **[Quick Reference Guide](adding_method_quick_reference.md)** ⚡ - Fast reference for adding a method (checklist format)
+  
+- **[Complete Guide for Adding Methods](adding_method_guide.md)** 📚 - Comprehensive guide covering:
   - Dockerfile creation and container setup
   - Using template generator in `bin/adding_method/`
   - Implementing the four processes: preprocess, train, predict, feature_selection
@@ -12,7 +14,7 @@ Each method has cross-validation from Nextflow, such that the folds are created 
   - Integration with CV_R or CV_PYTHON workflows
   - Step-by-step instructions with examples
   
-- **[R-based Method Tutorial](adding_r-based_method/adding_r-based_method.md)** - Detailed walkthrough using logistic regression as example
+- **[R-based Method Tutorial](adding_r-based_method/adding_r-based_method.md)** 🔬 - Detailed walkthrough using logistic regression as example
 
 
 Here, we breakdown the high level steps of each method flow:
