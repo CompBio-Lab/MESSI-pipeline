@@ -44,10 +44,10 @@ For example, if method was on `diablo`, and on both ROSMAP and Breast TCGA datas
 | patient-4 | 0 | 0.67 | diablo | ROSMAP |
 | SR41 | 0 | 0.71 | diablo | TCGA |
 
-Some explantions:
+Some explanations:
 
 - sample_name:  Patient identifier inside the dataset, as if like each row id of a dataframe
 - y:            The class label, either 1 or 0 in binary classification
-- phat:         Predicted proability of y == 1, so P(Y=1)
+- phat:         Predicted probability of y == 1, so P(Y=1)
 - method_name:  Name of the method ran (DIABLO, MOGONET, ...)
 - dataset:      Name of the dataset of study (TCGA, ROSMAP, ...)

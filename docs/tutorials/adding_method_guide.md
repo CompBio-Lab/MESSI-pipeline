@@ -407,10 +407,10 @@ main <- function(fold_path, label, prefix, method_name) {
 }
 
 main(
-  fold_path = opt$fold_path,
-  label = opt$label,
-  prefix = opt$prefix,
-  method_name = opt$method_name
+  fold_path = opt[["--fold_path"]],
+  label = opt[["--label"]],
+  prefix = opt[["--prefix"]],
+  method_name = opt[["--method_name"]]
 )
 ```
 
@@ -546,10 +546,10 @@ main <- function(model_path, test_path, label, method_name) {
 }
 
 main(
-  model_path = opt$model_path,
-  test_path = opt$test_path,
-  label = opt$label,
-  method_name = opt$method_name
+  model_path = opt[["--model_path"]],
+  test_path = opt[["--test_path"]],
+  label = opt[["--label"]],
+  method_name = opt[["--method_name"]]
 )
 ```
 
