@@ -16,31 +16,38 @@ else
   set +o allexport
 fi
 
+# Helper function to check if a variable is set and not equal to DEF_VAL
+
+check_var() {
+
+  local var_name="$1"
+
+  local var_value="${!var_name}"  # Indirect expansion to get value of variable
+
+  if [ -z "${var_value}" ] || [ "${var_value}" == "${DEF_VAL}" ]; then
+
+    echo "$var_name has not been provided yet in the .env file"
+
+    echo "Please update it!"
+
+    exit 1
+
+  fi
+
+}
+
+
 # Check if ALLOCATION CODE is provided or not
-if [ ${ALLOCATION_CODE} == ${DEF_VAL} ]; then
-  echo "Allocation code have not provided yet in the .env file"
-  echo "Please update it!"
-  exit 1
-fi
-
+check_var "ALLOCATION_CODE"
 # Check if MAIL user has provided or not
-if [ ${MAIL_USER} == ${DEF_VAL} ]; then
-  echo "Mail user have not provided yet in the .env file"
-  echo "Please update it!"
-  exit 1
-fi
-
-if [ ${APPTAINER_IMAGE_CACHE_DIR} == ${DEF_VAL} ]; then
- echo "Apptainer image cache dir have not provided yet in the .env file"
- echo "Please update it!"
- exit 1
-fi
-
+check_var "MAIL_USER"
+# Check if apptainer image cache dir exist
+check_var "APPTAINER_IMAGE_CACHE_DIR"
 
 # ============================================================================
 # First check if image dir exists and all images are loaded are not
 #APPTAINER_IMAGE_CACHE_DIR="/arc/project/${ALLOCATION_CODE}/${USER}/MESSI-apptainer-images"
-if [ ! -d ${APPTAINER_IMAGE_CACHE_DIR} ]; then
+if [ ! -d "${APPTAINER_IMAGE_CACHE_DIR}" ]; then
   echo "Dir not exists yet, creating now at: "
   echo "Creating the cache dir:  ${APPTAINER_IMAGE_CACHE_DIR}"
   mkdir -p ${APPTAINER_IMAGE_CACHE_DIR}
