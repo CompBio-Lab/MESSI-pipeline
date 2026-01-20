@@ -1,8 +1,10 @@
 #!/bin/bash
 
 # This arg is directly provided from the Makefile
-PROJECT_ROOT_DIR=$1
+PROJECT_ROOT_DIR="${1:-$(pwd)}"
+echo -e "Using ${PROJECT_ROOT_DIR} as project root dir\n"
 ENV_FILE="${PROJECT_ROOT_DIR}/.env"
+#echo "ENV file is: ${ENV_FILE}"
 DEF_VAL="REPLACE"
 # This loads the .env file under the root dir of the project
 if [ ! -f ${ENV_FILE} ]; then
@@ -28,13 +30,19 @@ if [ ${MAIL_USER} == ${DEF_VAL} ]; then
   exit 1
 fi
 
+if [ ${APPTAINER_IMAGE_CACHE_DIR} == ${DEF_VAL} ]; then
+ echo "Apptainer image cache dir have not provided yet in the .env file"
+ echo "Please update it!"
+ exit 1
+fi
+
 
 # ============================================================================
 # First check if image dir exists and all images are loaded are not
-APPTAINER_IMAGE_CACHE_DIR="/arc/project/${ALLOCATION_CODE}/${USER}/MESSI-apptainer-images"
+#APPTAINER_IMAGE_CACHE_DIR="/arc/project/${ALLOCATION_CODE}/${USER}/MESSI-apptainer-images"
 if [ ! -d ${APPTAINER_IMAGE_CACHE_DIR} ]; then
   echo "Dir not exists yet, creating now at: "
-  echo ${APPTAINER_IMAGE_CACHE_DIR}
+  echo "Creating the cache dir:  ${APPTAINER_IMAGE_CACHE_DIR}"
   mkdir -p ${APPTAINER_IMAGE_CACHE_DIR}
 fi
 # -------------------------------------------------
