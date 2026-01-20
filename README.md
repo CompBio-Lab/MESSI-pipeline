@@ -384,7 +384,10 @@ Loads previous configured environment variables from `.env` file:
 
 ```bash
 # Source the .env file to load env variables
-source .env
+# NOTE: here use a more special command to source, as we need to export the variables explicitly
+set -a           # Enable auto-export
+source .env      # Usual source
+set +a		 # Disable auto-export
 ```
 
 Need to specify an extra variable at runtime to tell nextflow to skip auto-update check as Sockeye has no internet access on compute nodes:
