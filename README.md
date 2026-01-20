@@ -375,6 +375,9 @@ which nextflow
 nextflow info
 ```
 
+![](assets/login_node_nextflow_info.png)
+
+
 #### Run the pipeline in HPC interactive node
 
 Loads previous configured environment variables from `.env` file:
