@@ -231,6 +231,8 @@ rm -rf .apptainer/cache # DANGER: recursive delete, be careful with wrong path
 #### Verify Apptainer images
 
 ```bash
+# Load the configured environment variables
+source .env
 # Check images directory
 ls /arc/project/${ALLOCATION_CODE}/${USER}/MESSI-apptainer-images
 
@@ -338,6 +340,7 @@ salloc \
   --time=3:00:00 \
   --ntasks=4 \
   --mem=6G \
+  --nodes=1 \
   --account=${ALLOCATION_CODE}
 ```
 
