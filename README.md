@@ -336,14 +336,11 @@ For development, testing, and medium-sized datasets on HPC. Serves as a middle g
 Running the following command in the login node would request an interactive session:
 
 ```bash
+# Load configured environment variables
+source .env
 # Request cpu interactive node (3 hours, 4 CPUs, 6GB RAM, no GPU)
 # Again ALLOCATION_CODE should be non null/empty from the .env file you have set above if done correctly
-salloc \
-  --time=3:00:00 \
-  --ntasks=4 \
-  --mem=6G \
-  --nodes=1 \
-  --account=${ALLOCATION_CODE}
+salloc --time=3:00:00 --ntasks=4 --mem=6G --nodes=1 --account=${ALLOCATION_CODE}
 ```
 
 Once inside the interactive node after SLURM allocates resources, your hostname should change to something like `se123` , where `123` is the node number assigned to you.
