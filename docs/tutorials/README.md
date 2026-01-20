@@ -1,9 +1,18 @@
 # Flow of methods and instructions
 
+Each method has cross-validation from Nextflow, such that the folds are created priorly, and each method use same folds to ensure same comparisons carried. And, each fold is being handled parallely with very few times as batch mode (one complete chunk).
 
-Each method has cross-validation from Nextflow, such that the folds are created priorly, and each mtehod use same folds to ensure same comparisons carried. And, each fold is being handled parallely with very few times as batch mode (one complete chunk).
+## Guides for Adding Methods
 
-To see detailed step by step instructions, you could see this [guide](adding_r-based_method/adding_r-based_method.md)
+- **[Complete Guide for Adding Methods](adding_method_guide.md)** - Comprehensive guide covering:
+  - Dockerfile creation and container setup
+  - Using template generator in `bin/adding_method/`
+  - Implementing the four processes: preprocess, train, predict, feature_selection
+  - Binary script templates for R and Python
+  - Integration with CV_R or CV_PYTHON workflows
+  - Step-by-step instructions with examples
+  
+- **[R-based Method Tutorial](adding_r-based_method/adding_r-based_method.md)** - Detailed walkthrough using logistic regression as example
 
 
 Here, we breakdown the high level steps of each method flow:
