@@ -177,6 +177,14 @@ module load gcc/9.4.0 git/2.31.8 apptainer/1.1.4
 ```
 
 
+#### Clone the repository in login node
+
+```bash
+# Important: this must be done in the login node, otherwise you wiil not have internet access during computation nodes
+git clone git@github.com:CompBio-Lab/MESSI-pipeline.git
+```
+
+
 #### Configure environment variables
 
 ```bash
@@ -198,12 +206,6 @@ APPTAINER_IMAGE_CACHE_DIR=/arc/project/${ALLOCATION_CODE}/${USER}/MESSI-apptaine
 > [!Warning]
 > Make sure you do NOT track this .env file onto git
 
-#### Clone the repository in login node
-
-```bash
-# Important: this must be done in the login node, otherwise you wiil not have internet access during computation nodes
-git clone git@github.com:CompBio-Lab/MESSI-pipeline.git
-```
 
 #### Pull Apptainer images
 
