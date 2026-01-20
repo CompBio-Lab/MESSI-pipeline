@@ -366,6 +366,9 @@ module load nextflow/24.04.4
 Verify nextflow loads correctly:
 
 ```bash
+# NOTE: this NXF_HOME has to be set, and need to be writeable dir
+# Otherwise, you would get an error of 'Unable to initialize nextflow environment'
+export NXF_HOME=$(eval pwd) # Set it as current working directory
 which nextflow
 nextflow info
 ```
@@ -486,6 +489,7 @@ cd /scratch/${ALLOCATION_CODE}/${USER}/MESSI-pipeline
 
 PIPELINE_DIR=$(eval pwd)
 # AS per nextflow expert, work/ CANNOT be under /tmp
+# NOTE: this NXF_HOME variable has to be in a writeable directory
 export NXF_WORK="${PIPELINE_DIR}/work"
 export NXF_HOME="${PIPELINE_DIR}"
 export NXF_OFFLINE='true'
