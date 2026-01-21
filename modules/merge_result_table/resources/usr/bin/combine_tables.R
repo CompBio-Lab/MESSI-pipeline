@@ -30,7 +30,9 @@ convert_table_format <- function(table) {
   relevant_cols <- c("sample_name", "y",  "phat", "method_name", "dataset", "fold")
   contains_relevant_cols <- cols %in% relevant_cols
   if(!all(contains_relevant_cols)) {
-    warning("\nResult table might not contain all relevant columns\n")
+    warning("\nResult table might not contain all relevant columns:\n ", 
+    paste(relevant_cols, collapse=", "), "\n", "current is: ", 
+    paste(cols, collapse=", "), "\n")
     # TODO: Find a better way for this?
     table <- table[, relevant_cols]
   }
@@ -64,7 +66,7 @@ main <- function(tables, method_name, methodMode, readMode="csv", pattern="-resu
     # TODO: need to make this label and identifier better
     # Get everything before last hypen - to retrieve unique label
     label <- gsub(pattern, "", table_path)
-    message("\nThis is label:", label, "\n")
+    message("\nThis is label: ", label, "\n")
     #table <- switch(
     #            readMode,
     #            "table" = read.table(table_path, header=TRUE),
