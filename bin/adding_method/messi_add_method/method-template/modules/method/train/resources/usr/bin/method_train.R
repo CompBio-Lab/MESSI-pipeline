@@ -32,10 +32,15 @@ load_utils(here("bin/misc_utils"))
 # Parase docopt
 opt <- docopt::docopt(doc)
 
+# TODO: implement your training logic here
+train_model <- function(train_data, inner_cv=FALSE) {
+  return(NULL)
+}
+
 
 # TODO: You might need to re-implement the main logic
 # Main function to run
-main <- function(fold_path, label, prefix, method_name) {
+main <- function(fold_path, label, prefix, method_name, inner_cv=FALSE) {
   # Log the params used
   args_used <- c(as.list(environment()))
   logging_params(args_used)
@@ -55,7 +60,10 @@ main <- function(fold_path, label, prefix, method_name) {
   # TODO: You need to implement your training logic here
   # Train a model
   # Recommended to use default settings
-  model <- "TODO"
+  model <- train_model(train_data, inner_cv=FALSE)
+  if (is.null(model)) {
+    stop("Model did not implement yet, model is NULL")
+  }
 
   # Filenames to write out
   model_file  <-  paste(label, paste(method_name, "model.rds", sep="_"), sep="-")
@@ -68,9 +76,10 @@ main <- function(fold_path, label, prefix, method_name) {
 }
 # Call the function here
 main(
-  fold_path = opt$fold_path,
-  label     = opt$label,
-  prefix    = opt$prefix,
-  method_name= opt$method_name
+  fold_path   = opt$fold_path,
+  label       = opt$label,
+  prefix      = opt$prefix,
+  method_name = opt$method_name
+  inner_cv    = opt$run_inner_cv
 )
 cat("Done")
