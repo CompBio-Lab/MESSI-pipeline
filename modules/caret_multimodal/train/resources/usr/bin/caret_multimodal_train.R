@@ -25,18 +25,48 @@ library(MultiAssayExperiment)
 library(stringr)
 library(caret)
 # Load scripts ========================================================
-source(here("bin/rhelpers.R")) # This is included in nextflow bin path
-# Loading generic utils
-load_utils(here("bin/logging"))
-load_utils(here("bin/preprocessing"))
-load_utils(here("bin/misc_utils"))
-# Parase docopt
+# Gather the pipeline dir (THIS IS VERY UGGLY FIX)
+bin_dir <- Sys.getenv("PATH") |> 
+  strsplit(":") |>
+  unlist() |>
+  tail(1)
+
+# Determine if running on cluster deploy mode or local mode
+is_scratch <- stringr::str_detect(bin_dir, pattern = "scratch")
+if (is_scratch) {
+  pipeline_dir <- gsub("/bin", "", bin_dir)
+} else {
+  pipeline_dir <- ""
+}
+
+
+# Source custom functions
+source(here(pipeline_dir, "bin/rhelpers.R")) # This is included in nextflow bin path
+# Loading generic utils from directories
+load_utils(here(pipeline_dir, "bin/logging"))
+load_utils(here(pipeline_dir, "bin/misc_utils"))
+load_utils(here(pipeline_dir, "bin/plotting"))
+# Parse docopt
 opt <- docopt::docopt(doc)
 
 # TODO: implement your training logic here
 train_model <- function(train_data, inner_cv=FALSE) {
+  alphas <- c(0.7, 0.775, 0.850, 0.925, 1)
+  lambdas <- seq(0.001, 0.1, by = 0.01)
+  tuneGrid <- expand.grid(alpha = alphas, lambda = lambdas)
   # Caret relies on tuneGrid and trainControl for hyperparameter tuning
   if (inner_cv) {
+    trControl <- trainControl(
+      method = "repeatedcv",
+      number = 5,
+      repeats = 3,
+      classProbs = TRUE,
+      summaryFunction = twoClassSummary,
+      savePredictions = "final"
+    )
+
+  } else {
+    # Default with no inner cv, simple train-test 
     trControl <- trainControl(
       method = "cv",
       number = 5,
@@ -44,20 +74,6 @@ train_model <- function(train_data, inner_cv=FALSE) {
       summaryFunction = twoClassSummary,
       savePredictions = "final"
     )
-    alphas <- c(0.7, 0.775, 0.850, 0.925, 1)
-    lambdas <- seq(0.001, 0.1, by = 0.01)
-    tuneGrid <- expand.grid(alpha = alphas, lambda = lambdas)
-  } else {
-    # Default with no inner cv, simple train-test 
-    trControl <- trainControl(
-      method = "none",
-      number = 0,
-      classProbs = TRUE,
-      summaryFunction = twoClassSummary,
-      savePredictions = "final"
-    )
-    # Default hyperparameters
-    tuneGrid <- expand.grid(alpha = 1, lambda = 0.01)
   }
   # =========================================================
   # First fit individual models for each modality
