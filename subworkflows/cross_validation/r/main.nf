@@ -1,4 +1,5 @@
 // Methods to include
+include { CARET_MULTIMODAL } from "${subworkflowDir}/methods/caret_multimodal"
 include { DEMO_LOGIT } from "${subworkflowDir}/methods/demo_logit"
 include { COOPERATIVE_LEARNING }  from "${subworkflowDir}/methods/cooperative_learning"
 include { DIABLO }                from "${subworkflowDir}/methods/diablo"
@@ -15,6 +16,7 @@ def language_name = "R"
 def saveMode = "language"
 workflow CV_R {
   // Skip or trigger method to run
+  skip_caret_multimodal = params.skip_caret_multimodal // boolean: true/false
   skip_demo_logit = params.skip_demo_logit // boolean: true/false
   skip_cplr   = params.skip_cplr    // boolean: true/false
   skip_diablo = params.skip_diablo  // boolean: true/false
@@ -42,6 +44,13 @@ workflow CV_R {
     */
 
     // Instantiation of method subworkflows
+    // CARET_MULTIMODAL
+    caret_multimodal_results = Channel.empty()
+    if (!skip_caret_multimodal) {
+        CARET_MULTIMODAL ( mae_copy )
+        caret_multimodal_results = CARET_MULTIMODAL.out.csv_results
+    }
+    
     // DEMO_LOGIT
     demo_logit_results = Channel.empty()
     if (!skip_demo_logit) {
@@ -89,6 +98,7 @@ workflow CV_R {
     // Collect all result and mix it to merge it more
     Channel.empty()
             // Then these are outputs of methods
+            .mix( caret_multimodal_results )
             .mix( demo_logit_results )
             .mix( cooperative_learning_results )
             .mix( diablo_results )

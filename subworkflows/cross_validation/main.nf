@@ -36,7 +36,8 @@ def shouldRunR() {
         params.skip_cplr && 
         params.skip_diablo && 
         params.skip_mofa &&
-        params.skip_rgcca
+        params.skip_rgcca &&
+				params.skip_caret_multimodal
     )
 }
 
@@ -110,7 +111,6 @@ workflow CROSS_VALIDATION {
 		// Execute these two (they should be in parallel)
 		// Execute language workflows or specific only
 		if ( !runBothLangs ) {
-			log.info "Running one of the language only from R and Python"
 			if ( runR ) {
 				log.info "Running methods in R only"
 				CV_R ( ch_full_exp.mae_copy )
