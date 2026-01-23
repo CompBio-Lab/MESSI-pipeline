@@ -1,3 +1,4 @@
+caret_multimodal
 codia
 cooperative_learning
 mae_mudata
@@ -8,5 +9,6 @@ mowgli
 muon-py
 rgcca
 save_simulate
+
 
 
