@@ -86,8 +86,6 @@ run_caret_multimodal_cv <- function(X, Y) {
   # Then fit the ensemble model
   stack_model <- caretMultimodal::caret_stack(
     caret_list = base_models,
-    data_list = train_data$X,
-    target = train_data$Y, 
     method = "glmnet",
     tuneGrid = tuneGrid,
     trControl = trControl

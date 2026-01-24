@@ -87,8 +87,6 @@ train_model <- function(train_data, inner_cv=FALSE) {
   # Then fit the ensemble model
   stack_model <- caretMultimodal::caret_stack(
     caret_list = base_models,
-    data_list = train_data$X,
-    target = train_data$Y, 
     method = "glmnet",
     tuneGrid = tuneGrid,
     trControl = trControl
@@ -129,6 +127,10 @@ main <- function(fold_path, label, prefix, method_name, inner_cv=FALSE) {
   saveRDS(object = test_data, test_file)
   return(model)
 }
+
+# Set seed for reproducibility
+set.seed(1)
+
 # Call the function here
 main(
   fold_path   = opt$fold_path,
