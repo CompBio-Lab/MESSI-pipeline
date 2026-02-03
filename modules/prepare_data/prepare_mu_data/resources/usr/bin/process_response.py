@@ -1,6 +1,5 @@
 import pandas as pd
 
-import pandas as pd
 
 def process_response(y_series, convert_to="numeric"):
     """
@@ -13,6 +12,10 @@ def process_response(y_series, convert_to="numeric"):
     if not isinstance(y_series, pd.Series):
         raise TypeError("Response must be a pandas Series.")
 
+    # Normalize string labels to lowercase
+    y_series = y_series.apply(
+        lambda x: x.lower() if isinstance(x, str) else x
+    )
     # Ensure there are exactly two unique labels
     unique_labels = set(y_series.unique())
     if len(unique_labels) != 2:
