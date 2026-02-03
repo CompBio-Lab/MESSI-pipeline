@@ -30,6 +30,42 @@ calculate_threshold <- function(variances, threshold_type = "mean", percentile =
   return(threshold)
 }
 
+# Safe filter to drop columns by threshold, only filter if kept at least 2 columns
+# Otherwise, methods could complain as it requires >= features
+safe_filter <- function(X, keep, step, min_cols = 2) {
+
+  kept <- sum(keep)
+
+  total <- length(keep)
+
+  if (kept < min_cols) {
+
+    message(sprintf(
+
+      "[SKIP] %s: %d/%d features",
+
+      step, kept, total
+
+    ))
+
+    return(X)
+
+  }
+
+
+
+  message(sprintf(
+
+    "[OK]   %s: %d/%d features",
+
+    step, kept, total
+
+  ))
+  X[, keep, drop = FALSE]
+}
+
+
+
 
 # Takes input of an X list, such composed of I matrix of p_i x n
 preprocess_view <- function(X, replace_na_val=0, scale=FALSE, filter_low_var=TRUE) {
@@ -64,13 +100,15 @@ preprocess_view <- function(X, replace_na_val=0, scale=FALSE, filter_low_var=TRU
       # Remove features with less than mean of the variances
       threshold <- calculate_threshold(variances, threshold_type="mean")
       relv_feats <- variances >= threshold
-      # Apply the filter here
-      wide_X_i <- wide_X_i[, relv_feats]
+      # Apply the safe filter here
+      #wide_X_i <- wide_X_i[, relv_feats, drop=FALSE]
+      wide_X_i <- safe_filter(wide_X_i, relv_feats, step = "Variance filter")
 
       # Then, check those features that have at least 50% of its values not being zero
       # And, remove those that have 70% of zero
-      zero_var_feats <- rownames(nearZeroVar(wide_X_i, freqCut = 70/5, uniqueCut = 50)$Metrics)
-      wide_X_i <- wide_X_i[, !colnames(wide_X_i) %in% zero_var_feats]
+      zero_var_feats <- rownames(mixOmics::nearZeroVar(wide_X_i, freqCut = 70/5, uniqueCut = 50)$Metrics)
+      wide_X_i <- wide_X_i[, !colnames(wide_X_i) %in% zero_var_feats, drop=FALSE]
+      stopifnot(is.matrix(wide_X_i))
     }
 
 

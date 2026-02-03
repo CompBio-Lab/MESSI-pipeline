@@ -42,31 +42,29 @@ def calculate_metrics(group, threshold, average='binary', round_digit=3):
     y_pred = np.where(phat >= threshold, 1, 0)
     # Initialize dict for metrics
     metrics = {
+        'auc': 0.0,
         'accuracy': 0.0,
         'balanced_accuracy': 0.0,
         'precision': 0.0,
         'average_precision_score': 0.0,
         'recall': 0.0,
         'f1_score': 0.0,
-        'auc': 0.0,
-        'log_loss': 0.0,
-        'phi_coefficient': 0.0
+	'log_loss': 0.0,
     }
-    
+
     try:
         # Check if both classes are present in the current group
         if len(set(y_true)) > 1:  # More than one unique value in y_true
+            # AUC requires predicted probability (phat) not y_pred
+            metrics['auc'] = roc_auc_score(y_true, phat)
             metrics['accuracy'] = accuracy_score(y_true, y_pred)
             metrics['balanced_accuracy'] = balanced_accuracy_score(y_true, y_pred)
             metrics['precision'] = precision_score(y_true, y_pred, average=average)
             metrics['average_precision_score'] = average_precision_score(y_true, y_pred)
             metrics['recall'] = recall_score(y_true, y_pred, average=average)
             metrics['f1_score'] = f1_score(y_true, y_pred, average=average)
-            # auc requires predicted probability (phat) no y_pred
-            metrics['auc'] = roc_auc_score(y_true, phat)
             # For the losses as well
             metrics['log_loss'] = log_loss(y_true, y_pred)
-            metrics['phi_coefficient'] = matthews_corrcoef(y_true, y_pred)
         else:
             raise ValueError("Only one class present")
     

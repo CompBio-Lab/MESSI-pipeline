@@ -25,12 +25,26 @@ library(magrittr)
 library(tibble)
 library(caret)
 
+bin_dir <- Sys.getenv("PATH") |> 
+  strsplit(":") |>
+  unlist() |>
+  tail(1)
+
+# Determine if running on cluster deploy mode or local mode
+is_scratch <- stringr::str_detect(bin_dir, pattern = "scratch")
+if (is_scratch) {
+  pipeline_dir <- gsub("/bin", "", bin_dir)
+} else {
+  pipeline_dir <- ""
+}
+
+
 # Source custom functions
-source(here("bin/rhelpers.R")) # This is included in nextflow bin path
+source(here(pipeline_dir, "bin/rhelpers.R")) # This is included in nextflow bin path
 # Loading generic utils from directories
-load_utils(here("bin/logging"))
-load_utils(here("bin/misc_utils"))
-load_utils(here("bin/plotting"))
+load_utils(here(pipeline_dir, "bin/logging"))
+load_utils(here(pipeline_dir, "bin/misc_utils"))
+load_utils(here(pipeline_dir, "bin/plotting"))
 
 # Helper functions to run cv, fit final model, and extract features
 run_caret_multimodal_cv <- function(X, Y) {
@@ -72,8 +86,6 @@ run_caret_multimodal_cv <- function(X, Y) {
   # Then fit the ensemble model
   stack_model <- caretMultimodal::caret_stack(
     caret_list = base_models,
-    data_list = train_data$X,
-    target = train_data$Y, 
     method = "glmnet",
     tuneGrid = tuneGrid,
     trControl = trControl
