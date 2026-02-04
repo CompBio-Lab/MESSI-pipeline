@@ -8,10 +8,10 @@ RUN Rscript -e "\
 
 # Install R packages from CRAN
 RUN Rscript -e "\
-  pkgs <- c('here', 'docopt', 'glmnet'); \
+  pkgs <- c('here', 'docopt', 'glmnet', 'viridis'); \
   install.packages(pkgs) \
   "
 
 # And install main caretMultimodal package from GitHub
-RUN Rscript -e "devtools::install_github('JoshD898/caretMultimodal')"
+RUN Rscript -e "devtools::install_github('JoshD898/caretMultimodal@eaedd51')"
 
