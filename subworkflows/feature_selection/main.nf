@@ -2,6 +2,7 @@
 // TODO: update this later
 
 include { printBanner } 				  from "${modulesDir}/functions"
+include { CARET_MULTIMODAL_SELECT_FEATURE }       from "${modulesDir}/caret_multimodal/select_feature"
 include { COOPERATIVE_LEARNING_SELECT_FEATURE }   from "${modulesDir}/cooperative_learning/select_feature"
 include { DIABLO_SELECT_FEATURE }                 from "${modulesDir}/diablo/select_feature"
 include { MOGONET_SELECT_FEATURE }                from "${modulesDir}/mogonet/select_feature"
@@ -17,6 +18,7 @@ workflow FEATURE_SELECTION {
   // Params used
   // n_percent     = params.n_percent // N percent of features to be selected for each method
   // Skip or trigger method to run
+  skip_caret_multimodal = params.skip_caret_multimodal // boolean: true/false
   skip_cplr     = params.skip_cplr    // boolean: true/false
   skip_diablo   = params.skip_diablo  // boolean: true/false
   skip_rgcca    = params.skip_rgcca   // boolean: true/false
@@ -52,7 +54,13 @@ workflow FEATURE_SELECTION {
     //         .set { all_datasets }
     //mae_data.view { "This is mae: $it"}
     /* The ones in R */
-   cooperative_learning_features = Channel.empty()
+    caret_multimodal_features = Channel.empty()
+    if (!skip_caret_multimodal) {
+      CARET_MULTIMODAL_SELECT_FEATURE ( mae_data )
+      caret_multimodal_features = CARET_MULTIMODAL_SELECT_FEATURE.out.features
+    }
+
+    cooperative_learning_features = Channel.empty()
     if (!skip_cplr) {
       COOPERATIVE_LEARNING_SELECT_FEATURE (mae_data)
       cooperative_learning_features = COOPERATIVE_LEARNING_SELECT_FEATURE.out.features
@@ -100,6 +108,7 @@ workflow FEATURE_SELECTION {
 
     /* Lastly collect the features and merge together for downstream usage*/
     Channel.empty()
+            .mix( caret_multimodal_features )
             .mix( cooperative_learning_features )
             .mix( diablo_features )
             .mix( mogonet_features )
