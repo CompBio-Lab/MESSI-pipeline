@@ -11,7 +11,8 @@ Options:
   --data_path=DATA_PATH     Path to read the full data in
   --dataset_name=DNAME      Dataset name used as identification
   --output_ext=EXT          Extension of output table to save [default: csv]
-  --n_percent=N_PER         N percent of features per view to select [default: 10]
+  --nfolds=NFOLDS           Number of folds to perform CV to perform feature selection [default: 5]
+  --criteria_order=CRT      Variable to sort feature coeffcients, one of standardized_coef or coef [default: coef]
 "
 # Parse cli docs
 opt <- docopt::docopt(doc)
@@ -47,43 +48,34 @@ load_utils(here(pipeline_dir, "bin/misc_utils"))
 load_utils(here(pipeline_dir, "bin/plotting"))
 
 # Helper functions to run cv, fit final model, and extract features
-run_caret_multimodal_cv <- function(X, Y) {
+run_caret_multimodal_cv <- function(X, Y, nfolds=5) {
   # NOTE: this is not the same as the normal train process, as it has different parameters here
   # Caret relies on tuneGrid and trainControl for hyperparameter tuning
-  if (inner_cv) {
-    trControl <- trainControl(
-      method = "repeatedcv",
-      number = 5,
-      repeats = 5,
-      classProbs = TRUE,
-      summaryFunction = twoClassSummary,
-      savePredictions = "final"
-    )
-    alphas <- c(0.7, 0.775, 0.850, 0.925, 1)
-    lambdas <- seq(0.001, 0.1, by = 0.01)
-    tuneGrid <- expand.grid(alpha = alphas, lambda = lambdas)
-  } else {
-    # Default with no inner cv, simple train-test 
-    trControl <- trainControl(
-      method = "cv",
-      number = 5,
-      classProbs = TRUE,
-      summaryFunction = twoClassSummary,
-      savePredictions = "final"
-    )
-    # Default hyperparameters
-    tuneGrid <- expand.grid(alpha = 1, lambda = 0.01)
-  }
+  message("Running without inner cross-validation, using default hyperparameters")
+  # Default with no inner cv, simple train-test 
+  trControl <- caret::trainControl(
+    method = "cv",
+    number = nfolds,
+    classProbs = TRUE,
+    summaryFunction = caret::twoClassSummary,
+    savePredictions = "final"
+  )
+  # Default hyperparameters
+  alpha_vals <- c(0.7, 0.775, 0.850, 0.925, 1)
+  lambda_vals <- seq(0.001, 0.1, by = 0.01)
+  tuneGrid <- expand.grid(alpha = alpha_vals, lambda = lambda_vals)
   # =========================================================
   # First fit individual models for each modality
+  message("Fitting base models for each modality...")
   base_models <- caretMultimodal::caret_list(
-    target = train_data$Y,
-    data_list = train_data$X,
+    target = Y,
+    data_list = X,
     method = "glmnet",
     tuneGrid = tuneGrid,
     trControl = trControl
   )
   # Then fit the ensemble model
+  message("Fitting stacked model...")
   stack_model <- caretMultimodal::caret_stack(
     caret_list = base_models,
     method = "glmnet",
@@ -97,12 +89,7 @@ run_caret_multimodal_cv <- function(X, Y) {
 
 
 # Main entrance of the script
-# TODO: You need to re-implement the main logic
-# 1. Perform some kind of cv to find hyperparameters
-# 2. Use those found optimal hyperparams to fit final model
-# 3. Then select top weights from the final model
-# 4. Take top H percent of each view (omic) features from the dataset input
-main <- function(mae_path, dataset_name, n_percent, design) {
+main <- function(mae_path, dataset_name, nfolds, criteria_order="coef") {
   # ---------------------------------------------------------------------------
   # PARAMS
   # ---------------------------------------------------------------------------
@@ -122,29 +109,25 @@ main <- function(mae_path, dataset_name, n_percent, design) {
   logging_head_names(X=X, n = 10)
   # TODO: Run a cv on X and Y to get hyperparameters
   # Then fit the model
-  cv_model <- run_caret_multimodal_cv(X, Y)
-  # TODO: Extract hyperparameters from your cv model to fit final model
-  final_model <- fit_final_model(X, Y, hyperparam1, hyperparam2)
+  cv_model <- run_caret_multimodal_cv(X, Y, nfolds = nfolds)
   # TODO: Extract the features out from your final model and wrangle to df for downstream usage
-  feats_df <- EXTRACT_FEATURES_OUT %>%
+  feature_weights <- caretMultimodal:::compute_feature_contributions.caret_stack(cv_model, n_features = Inf)
+  feats_df <- feature_weights %>%
+              dplyr::rename(
+                "view" = "Model",
+                "coef" = "Relative Contribution"
+              ) %>%
+              dplyr::rename_with(tolower) %>%
               as_tibble() %>%
               # Add more metadata
               mutate(method = method,
                     dataset_name = dataset_name
               ) %>%
-              # View should be name of the omics
               group_by(view) %>%
               # Sort by descending order of some weights
-              # TODO: put in actual criteria_order column name, i.e. coef, weight
               arrange(desc(abs( !!sym( criteria_order ) ))) %>%
-              # This takes top N percent of feature from each view
-              group_modify(~ slice_head(
-                .x, n = round(n_percent * nrow(.x) / 100, digits=0)
-                )
-              ) %>%
-              ungroup() %>%
               # These are the required columns for downstream process
-              select(feature, view, method, dataset_name)
+              dplyr::select(feature, view, coef, method, dataset_name)
 
   # write it to disk
   comb_name <- paste(method, dataset_name, sep = "-")
@@ -156,9 +139,13 @@ main <- function(mae_path, dataset_name, n_percent, design) {
   return(feats_df)
 }
 
+# Set seed for reproducibility
+set.seed(1)
+
 # Then call the function above
 main(
   mae_path=opt$data_path, 
-  dataset_name=opt$dataset_name, 
-  n_percent=as.numeric(opt$n_percent)
+  dataset_name=opt$dataset_name,
+  nfolds=as.numeric(opt$nfolds),
+  criteria_order=opt$criteria_order
 )
