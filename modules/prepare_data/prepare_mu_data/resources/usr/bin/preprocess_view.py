@@ -1,5 +1,24 @@
 import pandas as pd
 
+def safe_filter(X, keep, step, min_cols=2):
+    """
+    X     : pandas DataFrame or numpy array (n_samples x n_features)
+    keep  : boolean mask (length = n_features)
+    step  : string, name of filtering step
+    """
+
+    kept = int(keep.sum())
+    total = len(keep)
+    if kept < min_cols:
+        print(f"[SKIP] {step}: {kept}/{total} features")
+        return X  # return unfiltered X
+    print(f"[OK]   {step}: {kept}/{total} features")
+    # IMPORTANT: keep 2D shape
+    if hasattr(X, "loc"):   # pandas
+        return X.loc[:, keep]
+    else:                   # numpy
+        return X[:, keep]
+
 # Helper function to calculate the threshold to use for filtering feature
 def calculate_threshold(variances, threshold_type='mean', percentile=0.10):
     """
@@ -80,10 +99,11 @@ def preprocess_view(df, var_threshold=0.16, replace_na_val=0, scale=False, filte
         threshold = calculate_threshold(variances, threshold_type="mean")
         # These are the relevant columns to keep
         relv_feats = variances >= threshold
+        df_reduced = safe_filter(df_copy,relv_feats,step="Variance filter",min_cols=2)
         # Then filter it out
         # NOTE: In python, it uses AnnData and MuData, so dont need to worry about prefixing
         # view_name into the feature name
-        df_reduced = df_copy.loc[:, relv_feats]
+        #df_reduced = df_copy.loc[:, relv_feats]
 	# And apply the nearZeroVar fun (implemented based on mixOmics)
         # Then, check those features that have at least 50% of its values not being zero
         # And, remove those that have 70% of zero
