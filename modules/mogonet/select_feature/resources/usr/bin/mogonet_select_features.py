@@ -46,7 +46,7 @@ def seed_everything(seed: int):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = True
+    torch.backends.cudnn.benchmark = False
 
 # TODO: The feat importance is always 0?
 # and make sure to have topn to be big number
