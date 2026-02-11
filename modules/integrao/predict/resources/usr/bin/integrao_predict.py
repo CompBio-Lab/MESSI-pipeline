@@ -17,7 +17,7 @@ Options:
 
 # TODO: The docopt help message above can be better described or reformatted
 
-from custom_integrao_predictor import Custom_Integrao_Predictor
+from custom_integrao_predictor import CustomIntegraoPredictor
 from docopt import docopt
 import json
 import pandas as pd
@@ -245,7 +245,7 @@ def build_predictor(full_dfs, hparams,
     predictor : integrao_predictor
         Initialized predictor with fused network.
     """
-    predictor = Custom_Integrao_Predictor(
+    predictor = CustomIntegraoPredictor(
         full_dfs,
         dataset_name,
         modalities_name_list=hparams["modality_names"],

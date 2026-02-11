@@ -14,7 +14,7 @@ from integrao.dataset import GraphDataset
 
 # Implement a custom integrao predictor that inherits from integrao_predictor and overrides the interpret_supervised and inference_supervised methods
 # to return predicted probabilities and feature importance for the new datasets. 
-class Custom_Integrao_Predictor(integrao_predictor):
+class CustomIntegraoPredictor(integrao_predictor):
     def inference_supervised(self, model_path, new_datasets, modalities_names):
         # loop through the new_dataset and create Graphdatase
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
