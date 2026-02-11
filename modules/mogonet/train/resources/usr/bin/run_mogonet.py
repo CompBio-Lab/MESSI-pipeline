@@ -11,7 +11,7 @@ Options:
   -h --help                   Show this message
   --fold_path=FOLD_PATH       Directory containing one split directory of relevant input [default: None] 
   --label=LABEL               Label of dataset and fold iteration [default: empty]
-  --seed=SEED                 Seed number to reproduce it [default: 0]
+  --seed=SEED                 Seed number to reproduce it [default: 1]
   --he_base_dim=HE_BASE_DIM   Base dimension of hidden embedding [default: 2]
 """
 
@@ -56,14 +56,14 @@ def seed_everything(seed: int):
     import random, os
     import numpy as np
     import torch
-    
+
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = True
+    torch.backends.cudnn.benchmark = False
         # ^^ safe to call this function even if cuda is not available
 # Train a model network from mogonet, assuming having those right inputs 
 # from upstream process

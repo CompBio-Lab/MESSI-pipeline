@@ -27,7 +27,11 @@ include { printBanner } 				from "${modulesDir}/functions"
 
 // Function to determine if Python methods should run
 def shouldRunPython() {
-    return !params.skip_mogonet
+    return !(
+			params.skip_mogonet && 
+			params.skip_integrao
+		)
+
 }
 
 // Function to determine if R methods should run

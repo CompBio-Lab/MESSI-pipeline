@@ -1,4 +1,5 @@
 // Methods to include
+include { INTEGRAO } from "${subworkflowDir}/methods/integrao"
 include { SKLEARN } from "${subworkflowDir}/methods/sklearn"
 include { MOGONET } 						from "${subworkflowDir}/methods/mogonet"
 include { GOAT } 								from "${subworkflowDir}/methods/goat"
@@ -14,6 +15,7 @@ def saveMode = "language"
 
 workflow CV_PYTHON {
   // Skip or trigger method to run
+  skip_integrao = params.skip_integrao // boolean: true/false
   skip_sklearn  = params.skip_sklearn // boolean: true/false
   skip_mogonet	= params.skip_mogonet	// boolean: true/false
   skip_goat 		= params.skip_goat		// boolean: true/false
@@ -31,6 +33,13 @@ workflow CV_PYTHON {
     */
 
     // Instantiation of method subworkflows
+    // INTEGRAO
+    integrao_results = Channel.empty()
+    if (!skip_integrao) {
+        INTEGRAO ( mu_copy )
+        integrao_results = INTEGRAO.out.csv_results
+    }
+    
     // SKLEARN
     sklearn_results = Channel.empty()
     if (!skip_sklearn) {
@@ -56,6 +65,7 @@ workflow CV_PYTHON {
     // Collect all result and mix it to merge it more
     Channel.empty()
             // Then these are outputs of methods
+            .mix( integrao_results )
             .mix( sklearn_results )
             .mix( mogonet_results )
             .mix( goat_results )
