@@ -70,9 +70,7 @@ process INTEGRAO_TRAIN {
 		"""
 		integrao_train.py \
 				--fold_path=${fold_path} \
-				--label=${data_label} \
-				--alignment_epochs=200 \
-				--finetune_epochs=200 > \
+				--label=${data_label}  > \
 				${data_label}-${getPublishPath(task.process).tokenize('/')[-1].toLowerCase()}.log
 		echo ${data_label}
 		"""
