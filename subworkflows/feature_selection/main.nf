@@ -5,6 +5,7 @@ include { printBanner } 				  from "${modulesDir}/functions"
 include { CARET_MULTIMODAL_SELECT_FEATURE }       from "${modulesDir}/caret_multimodal/select_feature"
 include { COOPERATIVE_LEARNING_SELECT_FEATURE }   from "${modulesDir}/cooperative_learning/select_feature"
 include { DIABLO_SELECT_FEATURE }                 from "${modulesDir}/diablo/select_feature"
+include { INTEGRAO_SELECT_FEATURE }               from "${modulesDir}/integrao/select_feature"
 include { MOGONET_SELECT_FEATURE }                from "${modulesDir}/mogonet/select_feature"
 include { RGCCA_SELECT_FEATURE }                  from "${modulesDir}/rgcca/select_feature"
 include { SKLEARN_SELECT_FEATURE }                from "${modulesDir}/sklearn/select_feature"
@@ -19,13 +20,14 @@ workflow FEATURE_SELECTION {
   // n_percent     = params.n_percent // N percent of features to be selected for each method
   // Skip or trigger method to run
   skip_caret_multimodal = params.skip_caret_multimodal // boolean: true/false
-  skip_cplr     = params.skip_cplr    // boolean: true/false
-  skip_diablo   = params.skip_diablo  // boolean: true/false
-  skip_rgcca    = params.skip_rgcca   // boolean: true/false
-  skip_sgmr     = params.skip_sgmr    // boolean: true/false
-  skip_mofa     = params.skip_mofa    // boolean: true/false
-	skip_mogonet  = params.skip_mogonet // boolean: true/false
-  skip_sklearn  = params.skip_sklearn // boolean: true/false
+  skip_cplr             = params.skip_cplr    // boolean: true/false
+  skip_diablo           = params.skip_diablo  // boolean: true/false
+  skip_integrao         = params.skip_integrao // boolean: true/false  
+  skip_rgcca            = params.skip_rgcca   // boolean: true/false
+  skip_sgmr             = params.skip_sgmr    // boolean: true/false
+  skip_mofa             = params.skip_mofa    // boolean: true/false
+	skip_mogonet          = params.skip_mogonet // boolean: true/false
+  skip_sklearn          = params.skip_sklearn // boolean: true/false
 
   // Other method param
   num_comps           = params.num_comps
@@ -72,6 +74,12 @@ workflow FEATURE_SELECTION {
       ch_design = Channel.fromList( diablo_design_connection )
       DIABLO_SELECT_FEATURE ( mae_data, num_comps, ch_design)
       diablo_features = DIABLO_SELECT_FEATURE.out.features
+    }
+
+    integrao_features = Channel.empty()
+    if (!skip_integrao) {
+      INTEGRAO_SELECT_FEATURE ( mu_data )
+      integrao_features = INTEGRAO_SELECT_FEATURE.out.features
     }
 
     mofa_features = Channel.empty()

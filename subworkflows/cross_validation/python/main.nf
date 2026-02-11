@@ -15,7 +15,7 @@ def saveMode = "language"
 
 workflow CV_PYTHON {
   // Skip or trigger method to run
-  skip_integrao = false // boolean: true/false
+  skip_integrao = params.skip_integrao // boolean: true/false
   skip_sklearn  = params.skip_sklearn // boolean: true/false
   skip_mogonet	= params.skip_mogonet	// boolean: true/false
   skip_goat 		= params.skip_goat		// boolean: true/false
