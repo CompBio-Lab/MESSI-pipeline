@@ -51,6 +51,7 @@ process INTEGRAO_PREDICT {
     integrao_predict.py \
       --model_dir=${model_dir} \
       --preprocessed_data_dir=${preprocessed_data_dir} \
+      --dataset_name=${dataset_name} \
 			--label=${data_label} > \
 			${data_label}-${getPublishPath(task.process).tokenize('/')[-1]}.log
 		"""
