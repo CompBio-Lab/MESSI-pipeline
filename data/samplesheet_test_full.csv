@@ -16,3 +16,4 @@ tcga-stes,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-stes.tar.gz
 tcga-thca,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-thca.tar.gz
 clinical_omics,/arc/project/st-singha53-1/datasets/messi_demo_data/clinical_omics.tar.gz
 electrical_omics,/arc/project/st-singha53-1/datasets/messi_demo_data/electrical_omics.tar.gz
+imaging_omics,/arc/project/st-singha53-1/datasets/messi_demo_data/imaging_omics.tar.gz
