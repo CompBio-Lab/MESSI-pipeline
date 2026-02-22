@@ -51,8 +51,10 @@ opt <- docopt::docopt(doc)
 
 # TODO: implement your training logic here
 train_model <- function(train_data, inner_cv=FALSE) {
-  alphas <- c(0.7, 0.775, 0.850, 0.925, 1)
-  lambdas <- seq(0.001, 0.1, by = 0.01)
+  #alphas <- c(0.7, 0.775, 0.850, 0.925, 1)
+  #lambdas <- seq(0.001, 0.1, by = 0.01)
+  alphas <- c(0) # Ridge regression only, no Lasso or elastic-net, since we have many features and want to keep them all
+  lambdas <- 10^seq(-4, 3, length = 20) # Use log space lambda values
   tuneGrid <- expand.grid(alpha = alphas, lambda = lambdas)
   # Caret relies on tuneGrid and trainControl for hyperparameter tuning
   if (inner_cv) {
@@ -69,7 +71,7 @@ train_model <- function(train_data, inner_cv=FALSE) {
     # Default with no inner cv, simple train-test 
     trControl <- trainControl(
       method = "cv",
-      number = 5,
+      number = 5, # This is internal cv for tuning the hyperparameters, not the same as the outer cv fold split, which is done by nextflow
       classProbs = TRUE,
       summaryFunction = twoClassSummary,
       savePredictions = "final"

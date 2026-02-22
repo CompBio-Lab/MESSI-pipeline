@@ -61,8 +61,10 @@ run_caret_multimodal_cv <- function(X, Y, nfolds=5) {
     savePredictions = "final"
   )
   # Default hyperparameters
-  alpha_vals <- c(0.7, 0.775, 0.850, 0.925, 1)
-  lambda_vals <- seq(0.001, 0.1, by = 0.01)
+  #alpha_vals <- c(0.7, 0.775, 0.850, 0.925, 1)
+  #   lambda_vals <- seq(0.001, 0.1, by = 0.01)
+  alpha_vals <- c(0) # Ridge regression only, no Lasso or elastic-net, since we have many features and want to keep them all
+  lambda_vals <- 10^seq(-4, 3, length = 20) # Use log space lambda values
   tuneGrid <- expand.grid(alpha = alpha_vals, lambda = lambda_vals)
   # =========================================================
   # First fit individual models for each modality
