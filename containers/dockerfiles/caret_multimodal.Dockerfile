@@ -13,5 +13,5 @@ RUN Rscript -e "\
   "
 
 # And install main caretMultimodal package from GitHub
-RUN Rscript -e "devtools::install_github('JoshD898/caretMultimodal@eaedd51')"
+RUN Rscript -e "devtools::install_github('JoshD898/caretMultimodal@a719216')"
 
