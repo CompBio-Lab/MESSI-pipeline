@@ -57,6 +57,9 @@ load_utils(here(pipeline_dir, "bin/plotting"))
 main <- function(mae_path, dataset_name, ncomp=2, design="full", prediction_model = "lda", par_type="tau", 
                  validation = "kfold", nfolds=5, reps=1, metric="Balanced_Accuracy",
                  criteria_order = "top") {
+  # Set seed based on dataset name for reproducibility, this is important as RGCCA has some randomness in it
+  seed  <- sum(utf8ToInt(dataset_name)) # Set seed based on dataset name
+  set.seed(seed)
   # PARAMS
   #method <- "rgcca"
   # Log the params used
@@ -96,10 +99,12 @@ main <- function(mae_path, dataset_name, ncomp=2, design="full", prediction_mode
   # Runs the cv 
   # RGGCA library requires sparse method to select method at rcgga_stability
   # hence during cv, need to provide the "sgcca" method instead
+
   cv_out <- rgcca_cv(
     blocks = rgcca_input, response = length(rgcca_input),
     connection = connection,
-    method = "sgcca", # This is bit is must, plain RGCCA would not work
+    method = "rgcca",
+    sparsity = 1, # Use the default value
     #par_type = par_type,
     tau = 1, # Fix tau 1 for all components so gets non-zero weights for all features
     ncomp = ncomp,
