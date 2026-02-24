@@ -52,14 +52,22 @@ def get_default_hyperparameters():
 # -------------------------
 
 
-def set_seed(seed: int):
-    """Set deterministic seeds for reproducibility."""
+# See here: https://stackoverflow.com/questions/70584201/i-dont-understand-why-set-seed-is-needed-with-torch-and-tensorflow-import
+# Function to set a seed
+def seed_everything(seed: int):
+    import random
+    import os
+    import numpy as np
+    import torch
+    
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+        # ^^ safe to call this function even if cuda is not available
 
 def load_data(mdata_path: str):
     """Load MuData and return list of per-modality DataFrames + modality names."""
@@ -95,13 +103,14 @@ def single_seed_run(
     hparams = {**DEFAULT_HPARAMS, **(hparams or {})}
     os.makedirs(run_dir, exist_ok=True)
     model_path = os.path.join(run_dir, "model_integrao_supervised.pth")
-
+    
     print(f"\n{'='*60}")
     print(f"  SEED {seed}  →  {run_dir}")
     print(f"{'='*60}")
 
+    
     # --- seed ---
-    set_seed(seed)
+    seed_everything(seed)
 
     # --- train ---
     # ================================================================================
