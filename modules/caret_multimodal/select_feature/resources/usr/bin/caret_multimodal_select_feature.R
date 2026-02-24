@@ -88,10 +88,17 @@ run_caret_multimodal_cv <- function(X, Y, nfolds=5) {
   return(stack_model)
 }
 
-
+get_seed <- function(dataset_name) {
+  d_int <- utf8ToInt(dataset_name) # Convert dataset name to integer
+  seed  <- sum(d_int)
+  message("\nSeed used:  ", seed)
+  return(seed)
+}
 
 # Main entrance of the script
 main <- function(mae_path, dataset_name, nfolds, criteria_order="coef") {
+  seed <- get_seed(dataset_name) # Set seed based on dataset name for reproducibility
+  set.seed(seed)
   # ---------------------------------------------------------------------------
   # PARAMS
   # ---------------------------------------------------------------------------
@@ -141,8 +148,7 @@ main <- function(mae_path, dataset_name, nfolds, criteria_order="coef") {
   return(feats_df)
 }
 
-# Set seed for reproducibility
-set.seed(1)
+
 
 # Then call the function above
 main(

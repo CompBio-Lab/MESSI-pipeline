@@ -97,8 +97,17 @@ train_model <- function(train_data, inner_cv=FALSE) {
   return(stack_model)
 }
 
+get_seed <- function(dataset_name) {
+  d_int <- utf8ToInt(dataset_name) # Convert dataset name to integer
+  seed  <- sum(d_int)
+  message("\nSeed used:  ", seed)
+  return(seed)
+}
+
 # Main function to run
 main <- function(fold_path, label, prefix, method_name, inner_cv=FALSE) {
+  seed <- get_seed(label) # Set seed based on dataset name for reproducibility
+  set.seed(seed)
   # Log the params used
   args_used <- c(as.list(environment()))
   logging_params(args_used)
@@ -130,8 +139,6 @@ main <- function(fold_path, label, prefix, method_name, inner_cv=FALSE) {
   return(model)
 }
 
-# Set seed for reproducibility
-set.seed(1)
 
 # Call the function here
 main(
