@@ -100,7 +100,8 @@ main <- function(mae_path, dataset_name, ncomp=2, design="full", prediction_mode
     blocks = rgcca_input, response = length(rgcca_input),
     connection = connection,
     method = "sgcca", # This is bit is must, plain RGCCA would not work
-    par_type = par_type,
+    #par_type = par_type,
+    tau = 1, # Fix tau 1 for all components so gets non-zero weights for all features
     ncomp = ncomp,
     prediction_model = prediction_model,
     validation = validation,
