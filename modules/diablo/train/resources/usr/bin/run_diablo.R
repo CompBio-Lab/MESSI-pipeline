@@ -52,8 +52,17 @@ load_utils(here(pipeline_dir, "bin/misc_utils"))
 # Parase docopt
 opt <- docopt::docopt(doc)
 
+get_seed <- function(dataset_name) {
+  d_int <- utf8ToInt(dataset_name) # Convert dataset name to integer
+  seed  <- sum(d_int)
+  message("\nSeed used:  ", seed)
+  return(seed)
+}
+
 # Main function to run
 main <- function(mae_path, label, fold_path, design, ncomp, run_inner_cv, prefix) {
+  seed <- get_seed(label) # Set seed based on dataset name, this is to ensure reproducibility across runs
+  set.seed(seed)
   # Log the params used
   args_used <- c(as.list(environment()))
   logging_params(args_used)

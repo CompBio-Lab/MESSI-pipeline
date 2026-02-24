@@ -46,12 +46,20 @@ load_utils(here(pipeline_dir, "bin/logging"))
 load_utils(here(pipeline_dir, "bin/misc_utils"))
 load_utils(here(pipeline_dir, "bin/plotting"))
 
+get_seed <- function(dataset_name) {
+  d_int <- utf8ToInt(dataset_name) # Convert dataset name to integer
+  seed  <- sum(d_int)
+  message("\nSeed used:  ", seed)
+  return(seed)
+}
+
 # Main entrypoint of the script
 # criteria_order: variable to sort the features, use one of standardized_coef or coef
 main <- function(mae_path, dataset_name, type.measure="deviance", rho=0.5, useLasso=FALSE,
 nfolds=5, criteria_order="standardized_coef") {
   # TODO: n_percent and criteria order are ignored now and not used
-  
+  seed <- get_seed(dataset_name) # Set seed based on dataset name for reproducibility
+  set.seed(seed)
   # PARAMS
   method <- "cooperative_learning"
   # Log the params used

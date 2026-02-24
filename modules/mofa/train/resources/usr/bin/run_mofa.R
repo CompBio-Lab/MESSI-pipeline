@@ -40,12 +40,23 @@ load_utils(here(pipeline_dir, "bin/misc_utils"))
 # Parase docopt
 opt <- docopt::docopt(doc)
 
+
+get_seed <- function(dataset_name) {
+  d_int <- utf8ToInt(dataset_name) # Convert dataset name to integer
+  seed  <- sum(d_int)
+  message("\nSeed used:  ", seed)
+  return(seed)
+}
+
+
 # Need to force use python
 default_python <- "/usr/bin/python"
 reticulate::use_python(default_python)
 
 # Main function to run
 main <- function(mae_path, label, fold_path, run_inner_cv, prefix) {
+  seed <- get_seed(label) # Get seed for reproducibility, this is important for mofa training and cv
+  set.seed(seed)
   # Log the params used
   args_used <- c(as.list(environment()))
   logging_params(args_used)

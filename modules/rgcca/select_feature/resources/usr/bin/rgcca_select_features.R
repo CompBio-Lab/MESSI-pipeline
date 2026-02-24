@@ -50,6 +50,12 @@ load_utils(here(pipeline_dir, "bin/plotting"))
 
 # ===============================================
 
+get_seed <- function(dataset_name) {
+  d_int <- utf8ToInt(dataset_name) # Convert dataset name to integer
+  seed  <- sum(d_int)
+  message("\nSeed used:  ", seed)
+  return(seed)
+}
 
 # Main entrypoint of the script
 # prediction_model should be glm to accord with rest of methods?
@@ -58,7 +64,7 @@ main <- function(mae_path, dataset_name, ncomp=2, design="full", prediction_mode
                  validation = "kfold", nfolds=5, reps=1, metric="Balanced_Accuracy",
                  criteria_order = "top") {
   # Set seed based on dataset name for reproducibility, this is important as RGCCA has some randomness in it
-  seed  <- sum(utf8ToInt(dataset_name)) # Set seed based on dataset name
+  seed  <- get_seed(dataset_name)
   set.seed(seed)
   # PARAMS
   #method <- "rgcca"

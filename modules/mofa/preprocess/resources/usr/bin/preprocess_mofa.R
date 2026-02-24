@@ -71,11 +71,21 @@ reconstruct_mae <- function(mae) {
   return(new_mae)
 }
 
+
+get_seed <- function(dataset_name) {
+  d_int <- utf8ToInt(dataset_name) # Convert dataset name to integer
+  seed  <- sum(d_int)
+  message("\nSeed used:  ", seed)
+  return(seed)
+}
+
+
 # =================================================================================
 # MAIN entrance point
 main <- function(mae_path, split_dir, dataset_name, num_factors) {
   # Seed for reproducibility
-  set.seed(sum(utf8ToInt(dataset_name))) 
+  seed <- get_seed(dataset_name) # Convert dataset name to integer and sum it to get a seed
+  set.seed(seed) 
   # Should be a list of splits
   cat("Splitting data for", dataset_name, "\n")
   cat("\nThe data is located in:", mae_path, "\n")

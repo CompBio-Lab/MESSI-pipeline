@@ -44,8 +44,17 @@ source(here(rp, "parse_rgcca_input.R"))
 # Parase docopt
 opt <- docopt::docopt(doc)
 
+get_seed <- function(dataset_name) {
+  d_int <- utf8ToInt(dataset_name) # Convert dataset name to integer
+  seed  <- sum(d_int)
+  message("\nSeed used:  ", seed)
+  return(seed)
+}
+
 # Main function to run
 main <- function(mae_path, label, fold_path, inner_cv, prefix, method, design, ncomp=2, tau=1) {
+  seed <- get_seed(label) # Set seed based on dataset name, so that the result is reproducible
+  set.seed(seed)
   # Log the params used
   args_used <- c(as.list(environment()))
   logging_params(args_used)
