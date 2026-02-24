@@ -19,7 +19,7 @@ Options:
 from docopt import docopt
 import pandas as pd
 import mudata
-import os
+import hashlib
 import copy
 # Custom functions import
 from prepare_mogonet_single_split import prepare_mogonet_feat_select
@@ -34,9 +34,16 @@ from feature_importance import  cal_feat_imp, summarize_imp_feat
 #     view_list = [csv.replace(pattern, "") for csv in csvs]
 #     return view_list
 
+
+# def label_to_seed(label, prime=999983):
+#   hash_value = int(hashlib.sha256(label.encode()).hexdigest(), 16)
+#   return hash_value % prime  # Controls range
+
+# See here: https://stackoverflow.com/questions/70584201/i-dont-understand-why-set-seed-is-needed-with-torch-and-tensorflow-import
 # Function to set a seed
 def seed_everything(seed: int):
-    import random, os
+    import random
+    import os
     import numpy as np
     import torch
     
@@ -46,7 +53,9 @@ def seed_everything(seed: int):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.benchmark = True
+        # ^^ safe to call this function even if cuda is not available
+
 
 # TODO: The feat importance is always 0?
 # and make sure to have topn to be big number
