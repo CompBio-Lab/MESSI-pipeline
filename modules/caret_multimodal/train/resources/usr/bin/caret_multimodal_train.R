@@ -86,6 +86,7 @@ train_model <- function(train_data, inner_cv=FALSE) {
     tuneGrid = tuneGrid,
     trControl = trControl
   )
+  message("\nFinished fitting base models for each modality, now stacking them together...")
   # Then fit the ensemble model
   stack_model <- caretMultimodal::caret_stack(
     caret_list = base_models,
@@ -93,13 +94,16 @@ train_model <- function(train_data, inner_cv=FALSE) {
     tuneGrid = tuneGrid,
     trControl = trControl
   )
+  message("\nFinished fitting the stacked model.")
   # Return the stacked model
   return(stack_model)
 }
 
 get_seed <- function(dataset_name) {
   d_int <- utf8ToInt(dataset_name) # Convert dataset name to integer
-  seed  <- sum(d_int)
+  # For caretMultimodal only, add a "hacky" constant to the seed to make it different from other methods
+  # As it could go into problem with internal cv splitting when parallized run
+  seed  <- sum(d_int) + 1
   message("\nSeed used:  ", seed)
   return(seed)
 }
