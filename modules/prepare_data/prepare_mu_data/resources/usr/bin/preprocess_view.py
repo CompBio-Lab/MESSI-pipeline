@@ -114,6 +114,6 @@ def preprocess_view(df, var_threshold=0.16, replace_na_val=0, scale=False, filte
 	# And apply the nearZeroVar fun (implemented based on mixOmics)
         # Then, check those features that have at least 50% of its values not being zero
         # And, remove those that have 70% of zero
-        zero_var_feats = near_zero_var(df_reduced, freqCut = 70/5, uniqueCut = 50)["Metrics"].index.tolist()
+        zero_var_feats = near_zero_var(df_reduced, freq_cut = 70/5, unique_cut = 50)["Metrics"].index.tolist()
         df_reduced = df_reduced.drop(columns=zero_var_feats)
     return df_reduced
