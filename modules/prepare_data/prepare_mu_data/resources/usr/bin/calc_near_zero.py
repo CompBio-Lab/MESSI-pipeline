@@ -41,6 +41,29 @@ def _all_missing_mask(x):
     return np.array([np.all(pd.isna(x[:, j])) for j in range(x.shape[1])])
 
 def near_zero_var(x, freq_cut=95/5, unique_cut=10):
+    """
+    Identify near-zero variance predictors in a dataset.
+    
+    Python reimplementation of R's mixOmics::nearZeroVar(). Replicates R's
+    float precision behavior: R's unique() uses exact float comparison, while
+    R's table() converts doubles to strings via as.character() (~15 significant
+    digits), which can merge values that differ only past the 15th digit.
+    
+    Parameters
+    ----------
+    x : pd.DataFrame or np.ndarray
+        Input data matrix (samples x features).
+    freq_cut : float, default=19.0 (95/5)
+        Cutoff for the ratio of the most common to second most common value.
+    unique_cut : float, default=10
+        Cutoff for the percentage of distinct values out of total samples.
+    
+    Returns
+    -------
+    dict with:
+        'Position' : list of int (0-indexed column indices flagged)
+        'Metrics'  : pd.DataFrame with freqRatio and percentUnique for flagged columns
+    """
     col_names, x = _normalize_input(x)
     n_rows, n_cols = x.shape
 
