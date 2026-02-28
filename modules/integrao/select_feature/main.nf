@@ -7,7 +7,8 @@ process INTEGRAO_SELECT_FEATURE {
 	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	tag "${dataset_name}"
 	debug true
-  label 'process_high'
+        label 'process_high'
+        label 'gpu'
 	container "${ onSockeye  ?
 		'integrao.sif' :
 		'tonyliang19/integrao:latest' }"

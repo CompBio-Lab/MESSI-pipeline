@@ -53,8 +53,17 @@ source(here(rp, "createKeepX.R"))
 source(here(rp, "extract_feats_df.R"))
 source(here(rp, "getDesign.R"))
 
+get_seed <- function(dataset_name) {
+  d_int <- utf8ToInt(dataset_name) # Convert dataset name to integer
+  seed  <- sum(d_int)
+  message("\nSeed used:  ", seed)
+  return(seed)
+}
+
 # Main entrance of the script
 main <- function(mae_path, dataset_name, n_percent, design, ncomp) {
+  seed <- get_seed(dataset_name) # Set seed for reproducibility
+  set.seed(seed)
   # ---------------------------------------------------------------------------
   # PARAMS
   # ---------------------------------------------------------------------------

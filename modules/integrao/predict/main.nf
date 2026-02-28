@@ -20,7 +20,8 @@ process INTEGRAO_PREDICT {
     Custom labels to add for the method if required GPU access, 
     large mem usage, etc.
   */
-	label 'process_low'
+	label 'process_medium'
+        label 'gpu'
   /*
     These are minimal required input, the dataset name, current fold, and path
     to trained model and test data for current fold
@@ -50,6 +51,7 @@ process INTEGRAO_PREDICT {
     integrao_predict.py \
       --model_dir=${model_dir} \
       --preprocessed_data_dir=${preprocessed_data_dir} \
+      --dataset_name=${dataset_name} \
 			--label=${data_label} > \
 			${data_label}-${getPublishPath(task.process).tokenize('/')[-1]}.log
 		"""

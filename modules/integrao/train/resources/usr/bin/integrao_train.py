@@ -34,22 +34,6 @@ import hashlib
 from integrao.integrater import integrao_integrater
 
 
-# See here: https://stackoverflow.com/questions/70584201/i-dont-understand-why-set-seed-is-needed-with-torch-and-tensorflow-import
-# Function to set a seed
-def seed_everything(seed: int):
-    import random, os
-    import numpy as np
-    import torch
-
-    random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-        # ^^ safe to call this function even if cuda is not available
-
 
 def load_train_data(preprocessed_dir):
     """Load preprocessed training data and metadata.
@@ -158,15 +142,33 @@ def label_to_seed(label, prime=999983):
     hash_value = int(hashlib.sha256(label.encode()).hexdigest(), 16)
     return hash_value % prime  # Controls range
 
+# See here: https://stackoverflow.com/questions/70584201/i-dont-understand-why-set-seed-is-needed-with-torch-and-tensorflow-import
+# Function to set a seed
+def seed_everything(seed: int):
+    import random
+    import os
+    import numpy as np
+    import torch
+    
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True
+        # ^^ safe to call this function even if cuda is not available
+
+
 
 # from upstream process
 def main(fold_path, label, hparams_dict):
     seed = label_to_seed(label)
+        # --- Pipeline ---
+    seed_everything(seed)
     # Make output directory
     outdir = f"{fold_path}-model" # Use label directly as outdir since it already contains dataset and fold info
     os.makedirs(outdir, exist_ok=True)
-    # --- Pipeline ---
-    seed_everything(seed)
     # Load train and test data from fold_path
     train_mdata, metadata = load_train_data(fold_path)
     modality_names = metadata["modality_names"]

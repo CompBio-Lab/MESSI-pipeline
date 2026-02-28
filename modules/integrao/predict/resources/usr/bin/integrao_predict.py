@@ -11,6 +11,7 @@ Options:
   -h --help                                 Show this message
   --model_dir=MODEL_DIR                     Dir to trained model on specific fold [default: empty]
   --preprocessed_data_dir=PREPR_DATA_DIR    Dir to preprocessed data dir for specific fold [default: empty]
+  --dataset_name=DATASET_NAME               Dataset name (repeated in purpose)[default: empty]
   --label=LABEL                             Label of dataset and fold iteration [default: empty]
   --method_name=METHOD_NAME                 Method name ran [default: integrao]
 """
@@ -117,10 +118,12 @@ def extract_fold_name(label, pattern="fold_\\d+"):
     matches = re.findall(pattern, label)
     return matches[0]
 
-def extract_dataset_name(label, pattern="-"):
-    return label.split(pattern)[0]
+# NOTE: This is bad when dealing with sim data that have sim-data_fold...
+# So just pass the dataset name directly from CLI
+# def extract_dataset_name(label, pattern="-"):
+#     return label.split(pattern)[0]
 
-def generate_result_table(test_df, method_name, label=None, decimals=3):
+def generate_result_table(test_df, method_name, dataset_name=None, label=None, decimals=3):
     """
     Format a result table with predicted probabilities and metadata.
 
@@ -146,10 +149,10 @@ def generate_result_table(test_df, method_name, label=None, decimals=3):
     df["sample_name"] = df["sample_name"].astype(str)
     df["phat"] = df["phat"].round(decimals)
     df["method_name"] = method_name
-    if label is not None:
-        df["dataset"] = extract_dataset_name(label)
+    if dataset_name is not None:
+        df["dataset"] = dataset_name
     else:
-        df["dataset"] = ""
+        df["dataset"] = label
 
     # Ensure column order
     desired_order = ["sample_name", "y", "phat", "method_name", "dataset", "fold"]
@@ -265,7 +268,7 @@ def build_predictor(full_dfs, hparams,
 
 
 # Main entry point for prediction script
-def main(model_dir, preprocessed_data_dir, label, method_name):
+def main(model_dir, preprocessed_data_dir, label, dataset_name, method_name):
     # set seed here
     seed = label_to_seed(label)
     seed_everything(seed)
@@ -285,7 +288,7 @@ def main(model_dir, preprocessed_data_dir, label, method_name):
     )
     probs_df = extract_test_predictions(full_pred_probs, full_mdata, test_mdata, modality_names)
     # Now add metadata back to this probs_df and generate the result table
-    result_df = generate_result_table(probs_df, method_name=method_name, label=label)
+    result_df = generate_result_table(probs_df, method_name=method_name, dataset_name=dataset_name, label=label)
     # Lastly write out to file
     result_file = f"{label}-result.csv"
     result_df.to_csv(result_file, index=False, header=True)
@@ -301,5 +304,6 @@ if __name__ == '__main__':
     model_dir=args['--model_dir'], 
     preprocessed_data_dir=args['--preprocessed_data_dir'], 
     label=args['--label'],
+    dataset_name=args['--dataset_name'],
     method_name=args['--method_name']
   )

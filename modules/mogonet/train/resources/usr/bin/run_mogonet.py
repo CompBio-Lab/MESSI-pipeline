@@ -53,18 +53,20 @@ def label_to_seed(label, prime=999983):
 # See here: https://stackoverflow.com/questions/70584201/i-dont-understand-why-set-seed-is-needed-with-torch-and-tensorflow-import
 # Function to set a seed
 def seed_everything(seed: int):
-    import random, os
+    import random
+    import os
     import numpy as np
     import torch
-
+    
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.benchmark = True
         # ^^ safe to call this function even if cuda is not available
+
 # Train a model network from mogonet, assuming having those right inputs 
 # from upstream process
 def main(

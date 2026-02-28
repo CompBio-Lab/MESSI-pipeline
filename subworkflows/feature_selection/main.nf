@@ -119,6 +119,7 @@ workflow FEATURE_SELECTION {
             .mix( caret_multimodal_features )
             .mix( cooperative_learning_features )
             .mix( diablo_features )
+            .mix( integrao_features )
             .mix( mogonet_features )
             .mix( mofa_features )
             .mix( rgcca_features )

@@ -50,10 +50,21 @@ mofa_pre <- function(mae, num_factors, scale_views=FALSE) {
 }
 
 
+get_seed <- function(dataset_name) {
+  d_int <- utf8ToInt(dataset_name) # Convert dataset name to integer
+  seed  <- sum(d_int)
+  message("\nSeed used:  ", seed)
+  return(seed)
+}
+
+
+
 # Main entrypoint here
 main <- function(mae_path, dataset_name, num_factors,
                  scale_views=FALSE, method="mofa") {
   # ============================================================================
+  seed <- get_seed(dataset_name) # Get seed for reproducibility, this is important for mofa training and cv
+  set.seed(seed)
   raw_mae <- loadHDF5MultiAssayExperiment(mae_path)
   # Then starting to use mofa here
   # TODO: add options into scale view or scale anything

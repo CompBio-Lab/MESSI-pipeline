@@ -34,6 +34,7 @@ process INTEGRAO_TRAIN {
 	// TODO: add your custom labels to tell if process
 	// consumes large RAM/ROM and gpu access or not
 	label 'process_medium'
+        label 'gpu'
 
 
 	// TODO: Change arg name to mae_path or mu_path

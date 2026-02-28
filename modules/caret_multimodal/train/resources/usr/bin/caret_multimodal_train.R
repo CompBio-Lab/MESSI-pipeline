@@ -51,8 +51,10 @@ opt <- docopt::docopt(doc)
 
 # TODO: implement your training logic here
 train_model <- function(train_data, inner_cv=FALSE) {
-  alphas <- c(0.7, 0.775, 0.850, 0.925, 1)
-  lambdas <- seq(0.001, 0.1, by = 0.01)
+  #alphas <- c(0.7, 0.775, 0.850, 0.925, 1)
+  #lambdas <- seq(0.001, 0.1, by = 0.01)
+  alphas <- c(0) # Ridge regression only, no Lasso or elastic-net, since we have many features and want to keep them all
+  lambdas <- 10^seq(-4, 3, length = 20) # Use log space lambda values
   tuneGrid <- expand.grid(alpha = alphas, lambda = lambdas)
   # Caret relies on tuneGrid and trainControl for hyperparameter tuning
   if (inner_cv) {
@@ -69,7 +71,7 @@ train_model <- function(train_data, inner_cv=FALSE) {
     # Default with no inner cv, simple train-test 
     trControl <- trainControl(
       method = "cv",
-      number = 5,
+      number = 5, # This is internal cv for tuning the hyperparameters, not the same as the outer cv fold split, which is done by nextflow
       classProbs = TRUE,
       summaryFunction = twoClassSummary,
       savePredictions = "final"
@@ -84,6 +86,7 @@ train_model <- function(train_data, inner_cv=FALSE) {
     tuneGrid = tuneGrid,
     trControl = trControl
   )
+  message("\nFinished fitting base models for each modality, now stacking them together...")
   # Then fit the ensemble model
   stack_model <- caretMultimodal::caret_stack(
     caret_list = base_models,
@@ -91,12 +94,24 @@ train_model <- function(train_data, inner_cv=FALSE) {
     tuneGrid = tuneGrid,
     trControl = trControl
   )
+  message("\nFinished fitting the stacked model.")
   # Return the stacked model
   return(stack_model)
 }
 
+get_seed <- function(dataset_name) {
+  d_int <- utf8ToInt(dataset_name) # Convert dataset name to integer
+  # For caretMultimodal only, add a "hacky" constant to the seed to make it different from other methods
+  # As it could go into problem with internal cv splitting when parallized run
+  seed  <- sum(d_int) + 1
+  message("\nSeed used:  ", seed)
+  return(seed)
+}
+
 # Main function to run
 main <- function(fold_path, label, prefix, method_name, inner_cv=FALSE) {
+  seed <- get_seed(label) # Set seed based on dataset name for reproducibility
+  set.seed(seed)
   # Log the params used
   args_used <- c(as.list(environment()))
   logging_params(args_used)
@@ -128,8 +143,6 @@ main <- function(fold_path, label, prefix, method_name, inner_cv=FALSE) {
   return(model)
 }
 
-# Set seed for reproducibility
-set.seed(1)
 
 # Call the function here
 main(

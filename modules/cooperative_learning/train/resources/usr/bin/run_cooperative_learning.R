@@ -39,10 +39,18 @@ load_utils(here(pipeline_dir, "bin/logging"))
 load_utils(here(pipeline_dir, "bin/preprocessing"))
 load_utils(here(pipeline_dir, "bin/misc_utils"))
 
+get_seed <- function(dataset_name) {
+  d_int <- utf8ToInt(dataset_name) # Convert dataset name to integer
+  seed  <- sum(d_int)
+  message("\nSeed used:  ", seed)
+  return(seed)
+}
+
 
 # This the main function to execute
 main <- function(mae_path, label, fold_path, inner_cv, prefix, rho, alpha) {
-  # Log the params used
+  seed <- get_seed(label) # Set seed based on dataset name
+  set.seed(seed)
   args_used <- c(as.list(environment()))
   logging_params(args_used)
   cat("\nLooking at this fold:", fold_path, "\n")

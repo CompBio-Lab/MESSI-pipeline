@@ -1,5 +1,9 @@
 import pandas as pd
 
+
+from near_zero_var import near_zero_var
+
+
 def safe_filter(X, keep, step, min_cols=2):
     """
     X     : pandas DataFrame or numpy array (n_samples x n_features)
@@ -43,44 +47,47 @@ def calculate_threshold(variances, threshold_type='mean', percentile=0.10):
     else:
         raise ValueError("Invalid threshold_type. Choose from 'mean', 'median', or 'percentile'.")
 
-def compute_freq_ratio(data):
-    data = data.dropna()
-    if len(data.unique()) == len(data):
-        return 1
-    elif len(data.unique()) == 1:
-        return 0
-    else:
-        value_counts = data.value_counts()
-        return value_counts.max() / value_counts.iloc[1] if len(value_counts) > 1 else value_counts.max()
+# DEPRECATED: this version can fail at edge cases, e.g., when there are only two unique values and one of them is NA
+# def compute_freq_ratio(data):
+#     data = data.dropna()
+#     if len(data.unique()) == len(data):
+#         return 1
+#     elif len(data.unique()) == 1:
+#         return 0
+#     else:
+#         value_counts = data.value_counts()
+#         return value_counts.max() / value_counts.iloc[1] if len(value_counts) > 1 else value_counts.max()
 
-def calc_near_zero(df, freqCut = 95/5, uniqueCut=10):
-    # Calculate the number of unique values per column
-    lunique = df.apply(lambda data: len(data.dropna().unique()), axis=0)
 
-    # Calculate percentUnique
-    percent_unique = 100 * lunique / len(df)
+# DEPRECATED: this version can fail at edge cases
+# def near_zero_var(df, freqCut = 95/5, uniqueCut=10):
+#     # Calculate the number of unique values per column
+#     lunique = df.apply(lambda data: len(data.dropna().unique()), axis=0)
 
-    # Identify zero variance columns
-    zero_var = (lunique == 1) | df.apply(lambda data: data.isna().all(), axis=0)
+#     # Calculate percentUnique
+#     percent_unique = 100 * lunique / len(df)
 
-    # Calculate freqRatio for each column
-    freq_ratio = df.apply(compute_freq_ratio, axis=0)
+#     # Identify zero variance columns
+#     zero_var = (lunique == 1) | df.apply(lambda data: data.isna().all(), axis=0)
 
-    # Identify the positions where the conditions hold
-    positions = (freq_ratio > freqCut) & (percent_unique <= uniqueCut) | zero_var
-    positions = positions[positions].index.tolist()
+#     # Calculate freqRatio for each column
+#     freq_ratio = df.apply(compute_freq_ratio, axis=0)
 
-    # Prepare the output
-    out = {}
-    out['Position'] = positions
-    out['Metrics'] = pd.DataFrame({
-        'freqRatio': freq_ratio,
-        'percentUnique': percent_unique
-    })
+#     # Identify the positions where the conditions hold
+#     positions = (freq_ratio > freqCut) & (percent_unique <= uniqueCut) | zero_var
+#     positions = positions[positions].index.tolist()
 
-    # Filter the metrics based on positions
-    out['Metrics'] = out['Metrics'].loc[positions]
-    return out['Metrics']
+#     # Prepare the output
+#     out = {}
+#     out['Position'] = positions
+#     out['Metrics'] = pd.DataFrame({
+#         'freqRatio': freq_ratio,
+#         'percentUnique': percent_unique
+#     })
+
+#     # Filter the metrics based on positions
+#     out['Metrics'] = out['Metrics'].loc[positions]
+#     return out['Metrics']
 
 
 
@@ -107,6 +114,6 @@ def preprocess_view(df, var_threshold=0.16, replace_na_val=0, scale=False, filte
 	# And apply the nearZeroVar fun (implemented based on mixOmics)
         # Then, check those features that have at least 50% of its values not being zero
         # And, remove those that have 70% of zero
-        zero_var_feats = calc_near_zero(df_reduced, freqCut = 70/5, uniqueCut = 50).index.tolist()
+        zero_var_feats = near_zero_var(df_reduced, freq_cut = 70/5, unique_cut = 50)["Metrics"].index.tolist()
         df_reduced = df_reduced.drop(columns=zero_var_feats)
     return df_reduced
