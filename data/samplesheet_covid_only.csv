@@ -1,0 +1,3 @@
+dataset_name,tar_path
+covid_multiomics,/arc/project/st-singha53-1/datasets/messi_demo_data/covid_multiomics.tar.gz
+covid_organ,/arc/project/st-singha53-1/datasets/messi_demo_data/covid_organ.tar.gz
