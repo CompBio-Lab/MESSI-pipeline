@@ -5,15 +5,10 @@ rosmap,/arc/project/st-singha53-1/datasets/messi_demo_data/rosmap.tar.gz
 tcga-acc,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-acc.tar.gz
 tcga-blca,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-blca.tar.gz
 tcga-brca,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-brca.tar.gz
-tcga-chol,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-chol.tar.gz
 tcga-esca,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-esca.tar.gz
 tcga-meso,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-meso.tar.gz
 tcga-kich,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-kich.tar.gz
-tcga-kipan,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-kipan.tar.gz
 tcga-kirc,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-kirc.tar.gz
 tcga-skcm,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-skcm.tar.gz
 tcga-stes,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-stes.tar.gz
 tcga-thca,/arc/project/st-singha53-1/datasets/messi_demo_data/tcga-thca.tar.gz
-clinical_omics,/arc/project/st-singha53-1/datasets/messi_demo_data/clinical_omics.tar.gz
-electrical_omics,/arc/project/st-singha53-1/datasets/messi_demo_data/electrical_omics.tar.gz
-imaging_omics,/arc/project/st-singha53-1/datasets/messi_demo_data/imaging_omics.tar.gz
