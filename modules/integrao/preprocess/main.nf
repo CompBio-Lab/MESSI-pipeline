@@ -22,15 +22,12 @@ include { getPublishPath } from "${modulesDir}/functions"
 // TODO: Replace name here
 process INTEGRAO_PREPROCESS {
   // temp variables to use
-  def onSockeye = workflow.projectDir.toString().contains('/scratch')
   // process level configuration
   debug "${params.debug}" // debugs true or false by param in MESSI.config
   tag "${dataset_name}" // identifier of process when ran in parallel
   // By var before to determine what container to use
   // Uses apptainer if true otherwise docker
-	container "${ onSockeye  ?
-		'integrao.sif' :
-		'tonyliang19/integrao:latest' }"
+  label 'integrao'
 
   label "process_low"
 

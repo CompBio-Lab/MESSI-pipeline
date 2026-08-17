@@ -6,15 +6,12 @@
 include { getPublishPath } from "${modulesDir}/functions"
 process DIABLO_TRAIN {
 	// Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	def method_name = "diablo"
 	tag "${dataset_name}-${fold_path.name}-design_${design}-ncomp_${ncomp}"
 	//debug	"${params.debug}"
 	debug true
 	label 'process_medium'
-	container "${ onSockeye  ?
-		'codia.sif' :
-		'tonyliang19/codia:latest' }"
+	label 'codia'
 	// Parse this path
 	publishDir (
 		//path: "${params.outdir}/${task.process.tokenize(':')[-1].toLowerCase()}/${dataset_name}/${fold_path.name}",

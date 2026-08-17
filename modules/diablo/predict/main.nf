@@ -3,13 +3,10 @@ include { getPublishPath } from "${modulesDir}/functions"
 
 process DIABLO_PREDICT {
 	// Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	tag "${dataset_name}-${fold_name}-${method}"
 	debug true
 	label 'process_single'
-	container "${ onSockeye  ?
-		'codia.sif' :
-		'tonyliang19/codia:latest' }"
+	label 'codia'
 
 	publishDir (
 		//path: "${params.outdir}/${task.process.tokenize(':')[-1].toLowerCase()}/${dataset_name}/${fold_name}",

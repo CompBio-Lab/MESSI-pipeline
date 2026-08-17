@@ -4,13 +4,10 @@ include { getPublishPath } from "${modulesDir}/functions"
 
 process COOPERATIVE_LEARNING_SELECT_FEATURE {
   // Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	tag "${dataset_name}"
 	debug true
   label 'process_high'
-	container "${ onSockeye  ?
-		'codia.sif' :
-		'tonyliang19/codia:latest' }"
+  label 'codia'
 
 	publishDir (
 		path: "${params.outdir}/${task.process.tokenize(':').join('/').toLowerCase()}/${dataset_name}",
@@ -21,7 +18,7 @@ process COOPERATIVE_LEARNING_SELECT_FEATURE {
 	// Labels
 	label 'low_mem'
 	label 'cpu'
-	label 'codia'
+  label 'codia'
   
   
   /* Input and output blocks*/

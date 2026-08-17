@@ -1,11 +1,8 @@
 process MERGE_RESULT_TABLE {
-  def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	tag "${method_name}"
 	debug true
 	label 'process_single'
-	container "${ onSockeye  ?
-		'codia.sif' :
-		'tonyliang19/codia:latest' }"
+	label 'codia'
 
 	publishDir (
 		//path: "${params.outdir}/${task.process.tokenize(':')[-1].toLowerCase()}/${method_name}",

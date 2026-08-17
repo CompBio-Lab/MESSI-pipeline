@@ -5,14 +5,11 @@ include { getPublishPath } from "${modulesDir}/functions"
 
 process COOPERATIVE_LEARNING_PREPROCESS {
   // Temp variables
-  def onSockeye = workflow.projectDir.toString().contains('/scratch')
   /* Directives for process */
   debug "${params.debug}" // default is true
   tag "${dataset_name}"
   label 'process_single'
-  container "${ onSockeye ?
-    'codia.sif' :
-    'tonyliang19/codia:latest'}"
+  label 'codia'
   
   // More special publish dir by getting method/method_abc to method/abc
   publishDir (

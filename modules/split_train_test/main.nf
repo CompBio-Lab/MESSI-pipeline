@@ -2,13 +2,10 @@ process SPLIT_TRAIN_TEST {
 	// process metadata and configs
 	// Vars stuff
 	//def isRemote = workflow.containerEngine == 'apptainer' && !workflow.profile == 'standard'
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	tag "${dataset_name}"
 	label 'process_single'
+	label 'generic'
 	debug	"${params.debug}"
-	container "${ onSockeye  ? 
-		'save_simulate.sif' : 
-		'tonyliang19/save_simulate:latest' }"
 	publishDir (
 		path: "${params.outdir}/${task.process.tokenize(':').join('/').toLowerCase()}",
 		//saveAS: { fn -> fn.endsWith(".log") ? "${id}/$fn" : fn },

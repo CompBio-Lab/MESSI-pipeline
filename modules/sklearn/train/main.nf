@@ -18,13 +18,10 @@ include { getPublishPath } from "${modulesDir}/functions"
 
 process SKLEARN_TRAIN {
 	// Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	// Identifier for each dataset and fold combination
 	tag "${dataset_name}-${fold_path.name}-${model_name}"
 	// TODO: rename to the actual image name used
-	container "${ onSockeye  ?
-		'sklearn.sif' :
-		'tonyliang19/sklearn:latest' }"
+	label 'sklearn'
 	// Parse the output directory to migrate results to
 	publishDir (
 		path: "${params.outdir}/${getPublishPath(task.process)}/${dataset_name}/${fold_path.name}",
