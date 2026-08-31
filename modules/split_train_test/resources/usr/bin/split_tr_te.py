@@ -12,11 +12,13 @@ Arguments:
   MDATA                    path to find MuData format
 
 Options:
-  --split_type=SPLIT_TYPE   Type of split: skf, sgkf, logo   [default: skf]
-  --num_splits=NUM_SPLITS   Number of splits to generate		    [default: 10]
-  --seed=SEED               Random number seed to reproduce     [default: 329]
-  --output_dir=OUT_DIR      Output folder to write fold ids txt [default: splits]
-  --split_txt_name=SNAME    Name of individual fold txt file    [default: fold]
+  --split_type=SPLIT_TYPE       Type of split: skf, sgkf, logo                  [default: skf]
+  --num_splits=NUM_SPLITS       Number of splits to generate		            [default: 10]
+  --seed=SEED                   Random number seed to reproduce                 [default: 329]
+  --outcome_type=OUTCOME_TYPE   Type of outcome: classification or survival     [default: classification]
+  --event_col=EVENT_COL         Column name for survival event (survival only)  [default: os_event]
+  --output_dir=OUT_DIR          Output folder to write fold ids txt             [default: splits]
+  --split_txt_name=SNAME        Name of individual fold txt file                [default: fold]
 """
 
 from docopt import docopt
@@ -37,6 +39,8 @@ class SplitConfig:
     k: int
     seed: int
     identifier_col: str = "sample_name"
+    outcome_type: str = "classification"
+    event_col: str = "event"
     output_dir: str = "splits"
     split_txt_name: str = "fold"
 
@@ -44,14 +48,19 @@ class SplitConfig:
 # ------------------------------------------------------------------------------
 # Utility functions (functional, stateless)
 # ------------------------------------------------------------------------------
-def load_mudata(path, identifier_col):
+def load_mudata(path, identifier_col, outcome_type="classification", event_col="os_event"):
     mdata = mudata.read(path)
     block_key = list(mdata.mod.keys())[0]
     block = mdata.mod[block_key]
 
     X = block.to_df()
-    y = block.obs["response"].values
     groups = block.obs[identifier_col].values
+    
+    if outcome_type == "survival":
+        y = block.obs[event_col].values
+    else:
+        y = block.obs["response"].values
+
     return X, y, groups
 
 def create_splitter(split_type, k, seed):
@@ -111,13 +120,16 @@ def main(args):
         k=int(args["--num_splits"]),
         seed=int(args["--seed"]),
         identifier_col=args.get("--identifier_col", "sample_name"),
+        event_col=args.get("--event_col", "os_event"),
+	    outcome_type=args.get("--outcome_type", "classification"),
         output_dir=args["--output_dir"],
         split_txt_name=args["--split_txt_name"],
     )
 
     # Load the MuData and extract X, y, groups
     # Groups default is to sample_name
-    X, y, groups = load_mudata(args["MDATA"], cfg.identifier_col)
+    X, y, groups = load_mudata(args["MDATA"], cfg.identifier_col, outcome_type=cfg.outcome_type,
+                               event_col=cfg.event_col)
 
     engine = SplitEngine(cfg)
     folds = engine.run(X, y, groups)
