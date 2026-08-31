@@ -3,12 +3,9 @@ include { getPublishPath } from "${modulesDir}/functions"
 
 process SKLEARN_PREDICT {
 	// Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	tag "${dataset_name}-${fold_name}-${model_name}"
 	debug "${params.debug}"
-	container "${ onSockeye  ?
-		'sklearn.sif' :
-		'tonyliang19/sklearn:latest' }"
+	label 'sklearn'
 
 	publishDir (
 		path: "${params.outdir}/${getPublishPath(task.process)}/${dataset_name}/${fold_name}/${model_name}",

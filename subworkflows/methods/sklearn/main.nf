@@ -31,8 +31,9 @@ def saveMode = "method"
 
 workflow SKLEARN {
   // Classifier to train for sklearn
-  model_name = Channel.fromList(params.sklearn_classifier_names)
-  
+  model_name  = Channel.fromList(params.sklearn_classifier_names)
+  // Reduction method (pca or empty)
+  reduction   = Channel.value(params.sklearn_reduction)
   take:
   // TODO: rename this data_copy to mae_copy or mu_copy depending on language
   data_copy // ch of tuple dataset, path of mae/mu data, 
@@ -72,7 +73,7 @@ workflow SKLEARN {
       */
 
       // TODO: implement inner fold cross-validation in each method's train
-      SKLEARN_TRAIN ( train_input, model_name )
+      SKLEARN_TRAIN ( train_input, reduction, model_name )
 
       // Do some transformation to make a multiMap that has two branches for predict
 

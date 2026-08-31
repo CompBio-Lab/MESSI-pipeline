@@ -2,13 +2,10 @@
 include { getPublishPath } from "${modulesDir}/functions"
 process COOPERATIVE_LEARNING_PREDICT {
 	// Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	tag "${dataset_name}-${fold_name}"
 	debug true
 	label 'process_single'
-	container "${ onSockeye  ?
-		'codia.sif' :
-		'tonyliang19/codia:latest' }"
+	label 'codia'
 
 	publishDir (
 		path: "${params.outdir}/${getPublishPath(task.process)}/${dataset_name}/${fold_name}",

@@ -11,11 +11,14 @@ Options:
   -h --help                   Show this message
   --fold_path=FOLD_PATH       Directory containing one split directory of relevant input [default: empty] 
   --label=LABEL               Label of dataset and fold iteration [default: empty]
+  --reduction=REDUCTION       Name of the reducer to use for dimensionality reduction [default: empty]
   --model_name=MOD            Name of the classifier to run from sklearn [default: empty]
 """
 
 from docopt import docopt
-from sklearn.pipeline import make_pipeline
+from sklearn.decomposition import PCA
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.preprocessing import StandardScaler
 
 import mudata
@@ -29,12 +32,28 @@ from load_tr_te import load_tr_te
 from combine_mdata2df import combine_mdata2df
 
 
+
+# Now also including a reducer model, with setting ncomps = 50
+def build_reducer(X_df, mod_names, n_comp=50, random_state=42):
+    transformers = []
+    for m in mod_names:
+        prefix = f"{m}_"
+        cols = [c for c in X_df.columns if c.startswith(prefix)]
+        k = min(n_comp, len(cols), X_df.shape[0] - 1)
+        transformers.append((m, Pipeline([
+            ("scale", StandardScaler()),
+            ("pca", PCA(n_components=k, random_state=random_state)),
+        ]), cols))
+    return ColumnTransformer(transformers, remainder="drop")
+
+
+
 # Train data is MuData
 # model_name is name of classifier to use from sklearn
 # See main function of available options
-def train(train_data, model_name, target_col="response"):
+def train(train_data, model_name, target_col="response", reduction="empty"):
     # Convert the mdata to merged dataframe column wise
-    merged_df = combine_mdata2df(train_data)
+    merged_df, mod_names = combine_mdata2df(train_data)
     # Transform the mudata into X and y for sklearn
     # X_df contains all count data from the views
     # y_df contains response
@@ -46,25 +65,34 @@ def train(train_data, model_name, target_col="response"):
     clf = classifier_class(**params)
     print("\n", clf)
     # Tells to first apply standard scaling, then the model
-    clf = make_pipeline(StandardScaler(), clf)
+    if reduction != "empty":
+        # Build reducer
+        reducer = build_reducer(X_df, mod_names, n_comp=50)
+        # Create a pipeline with reducer and classifier
+        clf = make_pipeline(reducer, clf)
+    else:
+      clf = make_pipeline(StandardScaler(), clf)
     # Fitting model
     clf.fit(X_df, y_df["response"])
     return clf
 
 
 # from upstream process
-def main(fold_path, label, model_name):
+def main(fold_path, label, model_name, reduction="empty"):
     # Load data first from fold_path
     train_data, test_data = load_tr_te(fold_path)
     # Train sklearn classifier available options are:
     # 'AdaBoost', 'Decision Tree', 'Gaussian Process', 'Linear SVM', 'Naive Bayes',
     # 'Nearest Neighbors', 'Neural Net', 'QDA', 'RBF SVM', 'Random Forest'
     # Case sensitive
-    model = train(train_data, model_name=model_name)
+    model = train(train_data, model_name=model_name, reduction=reduction)
     # Parse to more machine readable label 
     model_label = model_name.lower().replace(" ", "_")
     # Parse label and choose output file to write
-    model_file = f"{label}-{model_label}-model.pkl"
+    if reduction != "empty":
+      model_file = f"{label}-{model_label}-{reduction}_model.pkl"
+    else:
+      model_file = f"{label}-{model_label}-model.pkl"
     # TODO: Decide to use pickle or joblib to write the trained model?
     joblib.dump(model, model_file)
     # Also write the test mudata to file so that it is passed to downstream
@@ -81,6 +109,7 @@ if __name__ == '__main__':
   main(
     fold_path  = args["--fold_path"],
     label      = args["--label"],
-    model_name = args["--model_name"]
+    model_name = args["--model_name"],
+    reduction  = args["--reduction"]
   )
 

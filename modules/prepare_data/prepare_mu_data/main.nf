@@ -10,10 +10,7 @@ process PREPARE_MU_DATA {
 	/* process metadata and configs */
 	tag "${dataset_name}"
   label 'process_low'
-	// TODO: move this containter to somewhere else?
-  container "${ onSockeye ? 
-		'save_simulate.sif' : 
-		'tonyliang19/save_simulate:latest' }"  
+	label 'generic'
 	publishDir (
 		path: "${params.outdir}/${task.process.tokenize(':').join('/').toLowerCase()}/${dataset_name}",
 		saveAS: { file },

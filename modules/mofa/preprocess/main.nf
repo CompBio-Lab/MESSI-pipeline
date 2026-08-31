@@ -27,16 +27,13 @@ include { getPublishPath } from "${modulesDir}/functions"
 
 process MOFA_PREPROCESS {
   // temp variables to use
-  def onSockeye = workflow.projectDir.toString().contains('/scratch')
   // process level configuration
   debug "${params.debug}" // debugs true or false by param in MESSI.config
   label 'process_single'
   tag "${dataset_name}-num_factor_${num_factors}" // identifier of process when ran in parallel
   // By var before to determine what container to use
   // Uses apptainer if true otherwise docker
-  container "${ onSockeye ?
-    'mofa.sif' :
-    'tonyliang19/mofa:latest'}"
+  label 'mofa'
 
   /* outputs store to outdir for saving and inspecting purpose */
   publishDir (

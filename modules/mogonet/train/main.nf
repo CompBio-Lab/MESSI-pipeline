@@ -11,16 +11,13 @@ include { getPublishPath } from "${modulesDir}/functions"
 process MOGONET_TRAIN {
 	// This label is defined in nextflow.config
 	// Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	// Process configurations
 	tag "${dataset_name}-${fold_path.name}-he${he_base_dim}"
 	label 'python'
 	label 'process_medium'
 	label 'gpu'
 	debug "${params.debug}"
-	container "${ onSockeye  ? 
-		'mogonet.sif' : 
-		'tonyliang19/mogonet:latest' }"
+	label 'mogonet'
 	// Saving outputs
 	publishDir (
 		path: "${params.outdir}/${getPublishPath(task.process)}/${dataset_name}/${fold_path.name}",

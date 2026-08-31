@@ -22,14 +22,11 @@ include { getPublishPath } from "${modulesDir}/functions"
 // TODO: Replace name here
 process RGCCA_PREPROCESS {
   // temp variables to use
-  def onSockeye = workflow.projectDir.toString().contains('/scratch')
   // process level configuration
   debug "${params.debug}" // default is true 
   tag "${dataset_name}" 
   label 'process_single'
-  container "${ onSockeye ?
-    'rgcca.sif' :
-    'tonyliang19/rgcca:latest'}"
+  label 'rgcca'
 
   /* outputs store to outdir for saving and inspecting purpose */
   publishDir (
