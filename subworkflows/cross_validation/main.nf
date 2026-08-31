@@ -29,7 +29,8 @@ include { printBanner } 				from "${modulesDir}/functions"
 def shouldRunPython() {
     return !(
 			params.skip_mogonet && 
-			params.skip_integrao
+			params.skip_integrao &&
+			params.skip_sklearn
 		)
 
 }
