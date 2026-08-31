@@ -1,12 +1,11 @@
 // Methods to include
-include { INTEGRAO } from "${subworkflowDir}/methods/integrao"
-include { SKLEARN } from "${subworkflowDir}/methods/sklearn"
-include { MOGONET } 						from "${subworkflowDir}/methods/mogonet"
-include { GOAT } 								from "${subworkflowDir}/methods/goat"
+include { INTEGRAO  }             from "${subworkflowDir}/methods/integrao"
+include { SKLEARN   }             from "${subworkflowDir}/methods/sklearn"
+include { MOGONET   } 						from "${subworkflowDir}/methods/mogonet"
 // This module to collect results
-include { MERGE_RESULT_TABLE }  from "${modulesDir}/merge_result_table"
+include { MERGE_RESULT_TABLE }    from "${modulesDir}/merge_result_table"
 // Helper fun
-include { printBanner } 				from "${modulesDir}/functions"
+include { printBanner } 				  from "${modulesDir}/functions"
 
 
 // Workflow specific params to use
@@ -54,13 +53,6 @@ workflow CV_PYTHON {
       mogonet_results = MOGONET.out.csv_results
     }
 
-    // GOAT
-    goat_results = Channel.empty()
-    if (!skip_goat) {
-      GOAT ( mu_copy )
-      goat_results = GOAT.out.csv_results
-    }
-
     // ======================================================================== 
     // Collect all result and mix it to merge it more
     Channel.empty()
@@ -68,7 +60,6 @@ workflow CV_PYTHON {
             .mix( integrao_results )
             .mix( sklearn_results )
             .mix( mogonet_results )
-            .mix( goat_results )
             .map { it ->
               [ language_name, it[0], it[1] ]  // Ch [R, method name, path of summary csv of method]
             }
