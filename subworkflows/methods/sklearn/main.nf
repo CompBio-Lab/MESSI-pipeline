@@ -33,7 +33,7 @@ workflow SKLEARN {
   // Classifier to train for sklearn
   model_name  = Channel.fromList(params.sklearn_classifier_names)
   // Reduction method (pca or empty)
-  reduction   = Channel.value(params.sklearn_reduction)
+  reduction   = Channel.fromList(params.sklearn_reduction)
   take:
   // TODO: rename this data_copy to mae_copy or mu_copy depending on language
   data_copy // ch of tuple dataset, path of mae/mu data, 
