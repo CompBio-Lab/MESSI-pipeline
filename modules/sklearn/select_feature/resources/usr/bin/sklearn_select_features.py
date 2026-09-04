@@ -79,7 +79,7 @@ def main(mu_path, dataset_name, model_name, block_num=0, n_iter=10, random_state
     print(opt_clf_instance)
     # Apply scaling and fit final model
     opt_clf = make_pipeline(StandardScaler(), opt_clf_instance)
-    opt_clf.fit(X_df, y_df["response"])
+    opt_clf.fit(X_df, y_df["response"].ravel())
     # Extract the classifier from the pipeline
     classifier = opt_clf.steps[-1][1]   # Adjust this based on your pipeline's step name
     # Then could either extract their weights or feature importance
