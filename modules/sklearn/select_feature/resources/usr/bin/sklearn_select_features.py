@@ -60,26 +60,24 @@ def main(mu_path, dataset_name, model_name, block_num=0, n_iter=10, random_state
     raw_mdata = mudata.read(mu_path)
     # Use a copy here to avoid mixing up stuff
     mdata = raw_mdata.copy()
-    # TODO: this is uggly solution now
-    # Take the modality out for usage later
-    modality_names = list(mdata.mod.keys())
-    # Then convert the mdata to merged dataframe column wise
-    merged_df = combine_mdata2df(mdata)
-    # And split them to X and Y
-    X_df, y_df = merged_df.drop(columns=[target_col]), merged_df[[target_col]]
+    # Combine the MuData into a single dataframe for X and y
+    X_df, y_df, modality_names = combine_mdata2df(mdata, target_col=target_col)
+    # sklearn expects a one-dimensional target
+    y = y_df[target_col].to_numpy().ravel()
+
     # For a model , apply a CV on full data to find optimal hyperparam
     # then instantiate new model with best param to get feature importance or weight
     print(f"Model name is '{model_name}'")
     classifier_class, init_params, param_dist = load_classifier_class(model_name=model_name)
     clf_instance = classifier_class(**init_params) # Instantiate object from class with model init params
     # Then apply random CV on the parameter distribution of given model
-    optimal_params_dict = run_random_search_cv(clf_instance, X=X_df, Y=y_df, param_distributions=param_dist, n_iter=n_iter, random_state=random_state)
+    optimal_params_dict = run_random_search_cv(clf_instance, X=X_df, Y=y, param_distributions=param_dist, n_iter=n_iter, random_state=random_state)
     # Now, instantiate new instance of the model with optimal params instead
     opt_clf_instance = classifier_class(**optimal_params_dict)
     print(opt_clf_instance)
     # Apply scaling and fit final model
     opt_clf = make_pipeline(StandardScaler(), opt_clf_instance)
-    opt_clf.fit(X_df, y_df["response"].ravel())
+    opt_clf.fit(X_df, y)
     # Extract the classifier from the pipeline
     classifier = opt_clf.steps[-1][1]   # Adjust this based on your pipeline's step name
     # Then could either extract their weights or feature importance

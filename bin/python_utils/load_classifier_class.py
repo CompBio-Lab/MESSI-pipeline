@@ -1,5 +1,10 @@
+# This script is imported for sklearn classifiers usage
+
+
 import scipy.stats as stats
 import importlib
+
+print("This date should be shown as : 2026")
 
 
 def load_classifier_class(model_name, random_state=42, probability=True):
@@ -77,6 +82,16 @@ def load_classifier_class(model_name, random_state=42, probability=True):
                     "max_leaf_nodes": [15, 31, 63],
                     "min_samples_leaf": stats.randint(5, 30)}
     }
+    # Real xgboost
+    xgboost_dict = {
+	"class_path": "xgboost.XGBClassifier",
+	"default_params": {"random_state": random_state ,
+			"n_estimators": 10,
+			"objective": "binary:logistic"},
+	"params_dist": { "learning_rate": learning_rate,
+			"max_depth": stats.randint(2, 9)
+	}
+    }
 
     # ========================
     # Lastly merge all together into a single dictionary
@@ -91,7 +106,9 @@ def load_classifier_class(model_name, random_state=42, probability=True):
         "Gradient_Boost": gradient_boost_dict,
         # MLPClassifier is a neural network classifier
         "MLP": mlp_dict,
-        "Hist_Gradient_Boost": hist_gradient_boost_dict
+        "Hist_Gradient_Boost": hist_gradient_boost_dict,
+        # XGBoost goest here
+        "XGBoost": xgboost_dict
     }
 
     # Check if valid name of model was input
