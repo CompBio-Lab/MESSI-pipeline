@@ -71,13 +71,10 @@ def main(mu_path, dataset_name, model_name, block_num=0, n_iter=10, random_state
     classifier_class, init_params, param_dist = load_classifier_class(model_name=model_name)
     clf_instance = classifier_class(**init_params) # Instantiate object from class with model init params
     # Then apply random CV on the parameter distribution of given model
-    optimal_params_dict = run_random_search_cv(clf_instance, X=X_df, Y=y, param_distributions=param_dist, n_iter=n_iter, random_state=random_state)
-    # Now, instantiate new instance of the model with optimal params instead
-    opt_clf_instance = classifier_class(**optimal_params_dict)
-    print(opt_clf_instance)
-    # Apply scaling and fit final model
-    opt_clf = make_pipeline(StandardScaler(), opt_clf_instance)
-    opt_clf.fit(X_df, y)
+    search = run_random_search_cv(clf_instance, X=X_df, Y=y, param_distributions=param_dist, n_iter=n_iter, random_state=random_state)
+    opt_clf = search.best_estimator_
+    print("Best parameters:", search.best_params_)
+    print("Best pipeline:", opt_clf)
     # Extract the classifier from the pipeline
     classifier = opt_clf.steps[-1][1]   # Adjust this based on your pipeline's step name
     # Then could either extract their weights or feature importance

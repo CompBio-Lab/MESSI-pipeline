@@ -24,11 +24,12 @@ def run_random_search_cv(clf_instance, X, Y, param_distributions, n_iter=10, ran
         )
     # Could then fit this cv object of the X and Y of data
     search = clf_cv.fit(X, Y)
-    # Strip the step prefix so callers can re-instantiate the bare classifier
-    # with the returned params (classifier_class(**optimal_params)).
-    prefix = f"{step_name}__"
-    optimal_params = {
-        k[len(prefix):] if k.startswith(prefix) else k: v
-        for k, v in search.best_params_.items()
-    }
-    return optimal_params
+    # # Strip the step prefix so callers can re-instantiate the bare classifier
+    # # with the returned params (classifier_class(**optimal_params)).
+    # prefix = f"{step_name}__"
+    # optimal_params = {
+    #     k[len(prefix):] if k.startswith(prefix) else k: v
+    #     for k, v in search.best_params_.items()
+    # }
+    # return optimal_params
+    return search
