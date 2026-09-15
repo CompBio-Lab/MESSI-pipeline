@@ -2,6 +2,7 @@
 def prepare_dir = "${modulesDir}/prepare_data"
 include { PREPARE_MAE_DATA  }     from "${prepare_dir}/prepare_mae_data"
 include { PREPARE_MU_DATA   }     from "${prepare_dir}/prepare_mu_data"
+include { SPLIT_MODALITY    }     from "${prepare_dir}/split_modality"
 include { PARSE_METADATA }        from "${prepare_dir}/parse_metadata"
 include { UNCOMPRESS_RECORD }     from "${prepare_dir}/uncompress_record"
 // More generic utitilies here
@@ -21,8 +22,9 @@ workflow PREPARE_DATA {
     // ch_output           = Channel.fromList(               // Output format MAE and MuData
     //                         params.output_formats
     //                       )
-    runSimple            = params.runSimple
-    filter_low_var       = params.filter_low_var  // Filter the low variance features (default: "0")
+    filter_low_var        = params.filter_low_var         // Filter the low variance features (default: "0")
+    single_modality_mode  = params.single_modality_mode   // Single modality mode (default: "False") When true, each data is expanded to all modalities, 
+                                                          // and force to run in sklearn pipeline to test modality baselines
   /* Workflow starts here */
   // Workflow required input
     take:
@@ -46,22 +48,7 @@ workflow PREPARE_DATA {
     ch_datasets = Channel.empty()
     UNCOMPRESS_RECORD ( data_records )
 
-    // // Join by common dataset_name and make it multimap
-    // UNCOMPRESS_RECORD.out
-    //                 .record
-    //                 // .map { dname, mae_path, mu_path ->
-    //                 //     [
-    //                 //         [ dname, mae_path, mu_path]
-    //                 //         // dataset_name: it[0],
-    //                 //         // mae_path: it[1],
-    //                 //         // mu_path:  it[2]
-    //                 //     ]
-    //                 // }
-    //                 .multiMap{ dname, mae_path, mu_path ->
-    //                 mae_pt:  [dname, mae_path]
-    //                 mu_pt:   [dname, mu_path]
-    //                 }
-    //                 .set { real_data }
+    // Expand to different parts of the channel for MAE and MuData
 
     UNCOMPRESS_RECORD.out.record.map { dname, mae_path, mu_path -> [ dname, mae_path ] }.set { mae_pt }
     UNCOMPRESS_RECORD.out.record.map { dname, mae_path, mu_path -> [ dname, mu_path ] }.set { mu_pt }
@@ -99,6 +86,26 @@ workflow PREPARE_DATA {
                       .map { dname, data_path -> data_path }
                       .collect()
     )
+
+    // =====================================================================
+    // NEW (single-modality mode): expand each processed MuData into one
+    // single-modality MuData per omics, named '<dataset>-<modality>'.
+    // These are first-class datasets: SPLITTING runs on them independently
+    // and yields folds identical to the parent multimodal dataset (the
+    // splitter depends only on y and obs row order, both preserved here).
+    // =====================================================================
+    mu_data_unimodal = Channel.empty()
+    if ( single_modality_mode ) {
+        SPLIT_MODALITY ( PREPARE_MU_DATA.out.mu_data )
+        // Derive the child dataset name from the file name:
+        // 'rosmap-genomics_processed.h5mu' -> 'rosmap-genomics'
+        SPLIT_MODALITY.out.unimodal_files
+                .flatMap { dname, files ->
+                    files.collect { f -> [ f.name.replace('_processed.h5mu', ''), f ] }
+                }
+                .set { mu_data_unimodal }
+    }
+
     // TODO: Do the conversions later? assume two formats exists now
     // ch_datasets = Channel.empty()
     emit:
@@ -110,7 +117,8 @@ workflow PREPARE_DATA {
         N = n(real_data) + n(simulated_data)
         N = n(real_data)
     */
-    mae_data = PREPARE_MAE_DATA.out.mae_data
-    mu_data = PREPARE_MU_DATA.out.mu_data
+    mae_data          = PREPARE_MAE_DATA.out.mae_data
+    mu_data           = PREPARE_MU_DATA.out.mu_data
+    mu_data_unimodal  = mu_data_unimodal
 }
 
