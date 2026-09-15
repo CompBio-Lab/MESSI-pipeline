@@ -20,7 +20,10 @@ def run_random_search_cv(clf_instance, X, Y, param_distributions, n_iter=10, ran
     clf_cv = RandomizedSearchCV(
         pipeline, param_distributions=prefixed_param_distributions,
         n_iter=n_iter, random_state=random_state,
-        n_jobs=n_jobs
+        n_jobs=n_jobs,
+        scoring="roc_auc",
+        # This gives us the best model with optimal hyperparameters after fitting
+        refit=True
         )
     # Could then fit this cv object of the X and Y of data
     search = clf_cv.fit(X, Y)
