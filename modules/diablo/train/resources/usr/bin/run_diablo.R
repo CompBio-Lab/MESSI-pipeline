@@ -76,7 +76,8 @@ main <- function(mae_path, label, fold_path, design, ncomp, run_inner_cv, prefix
   sample_names <- check_common_samples(train_data)
   cat("\nTotal of", length(sample_names), "samples:\n", sample_names)
   
-
+  # Set scheme to horst
+  scheme <- "horst"
   # Get the design matrix here
   if (design == "full") {
     corr <- 1
@@ -105,13 +106,14 @@ main <- function(mae_path, label, fold_path, design, ncomp, run_inner_cv, prefix
     model <- mixOmics::block.splsda(X = X, Y = Y, 
                                     ncomp = tuned_output$ncomp, 
                                     keepX = tuned_output$keepX, 
-                                    design = design_mat)
+                                    design = design_mat,
+                                    scheme = scheme)
     #---------------------------------------------------------------------------
   } else {
     cat("\nNot running inner cv per fold\n")
     # use default settings
     # Use a fully connected design on def , could also use null
-    model <- mixOmics::block.splsda(X = train_data$X, Y = train_data$Y, design=design_mat, ncomp=ncomp)
+    model <- mixOmics::block.splsda(X = train_data$X, Y = train_data$Y, design=design_mat, ncomp=ncomp, scheme=scheme)
     cat("\nFitted model\n")
   }
 
