@@ -60,11 +60,28 @@ workflow MESSI_BENCHMARK {
       // SUBWORKFLOW: Perform splitting with stratification to the response
       // variable on each dataset
       //
-      SPLITTING (	PREPARE_DATA.out.mu_data, params.split_type )
+
+      // NEW (single-modality mode): the unimodal datasets are mixed into the
+      // same SPLITTING call. When params.single_modality_mode is false,
+      // mu_data_unimodal is an empty channel and the mix is a no-op.
+      // Unimodal children get folds identical to their parent multimodal
+      // dataset (the splitter depends only on y and obs row order).
+      //
+
+      SPLITTING (	
+        PREPARE_DATA.out.mu_data.mix ( PREPARE_DATA.out.mu_data_unimodal ), 
+        params.split_type 
+      )
       //
       // SUBWORKFLOW: Perform cross validation for each dataset using these indices
       //
-      CROSS_VALIDATION ( PREPARE_DATA.out.mae_data, PREPARE_DATA.out.mu_data, SPLITTING.out.splits_indices )
+      // NEW: 4th input routes the unimodal datasets; inside CROSS_VALIDATION
+      // they are consumed by python methods only (currently sklearn).
+      //
+      CROSS_VALIDATION ( 
+        PREPARE_DATA.out.mae_data, PREPARE_DATA.out.mu_data, 
+        SPLITTING.out.splits_indices, PREPARE_DATA.out.mu_data_unimodal 
+      )
       //
       // MODULE: Use the output of cross validation to calculate metrics
       //

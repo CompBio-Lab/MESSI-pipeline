@@ -35,7 +35,7 @@ def main(model_path, test_path, label, method_name, target_col="response"):
   test_data = mudata.read(test_path)
   # Partion the mudata to x df and y df (which contains response and other metadata)
   # Y contains other metadata information, hence not doing in the form of merged way
-  test_X_df, test_y_df =  combine_mdata2df(test_data, concat=False)
+  test_X_df, test_y_df, _ =  combine_mdata2df(test_data)
   # Get predicted probabilities
   predicted_df = pd.DataFrame(model.predict_proba(test_X_df), columns=model.classes_)
   # Retrieve the class equals to 1 only (no string required)

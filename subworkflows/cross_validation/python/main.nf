@@ -25,6 +25,13 @@ workflow CV_PYTHON {
     mu_copy 	//  channel of (key, key/path_to_mu, split_indices), 
               // where each split_indices/ contains
               // list of txt files.
+
+     // NEW (single-modality mode): same tuple shape as mu_copy, but containing
+    // the expanded per-modality datasets ('<dataset>-<modality>'). Only
+    // sklearn consumes them: single-block input is not meaningful for
+    // multi-block integration methods (INTEGRAO, MOGONET). Empty channel
+    // when params.single_modality_mode is false.
+    mu_copy_unimodal
   main:
     /*
       Need to first allocate empty output for each of the methods
@@ -42,7 +49,8 @@ workflow CV_PYTHON {
     // SKLEARN
     sklearn_results = Channel.empty()
     if (!skip_sklearn) {
-        SKLEARN ( mu_copy )
+        // Mix inputs of mudata and unimodal
+        SKLEARN ( mu_copy.mix( mu_copy_unimodal ) )
         sklearn_results = SKLEARN.out.csv_results
     }
     
