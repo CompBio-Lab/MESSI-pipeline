@@ -97,7 +97,7 @@ main <- function(mae_path, dataset_name, n_percent, design, ncomp) {
   }
   design_mat <- getDesign(X, corr = corr)
 
-  model <- block.splsda(X, Y, keepX=keepX, design=design_mat, ncomp=ncomp)
+  model <- block.splsda(X, Y, keepX=keepX, design=design_mat, ncomp=ncomp, scheme="horst")
 
   # Loop over components and extract features
   # Extract the features out from var_list and wrangle to df for downstream usage

@@ -77,7 +77,8 @@ tune_diablo <- function(base_model, design, dist="centroids.dist", validation='M
                                      design = design,
                                      validation = validation, 
                                      folds = folds, nrepeat = nrepeat,
-                                     dist = dist)
+                                     dist = dist,
+                                     scheme="horst")
   cat("\nFinished tuning keepX\n")
   
   list_keepX <- tune_features$choice.keepX

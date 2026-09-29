@@ -2,7 +2,7 @@
 
 # Script to prepare mofa input
 doc <- "This script is to run MOFA method from MOFA2 package, train only
-it could possibly be ran on a inner CV model, output is a modelel for prediction
+it could possibly be ran on a inner CV model, output is a model for prediction
 usage in downstream.
 
 Usage:
@@ -138,6 +138,13 @@ main <- function(mae_path, split_dir, dataset_name, num_factors) {
   mofa_emb <- load_model(file=mofa_emb_file, remove_inactive_factors = FALSE)
   # Although to make predictions, need its embeddings and use a glmnet on prediction
   factors <- get_factors(mofa_emb, factors="all")
+
+  # =================================================================================
+  # NOTE: The MOFA factors are then extracted and construct as MAEs as input objects
+  # for downstream model fitting and prediction
+  # For classification it uses glmnent family binomial
+  # For survival it uses glmnet family cox
+  # =================================================================================
   # Then use this new mae
   mae <- MultiAssayExperiment(experiments = list(embeddings=factors$group1 |> t() ),
                               colData = raw_col_data

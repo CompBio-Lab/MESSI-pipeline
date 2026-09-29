@@ -31,9 +31,11 @@ process MOFA_TRAIN {
     tuple val(dataset_name), val(fold_path.name), path('*log*'), 					emit: log
 	script:
 		def data_label = "${dataset_name}-${fold_path.name}"
+		// Dynamically determine script based on classification or survival task
+		def script_names = params.outcome_type == "classification" ? "run_mofa.R" : "run_mofa_survival.R"
     if (run_inner_cv)
       """
-      run_mofa.R \
+      ${script_names} \
         --mae_path=${mae_path} \
         --label=${data_label} \
         --fold_path=${fold_path} \
@@ -43,7 +45,7 @@ process MOFA_TRAIN {
       """
     else
     """
-      run_mofa.R \
+      ${script_names} \
         --mae_path=${mae_path} \
         --label=${data_label} \
         --fold_path=${fold_path} > \

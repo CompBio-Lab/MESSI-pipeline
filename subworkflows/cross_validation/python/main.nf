@@ -18,6 +18,7 @@ workflow CV_PYTHON {
   skip_sklearn  = params.skip_sklearn // boolean: true/false
   skip_mogonet	= params.skip_mogonet	// boolean: true/false
   skip_goat 		= params.skip_goat		// boolean: true/false
+  skip_sksurv   = params.skip_sksurv  // boolean: true/false
   // Method specific parameters
   he_base_dim = params.he_base_dim
   // Inputs of workflow
@@ -53,6 +54,13 @@ workflow CV_PYTHON {
         SKLEARN ( mu_copy.mix( mu_copy_unimodal ) )
         sklearn_results = SKLEARN.out.csv_results
     }
+
+    // SKSURV
+    sksurv_results = Channel.empty()
+    if (!skip_sksurv) {
+      SKSURV ( mu_copy )
+      sksurv_results = SKSURV.out.csv_results
+    }
     
     // MOGONET
     mogonet_results = Channel.empty()
@@ -65,9 +73,10 @@ workflow CV_PYTHON {
     // Collect all result and mix it to merge it more
     Channel.empty()
             // Then these are outputs of methods
-            .mix( integrao_results )
-            .mix( sklearn_results )
-            .mix( mogonet_results )
+            .mix( integrao_results  )
+            .mix( sklearn_results   )
+            .mix( mogonet_results   )
+            .mix( sksurv_results    )
             .map { it ->
               [ language_name, it[0], it[1] ]  // Ch [R, method name, path of summary csv of method]
             }

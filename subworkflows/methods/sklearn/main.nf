@@ -31,7 +31,9 @@ def saveMode = "method"
 
 workflow SKLEARN {
   // Classifier to train for sklearn
-  model_name  = Channel.fromList(params.sklearn_classifier_names)
+  // Set classifier to Logit only if single_mode is true
+  model_name = Channel.fromList(params.sklearn_classifier_names)
+  
   // Reduction method (pca or empty)
   // Set reduction to empty if single_mode is true
   if ( params.single_modality_mode ) {

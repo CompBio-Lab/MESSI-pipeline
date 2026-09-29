@@ -83,6 +83,10 @@ main <- function(mae_path, dataset_name, ncomp=2, design="full", prediction_mode
   
   # This is number of omics including the response block, so H + 1
   J <- length(rgcca_input)
+
+  # Set scheme to horst for same comparison with diablo
+  scheme <- "horst"
+
   # Set up the connection matrix
   if (design == "full") {
     # Full means 1 everywhere not of diagonal, meaning every omics
@@ -110,6 +114,7 @@ main <- function(mae_path, dataset_name, ncomp=2, design="full", prediction_mode
     blocks = rgcca_input, response = length(rgcca_input),
     connection = connection,
     method = "rgcca",
+    scheme = scheme,
     sparsity = 1, # Use the default value
     #par_type = par_type,
     tau = 1, # Fix tau 1 for all components so gets non-zero weights for all features
