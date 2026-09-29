@@ -18,14 +18,11 @@ include { getPublishPath } from "${modulesDir}/functions"
 
 process RGCCA_TRAIN {
 	// Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	// Identifier for each dataset and fold combination
 	tag "${dataset_name}-${fold_path.name}-${method}-design_${design}-ncomp_${ncomp}"
 	label 'process_single'
 	// TODO: rename to the actual image name used
-	container "${ onSockeye  ?
-		'rgcca.sif' :
-		'tonyliang19/rgcca:latest' }"
+	label 'rgcca'
 	// Parse the output directory to migrate results to
 	publishDir (
 		path: "${params.outdir}/${getPublishPath(task.process)}/${dataset_name}/${fold_path.name}",

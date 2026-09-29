@@ -3,14 +3,10 @@ include { getPublishPath } from "${modulesDir}/functions"
 
 process RGCCA_PREDICT {
 	// Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	tag "${dataset_name}-${fold_name}-${method}"
 	debug "${params.debug}"
-  label 'process_single'
-	container "${ onSockeye  ?
-		'rgcca.sif' :
-		'tonyliang19/rgcca:latest' }"
-
+	label 'process_single'
+	label 'rgcca'
 	publishDir (
 		path: "${params.outdir}/${getPublishPath(task.process)}/${dataset_name}/${fold_name}",
 		mode: 'copy',
@@ -23,7 +19,6 @@ process RGCCA_PREDICT {
   */
 	label 'low_mem'
 	label 'cpu'
-	label 'codia'
 
   /*
     Given RGCCA itself has many methods available, so we have an extra input here

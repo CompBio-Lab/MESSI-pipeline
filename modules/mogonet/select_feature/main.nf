@@ -4,13 +4,10 @@ include { getPublishPath } from "${modulesDir}/functions"
 
 process MOGONET_SELECT_FEATURE {
   // Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	tag "${dataset_name}-he${he_base_dim}"
 	debug true
   label 'process_high'
-	container "${ onSockeye  ?
-		'mogonet.sif' :
-		'tonyliang19/mogonet:latest' }"
+  label 'mogonet'
 
 	publishDir (
 		path: "${params.outdir}/${task.process.tokenize(':').join('/').toLowerCase()}/${dataset_name}",

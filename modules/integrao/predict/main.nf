@@ -3,12 +3,9 @@ include { getPublishPath } from "${modulesDir}/functions"
 
 process INTEGRAO_PREDICT {
 	// Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	tag "${dataset_name}-${fold_name}"
 	debug "${params.debug}"
-	container "${ onSockeye  ?
-		'integrao.sif' :
-		'tonyliang19/integrao:latest' }"
+	label 'integrao'
 
 	publishDir (
 		path: "${params.outdir}/${getPublishPath(task.process)}/${dataset_name}/${fold_name}",

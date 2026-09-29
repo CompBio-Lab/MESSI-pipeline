@@ -7,13 +7,10 @@
 include { getPublishPath } from "${modulesDir}/functions"
 process COOPERATIVE_LEARNING_TRAIN {
   // Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	tag "${dataset_name}-${fold_path.name}"
 	debug	"${params.debug}"
 	label 'process_high'
-	container "${ onSockeye  ? 
-		'codia.sif' : 
-		'tonyliang19/codia:latest' }"
+	label 'codia'
 	// More special publish dir by getting method/method_abc to method/abc
   publishDir (
     path: "${params.outdir}/${getPublishPath(task.process)}/${dataset_name}/${fold_path.name}",

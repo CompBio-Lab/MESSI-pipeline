@@ -11,16 +11,13 @@
 //include { getPublishPath } from "${modulesDir}/functions"
 // TODO: Replace name here
 process PARSE_METADATA {
-  // temp variables to use
-  def onSockeye = workflow.projectDir.toString().contains('/scratch')
   // process level configuration
   debug "${params.debug}" // debugs true or false by param in MESSI.config
   // tag "${dataset_name}" // identifier of process when ran in parallel
   // By var before to determine what container to use
   // Uses apptainer if true otherwise docker
-  container "${ onSockeye ?
-    'save_simulate.sif' :
-    'tonyliang19/save_simulate:latest'}"
+  label "generic"
+
 
   /* outputs store to outdir for saving and inspecting purpose */
   publishDir (

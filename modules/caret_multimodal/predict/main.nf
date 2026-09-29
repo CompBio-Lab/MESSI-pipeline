@@ -3,12 +3,9 @@ include { getPublishPath } from "${modulesDir}/functions"
 
 process CARET_MULTIMODAL_PREDICT {
 	// Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	tag "${dataset_name}-${fold_name}"
 	debug "${params.debug}"
-	container "${ onSockeye  ?
-		'caret_multimodal.sif' :
-		'tonyliang19/caret_multimodal:latest' }"
+  label 'caret_multimodal'
 
 	publishDir (
 		path: "${params.outdir}/${getPublishPath(task.process)}/${dataset_name}/${fold_name}",

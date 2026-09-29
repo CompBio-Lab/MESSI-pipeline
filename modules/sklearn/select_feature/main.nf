@@ -4,13 +4,10 @@ include { getPublishPath } from "${modulesDir}/functions"
 
 process SKLEARN_SELECT_FEATURE {
   // Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	tag "${model_name}-${dataset_name}"
 	debug true
   label 'process_high'
-	container "${ onSockeye  ?
-		'sklearn.sif' :
-		'tonyliang19/sklearn:latest' }"
+  label 'sklearn'
 
 	publishDir (
 		path: "${params.outdir}/${task.process.tokenize(':').join('/').toLowerCase()}/${dataset_name}",

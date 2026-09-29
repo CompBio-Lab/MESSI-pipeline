@@ -8,14 +8,10 @@
 */
 
 process PREPARE_MAE_DATA {
-  def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	/* process metadata and configs */
 	tag "${dataset_name}"
-	// TODO: move this containter to somewhere else?
   label 'process_low'
-  container "${ onSockeye ? 
-		'save_simulate.sif' : 
-		'tonyliang19/save_simulate:latest' }"  
+  label 'generic'
 	publishDir (
 		path: "${params.outdir}/${task.process.tokenize(':').join('/').toLowerCase()}/${dataset_name}",
 		saveAS: { file },

@@ -4,13 +4,10 @@ include { getPublishPath } from "${modulesDir}/functions"
 
 process RGCCA_SELECT_FEATURE {
   // Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	tag "${dataset_name}-design_${design}-ncomp_${ncomp}"
 	debug true
   label 'process_low'
-	container "${ onSockeye  ?
-		'rgcca.sif' :
-		'tonyliang19/rgcca:latest' }"
+  label 'rgcca'
 
 	publishDir (
 		path: "${params.outdir}/${task.process.tokenize(':').join('/').toLowerCase()}/${dataset_name}",

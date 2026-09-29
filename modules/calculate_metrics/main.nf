@@ -1,11 +1,7 @@
 process CALCULATE_METRICS {
-  def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	debug true
 	label 'process_single'
-	container "${ onSockeye  ?
-		'mogonet.sif' :
-		'tonyliang19/mogonet:latest' }"
-
+	label 'mogonet' // Should be a generic python container?
 	publishDir (
 		path: "${params.outdir}/${task.process.tokenize(':').join('/').toLowerCase()}",
 		mode: 'copy',

@@ -18,13 +18,10 @@ include { getPublishPath } from "${modulesDir}/functions"
 
 process INTEGRAO_TRAIN {
 	// Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	// Identifier for each dataset and fold combination
 	tag "${dataset_name}-${fold_path.name}"
 	// TODO: rename to the actual image name used
-	container "${ onSockeye  ?
-		'integrao.sif' :
-		'tonyliang19/integrao:latest' }"
+	label 'integrao'
 	// Parse the output directory to migrate results to
 	publishDir (
 		path: "${params.outdir}/${getPublishPath(task.process)}/${dataset_name}/${fold_path.name}",

@@ -2,10 +2,7 @@ process SAMPLESHEET_CHECK {
   tag "$samplesheet"
   label 'process_single_low'
 
-  def onSockeye = workflow.projectDir.toString().contains('/scratch')
-	container "${ onSockeye  ?
-		'mogonet.sif' :
-		'tonyliang19/mogonet:latest' }"
+  label 'mogonet'
 
   input:
   path(samplesheet)

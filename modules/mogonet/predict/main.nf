@@ -2,13 +2,10 @@
 include { getPublishPath } from "${modulesDir}/functions"
 process MOGONET_PREDICT {
 	// Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	tag "${dataset_name}-${fold_name}"
 	debug true
 	label 'process_low'
-	container "${ onSockeye  ?
-		'mogonet.sif' :
-		'tonyliang19/mogonet:latest' }"
+	label 'mogonet'
 
 	publishDir (
 		path: "${params.outdir}/${getPublishPath(task.process)}/${dataset_name}/${fold_name}",
@@ -19,7 +16,7 @@ process MOGONET_PREDICT {
 	// Labels
 	label 'low_mem'
 	label 'gpu'
-  label 'mogonet'
+	label 'mogonet'
 
 	input:
     tuple val(dataset_name), val(fold_name), path(model)

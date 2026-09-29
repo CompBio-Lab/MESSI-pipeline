@@ -31,16 +31,13 @@ include { getPublishPath } from "${modulesDir}/functions"
 
 process MOGONET_PREPROCESS {
   // Temp variables
-  def onSockeye = workflow.projectDir.toString().contains('/scratch')
   def output_dir = "fold"
   // process configurations
   label 'process_low'
   debug "${params.debug}"
   tag "${dataset_name}"
   // If on sockeye, then use sif file otherwise assuming local (use docker)
-	container "${ onSockeye ? 
-    'mogonet.sif' : 
-    'tonyliang19/save_simulate:latest' }"
+  label 'mogonet'
   /* Outputs are stored to outdir (fold), for saving purpose, passing input/output 
   should be done with channels */
   publishDir (

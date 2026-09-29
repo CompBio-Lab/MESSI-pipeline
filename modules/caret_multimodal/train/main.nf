@@ -17,14 +17,9 @@
 include { getPublishPath } from "${modulesDir}/functions"
 
 process CARET_MULTIMODAL_TRAIN {
-	// Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	// Identifier for each dataset and fold combination
 	tag "${dataset_name}-${fold_path.name}"
-	// TODO: rename to the actual image name used
-	container "${ onSockeye  ?
-		'caret_multimodal.sif' :
-		'tonyliang19/caret_multimodal:latest' }"
+
 	// Parse the output directory to migrate results to
 	publishDir (
 		path: "${params.outdir}/${getPublishPath(task.process)}/${dataset_name}/${fold_path.name}",
@@ -34,6 +29,7 @@ process CARET_MULTIMODAL_TRAIN {
 	// TODO: add your custom labels to tell if process
 	// consumes large RAM/ROM and gpu access or not
 	label 'process_medium'
+	label 'caret_multimodal'
 
 
 	// TODO: Change arg name to mae_path or mu_path

@@ -3,13 +3,10 @@ include { getPublishPath } from "${modulesDir}/functions"
 
 process MOFA_PREDICT {
 	// Vars stuff
-	def onSockeye = workflow.projectDir.toString().contains('/scratch')
 	tag "${dataset_name}-${fold_name}"
 	debug true
 	label 'process_single'
-	container "${ onSockeye  ?
-		'mofa.sif' :
-		'tonyliang19/mofa:latest' }"
+	label 'mofa'
 
 	publishDir (
 		path: "${params.outdir}/${getPublishPath(task.process)}/${dataset_name}/${fold_name}",
