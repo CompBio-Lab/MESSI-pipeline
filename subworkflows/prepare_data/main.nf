@@ -1,6 +1,3 @@
-// Include simulation workflow
-include { SIMULATION } from "${subworkflowDir}/simulation"
-
 // Include modules here
 def prepare_dir = "${modulesDir}/prepare_data"
 include { PREPARE_MAE_DATA  }     from "${prepare_dir}/prepare_mae_data"

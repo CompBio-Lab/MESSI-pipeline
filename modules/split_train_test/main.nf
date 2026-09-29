@@ -18,6 +18,7 @@ process SPLIT_TRAIN_TEST {
 		tuple val(dataset_name), path(mu_path)
 		val(split_type)
 		val(num_splits)
+		val(outcome_type)
 		val(output_dir)
 
 	output:
@@ -31,6 +32,7 @@ process SPLIT_TRAIN_TEST {
 		split_tr_te.py	${mu_path}	\
 										--split_type=${split_type} \
 										--num_splits=${num_splits}	\
+										--outcome_type=${outcome_type} \
 										--output_dir=${dataset_name}/${output_dir} > \
 										${dataset_name}/${dataset_name}-${task.process.tokenize(':')[-1].toLowerCase()}.log
 		"""

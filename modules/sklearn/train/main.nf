@@ -19,7 +19,7 @@ include { getPublishPath } from "${modulesDir}/functions"
 process SKLEARN_TRAIN {
 	// Vars stuff
 	// Identifier for each dataset and fold combination
-	tag "${dataset_name}-${fold_path.name}-${model_name}"
+	tag "${dataset_name}-${fold_path.name}-${model_name}-${reduction}"
 	// TODO: rename to the actual image name used
 	label 'sklearn'
 	// Parse the output directory to migrate results to
@@ -36,7 +36,9 @@ process SKLEARN_TRAIN {
 	// TODO: Change arg name to mae_path or mu_path
 	input:
 		tuple val(dataset_name), path(data_path), path(fold_path)
+		each(reduction)
 		each(model_name)
+
 	/* 
 		TODO: this part needs to be defined by user,
 		mostly required is the template
@@ -49,9 +51,9 @@ process SKLEARN_TRAIN {
 		sample_script.py outputs my_model.pkl, then define path('my_model.pkl') in nextflow
 	*/
 	output:
-		tuple val(dataset_name), val(fold_path.name), val(model_name), path('*model*'),			 	emit: model
-		tuple val(dataset_name), val(fold_path.name), val(model_name), path('*test_data*'),	 	emit: test_data
-		tuple val(dataset_name), val(fold_path.name), val(model_name), path('*log*'), 				emit: log
+		tuple val(dataset_name), val(fold_path.name), val("${model_name}-${reduction}"), path('*model*'),			 	emit: model
+		tuple val(dataset_name), val(fold_path.name), val("${model_name}-${reduction}"), path('*test_data*'),	 	emit: test_data
+		tuple val(dataset_name), val(fold_path.name), val("${model_name}-${reduction}"), path('*log*'), 				emit: log
 	script:
   /* 
 			The script here should be found under method/resources/usr/bin/ , 
@@ -66,8 +68,9 @@ process SKLEARN_TRAIN {
 		sklearn_train.py \
 				--fold_path=${fold_path} \
 				--label=${data_label} \
-				--model_name=${model_name} > \
-				${data_label}-${model_name}-${getPublishPath(task.process).tokenize('/')[-1].toLowerCase()}.log
+				--model_name=${model_name}  \
+				--reduction=${reduction}  > \
+				${data_label}-${model_name}-${reduction}-${getPublishPath(task.process).tokenize('/')[-1].toLowerCase()}.log
 		echo ${data_label} > ${data_label}
 		"""
 

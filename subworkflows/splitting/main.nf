@@ -7,6 +7,7 @@ workflow SPLITTING {
 	// Load params 
 	num_splits 		= params.k_fold_number	// value of K fold
 	output_dir		=	params.split_dir			// output directory to store the splits , def is "splits"
+	outcome_type  = params.outcome_type   // Outcome type one of classification or survival, default is classification
 	// Workflow of splitting starts here
 	take:
 		// ch_datasets   // tuple of idendifier, path of mae data, path of mu data
@@ -28,7 +29,7 @@ workflow SPLITTING {
 		log.info "Using ${split_type} splitting strategy based on 'sample name' column"
 
 
-		SPLIT_TRAIN_TEST ( mu_data , split_type, num_splits, output_dir	)
+		SPLIT_TRAIN_TEST ( mu_data , split_type, num_splits, outcome_type, output_dir	)
 	emit:
 		splits_indices 	= SPLIT_TRAIN_TEST.out.splits_indices
 		ch_logs					= SPLIT_TRAIN_TEST.out.split_log

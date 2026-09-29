@@ -1,11 +1,10 @@
 // Methods to include
-include { CARET_MULTIMODAL } from "${subworkflowDir}/methods/caret_multimodal"
-include { DEMO_LOGIT } from "${subworkflowDir}/methods/demo_logit"
+include { CARET_MULTIMODAL }      from "${subworkflowDir}/methods/caret_multimodal"
+include { DEMO_LOGIT }            from "${subworkflowDir}/methods/demo_logit"
 include { COOPERATIVE_LEARNING }  from "${subworkflowDir}/methods/cooperative_learning"
 include { DIABLO }                from "${subworkflowDir}/methods/diablo"
 include { MOFA }                  from "${subworkflowDir}/methods/mofa"
 include { RGCCA }                 from "${subworkflowDir}/methods/rgcca"
-include { SGMR }	                from "${subworkflowDir}/methods/sgmr"
 // This module to collect results
 include { MERGE_RESULT_TABLE }    from "${modulesDir}/merge_result_table"
 include { printBanner }           from "${modulesDir}/functions"

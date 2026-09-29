@@ -20,4 +20,4 @@ def combine_mdata2df(mdata, concat=True):
         return X_df, y_df
     # Merge all DataFrames together, and drop irrevelant meta information
     merged_df = pd.concat([ X_df, y_df[["response"]] ] , axis=1)
-    return merged_df
+    return merged_df, mod_names
