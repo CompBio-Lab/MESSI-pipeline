@@ -48,7 +48,7 @@ def transform_mudata_format(
     data = raw_data.copy() 
     # Mudata has stricter format, so only need to check if each obs contain the
     # required columns
-    accepted_cols = set(["response", "sample_names", "sample_name"])
+    accepted_cols = set(["response", "sample_names", "sample_name", "sample"])
     new_mu_dict = {}
     for modality in data.mod:
       
