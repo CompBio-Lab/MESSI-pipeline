@@ -36,9 +36,13 @@ module load CVMFS_CC
 # module load java/11.0.16_8
 # module load nextflow/23.04.3
 # THESE ARE NEWER VERSIONS
-module load apptainer/1.3.4
-module load java/17.0.6
-module load nextflow/24.04.4
+#module load apptainer/1.3.4
+#module load java/17.0.6
+#module load nextflow/24.04.4
+# Even newer
+module load apptainer/1.3.5
+module load java/21.0.1
+module load nextflow/24.10.2
 # Source the load script with env vars setup
 #source bin/helper.sh
 # =============================================================================
@@ -58,8 +62,8 @@ export NXF_OFFLINE='true'
 # The NXF script to run, located on the repo root directory
 NXF_SRC_MAIN=$PIPELINE_DIR/main.nf
 # Profile order matters, since the later one overrides the prior ones
-PROFILE=sockeye,simulated_data
-#PROFILE=sockeye,real_data
+#PROFILE=sockeye,simulated_data
+PROFILE=sockeye,real_data
 # Or use this one for development usage
 #PROFILE=sockeye,test,debug
 #PARAMS_FILE=remote_params.yaml
@@ -70,10 +74,11 @@ PROFILE_SUFFIX=${PROFILE#sockeye,}
 PROFILE_SUFFIX="${PROFILE_SUFFIX//,/–}"
 OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results-${PROFILE_SUFFIX}
 # Samplesheet should maybe have it in profile only and not with CLI as it overrides it
+SAMPLESHEET=data/samplesheet_momix_3.csv
 #SAMPLESHEET=data/samplesheet_simulated_data.csv
 #SAMPLESHEET=data/samplesheet_simulated_part1.csv
 #SAMPLESHEET=data/samplesheet_simulated_part2.csv
-SAMPLESHEET=data/samplesheet_simulated_part3.csv
+#SAMPLESHEET=data/samplesheet_simulated_part3.csv
 #SAMPLESHEET=data/samplesheet_feat_selection.csv
 #SAMPLESHEET=data/samplesheet_test_full.csv
 #SAMPLESHEET=data/samplesheet_test_small.csv
