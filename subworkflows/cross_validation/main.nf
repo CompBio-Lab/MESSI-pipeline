@@ -141,6 +141,7 @@ workflow CROSS_VALIDATION {
 			} 
 			else {
 				log.info "None of the method could be run, check if parameter provided"
+				csv_results = Channel.empty()
 			}
 		} 
 		else {
