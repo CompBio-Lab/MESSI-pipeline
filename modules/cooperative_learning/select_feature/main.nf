@@ -27,6 +27,7 @@ process COOPERATIVE_LEARNING_SELECT_FEATURE {
     tuple val(dataset_name), path(mae_path)
   output:
     path("*.csv"),  emit: features
+    path("*.json"), emit: hyperparameters
     path("*plot*"), emit: plot
     path("*.log"),  emit: log
 
