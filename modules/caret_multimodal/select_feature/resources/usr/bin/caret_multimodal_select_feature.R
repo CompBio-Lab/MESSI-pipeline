@@ -25,6 +25,7 @@ library(dplyr)
 library(magrittr)
 library(tibble)
 library(caret)
+library(jsonlite)
 
 bin_dir <- Sys.getenv("PATH") |> 
   strsplit(":") |>
@@ -119,6 +120,8 @@ main <- function(mae_path, dataset_name, nfolds, criteria_order="coef") {
   # TODO: Run a cv on X and Y to get hyperparameters
   # Then fit the model
   cv_model <- run_caret_multimodal_cv(X, Y, nfolds = nfolds)
+  # Get tuned summary
+  tuning_summary <- as.data.frame(summary(cv_model))
   # TODO: Extract the features out from your final model and wrangle to df for downstream usage
   feature_weights <- caretMultimodal:::compute_feature_contributions.caret_stack(cv_model, n_features = Inf)
   feats_df <- feature_weights %>%
@@ -143,7 +146,64 @@ main <- function(mae_path, dataset_name, nfolds, criteria_order="coef") {
   output_format <- "csv"
   feats_file <- paste0(comb_name , "_", "features_selected", ".", output_format)
   write.csv(x=feats_df, file=feats_file, row.names=FALSE)
+  # And the hyperparams section as well
+  tuning_summary <- as.data.frame(summary(cv_model))
 
+  lambda_grid <- sort(unique(10^seq(-4, 3, length = 20)))
+
+  hyperparameter_record <- list(
+    run_id = paste(method, dataset_name, sep = "-"),
+    dataset = dataset_name,
+    method = method,
+    analysis_stage = "model_selection",
+
+    selection = list(
+      strategy = "cross_validated_late_fusion_stacking",
+      folds = nfolds,
+
+      selected_model_summary = tuning_summary
+    ),
+
+    parameters = list(
+      base_learner = list(
+        value = "glmnet",
+        treatment = "fixed"
+      ),
+      stack_learner = list(
+        value = "glmnet",
+        treatment = "fixed"
+      ),
+      alpha = list(
+        value = 0,
+        treatment = "fixed"
+      ),
+      lambda = list(
+        value = list(
+          candidate_values = lambda_grid,
+          selected_models = tuning_summary
+        ),
+        treatment = "tuned"
+      ),
+      seed = list(
+        value = seed,
+        treatment = "data-derived"
+      )
+    )
+  )
+
+  hyperparameter_file <- paste0(
+    method, "-", dataset_name,
+    "_selected_hyperparameters.json"
+  )
+
+  jsonlite::write_json(
+    hyperparameter_record,
+    path = hyperparameter_file,
+    pretty = TRUE,
+    auto_unbox = TRUE,
+    dataframe = "rows",
+    na = "null"
+  )
 
   return(feats_df)
 }
