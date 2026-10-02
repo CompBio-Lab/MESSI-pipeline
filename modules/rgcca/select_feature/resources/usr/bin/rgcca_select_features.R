@@ -80,7 +80,7 @@ main <- function(mae_path, dataset_name, ncomp=2, design="full", prediction_mode
   # It should now look like list(X1=X1, X2=X2, ... , XN=XN, response=Y)
   rgcca_input <- X
   rgcca_input[["response"]] <- as.factor(data_list$Y)
-  
+  block_names <- names(rgcca_input)
   # This is number of omics including the response block, so H + 1
   J <- length(rgcca_input)
 
@@ -116,7 +116,6 @@ main <- function(mae_path, dataset_name, ncomp=2, design="full", prediction_mode
     method = "rgcca",
     scheme = scheme,
     sparsity = 1, # Use the default value
-    #par_type = par_type,
     tau = 1, # Fix tau 1 for all components so gets non-zero weights for all features
     ncomp = ncomp,
     prediction_model = prediction_model,
@@ -145,7 +144,7 @@ main <- function(mae_path, dataset_name, ncomp=2, design="full", prediction_mode
     filter(view != "response") |>
     as_tibble()
 
-  
+
   
   # Now wrangle this to dataframe for downstream usage
   feats_df <- weights_df %>%
@@ -168,6 +167,85 @@ main <- function(mae_path, dataset_name, ncomp=2, design="full", prediction_mode
   comb_name <- paste(design, dataset_name, sep="-")
   feats_file <- paste0(comb_name, "_", "features_selected", ".", "csv")
   write.csv(x=feats_df, file=feats_file, row.names=FALSE)
+  # ------------------------------------
+  # And the hyperparameters section
+    # rgcca_cv stores the CV-selected parameter combination here.
+  selected_tau <- as.numeric(cv_out$best_params)
+  selected_tau_json <- as.list(stats::setNames(selected_tau, block_names))
+  connection_json <- lapply(
+    seq_len(nrow(connection)),
+    function(i) {
+      as.list(
+        stats::setNames(
+          as.numeric(connection[i, ]),
+          block_names
+        )
+      )
+    }
+  )
+
+  names(connection_json) <- block_names
+
+  method_name <- paste("rgcca", design, sep = "-")
+
+  hyperparameters <- list(
+    tau = make_parameter_record(
+      value = selected_tau_json,
+      treatment = "tuned"
+    ),
+
+    ncomp = make_parameter_record(
+      value = as.integer(ncomp),
+      treatment = "fixed"
+    ),
+
+    sparsity = make_parameter_record(
+      value = 1,
+      treatment = "fixed"
+    ),
+
+    scheme = make_parameter_record(
+      value = scheme,
+      treatment = "fixed"
+    ),
+
+    design = make_parameter_record(
+      value = design,
+      treatment = "fixed"
+    ),
+
+    connection = make_parameter_record(
+      value = connection_json,
+      treatment = "data-derived"
+    )
+  )
+
+  selection <- list(
+    strategy = "rgcca_cv",
+    tuned_parameter = cv_out$par_type,
+    candidate_generation = "automatic",
+    candidate_sets = nrow(cv_out$params),
+    prediction_model = prediction_model,
+    validation = validation,
+    folds = as.integer(nfolds),
+    repeats = as.integer(reps),
+    metric = metric,
+    random_seed = as.integer(seed)
+  )
+
+  hyperparameter_file <- write_selected_hyperparameters(
+    dataset_name = dataset_name,
+    method_name = method_name,
+    parameters = hyperparameters,
+    selection = selection
+  )
+
+  message(
+    "Selected hyperparameters written to: ",
+    hyperparameter_file
+  )
+
+
   return(feats_df)
 }
 
