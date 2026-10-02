@@ -11,7 +11,7 @@ include { RGCCA_SELECT_FEATURE }                  from "${modulesDir}/rgcca/sele
 include { SKLEARN_SELECT_FEATURE }                from "${modulesDir}/sklearn/select_feature"
 include { MOFA_SELECT_FEATURE }                   from "${modulesDir}/mofa/select_feature"
 include { MERGE_SELECTED_FEATURES }               from "${modulesDir}/merge_selected_features"
-
+include { MERGE_SELECTED_HYPERPARAMETERS  }       from "${modulesDir}/merge_selected_hyperparameters"
 // Define vars to use later
 //def saveMode 	= "language"
 //def lang 			= "all_langs"
@@ -57,58 +57,74 @@ workflow FEATURE_SELECTION {
     //mae_data.view { "This is mae: $it"}
     /* The ones in R */
     caret_multimodal_features = Channel.empty()
+    caret_multimodal_hyperparams = Channel.empty()
     if (!skip_caret_multimodal) {
       CARET_MULTIMODAL_SELECT_FEATURE ( mae_data )
       caret_multimodal_features = CARET_MULTIMODAL_SELECT_FEATURE.out.features
+      caret_multimodal_hyperparams = CARET_MULTIMODAL_SELECT_FEATURE.out.hyperparameters
     }
 
     cooperative_learning_features = Channel.empty()
+    cooperative_learning_hyperparams = Channel.empty()
     if (!skip_cplr) {
       COOPERATIVE_LEARNING_SELECT_FEATURE (mae_data)
       cooperative_learning_features = COOPERATIVE_LEARNING_SELECT_FEATURE.out.features
+      cooperative_learning_hyperparams = COOPERATIVE_LEARNING_SELECT_FEATURE.out.hyperparameters
     }
 
     diablo_features = Channel.empty()
+    diablo_hyperparams = Channel.empty() 
     if (!skip_diablo) {
       // Connection for its design matrix
       ch_design = Channel.fromList( diablo_design_connection )
       DIABLO_SELECT_FEATURE ( mae_data, num_comps, ch_design)
       diablo_features = DIABLO_SELECT_FEATURE.out.features
+      diablo_hyperparams = DIABLO_SELECT_FEATURE.out.hyperparameters
     }
 
     integrao_features = Channel.empty()
+    integrao_hyperparams = Channel.empty()
     if (!skip_integrao) {
       INTEGRAO_SELECT_FEATURE ( mu_data )
       integrao_features = INTEGRAO_SELECT_FEATURE.out.features
+      integrao_hyperparams = INTEGRAO_SELECT_FEATURE.out.hyperparameters
     }
 
     mofa_features = Channel.empty()
+    mofa_hyperparams = Channel.empty()
     if (!skip_mofa) {
       MOFA_SELECT_FEATURE ( mae_data, num_comps )
       mofa_features = MOFA_SELECT_FEATURE.out.features
+      mofa_hyperparams  = MOFA_SELECT_FEATURE.out.hyperparameters
     }
 
     rgcca_features = Channel.empty()
+    rgcca_hyperparams = Channel.empty()
     if (!skip_rgcca) {
       // RGCCA can use same design matrices like full or null as if in DIABLO
       ch_design = Channel.fromList ( diablo_design_connection )
       RGCCA_SELECT_FEATURE (mae_data, num_comps, ch_design)
       rgcca_features = RGCCA_SELECT_FEATURE.out.features
+      rgcca_hyperparams = RGCCA_SELECT_FEATURE.out.hyperparameters
     }
 
     /* The ones in Python */
     mogonet_features = Channel.empty()
+    mogonet_hyperparams = Channel.empty()
     if (!skip_mogonet) {
       MOGONET_SELECT_FEATURE ( mu_data, he_base_dim)
       mogonet_features = MOGONET_SELECT_FEATURE.out.features
+      mogonet_hyperparams = MOGONET_SELECT_FEATURE.out.hyperparameters
     }
 
     sklearn_features = Channel.empty()
+    sklearn_hyperparams = Channel.empty()
     if (!skip_sklearn) {
       // Classifier from sklearn
       ch_sk_classifiers = Channel.fromList( sklearn_classifier_names )
       SKLEARN_SELECT_FEATURE (mu_data, ch_sk_classifiers)
       sklearn_features = SKLEARN_SELECT_FEATURE.out.features
+      sklearn_hyperparams = SKLEARN_SELECT_FEATURE.out.hyperparameters
     }
 
 
@@ -129,7 +145,20 @@ workflow FEATURE_SELECTION {
             //.groupTuple(by: 0)
             //.map { lang, methods, list_csvs -> [lang, list_csvs] } // Ch [R, list of summary table only]
             .set { features_csv }
+    /* Similarly merge the hyperparam json as csv */
+    Channel.empty()
+            .mix( caret_multimodal_hyperparams )
+            .mix( cooperative_learning_hyperparams )
+            .mix( diablo_hyperparams )
+            .mix( integrao_hyperparams )
+            .mix( mogonet_hyperparams )
+            .mix( mofa_hyperparams )
+            .mix( rgcca_hyperparams )
+            .mix( sklearn_hyperparams )
+            .collect()
+            .set { hyperparams_json }
     // ========================================================================
     // Merge result tables together
     MERGE_SELECTED_FEATURES ( features_csv )
+    MERGE_SELECTED_HYPERPARAMETERS (  hyperparams_json  )
 }
