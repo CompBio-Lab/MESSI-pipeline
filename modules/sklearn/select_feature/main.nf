@@ -21,6 +21,7 @@ process SKLEARN_SELECT_FEATURE {
     each (model_name)
   output:
     path("*.csv"),    emit: features
+    path("*.json"),   emit: hyperparameters
     path("*.log"),    emit: log
 
   script:
