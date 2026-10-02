@@ -23,8 +23,9 @@ process MOGONET_SELECT_FEATURE {
     tuple val(dataset_name), path(mu_path)
     val(he_base_dim)
   output:
-    path("*.csv"), emit: features
-    path("*.log"), emit: log
+    path("*.csv"),  emit: features
+    path("*.json"), emit: hyperparameters
+    path("*.log"),  emit: log
 
   script:
   // The selected features, note have to run preprocess inside this step
