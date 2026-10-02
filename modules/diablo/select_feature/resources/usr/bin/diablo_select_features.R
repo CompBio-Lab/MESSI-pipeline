@@ -83,6 +83,15 @@ main <- function(mae_path, dataset_name, n_percent, design, ncomp) {
   logging_head_names(X=X, n = 10)
   # Then make the list of keepX, now defaults to take 100 percent of it
   keepX <- createKeepX(X, n_percent=n_percent, ncomp=ncomp)
+
+  # Convert keepX into a JSON-friendly named list.
+  # Each list element represents one modality, and each value represents
+  # the number of retained features for one component.
+  keepX_json <- lapply(
+    keepX,
+    function(x) as.integer(unname(x))
+  )
+
   cat("\nKeep X is the following:", "\n", unlist(keepX), "\n")
   # Then fit the model
 
@@ -129,17 +138,64 @@ main <- function(mae_path, dataset_name, n_percent, design, ncomp) {
   feats_file <- paste0(comb_name , "_", "features_selected", ".", output_format)
   write.csv(x=feats_df, file=feats_file, row.names=FALSE)
 
-  # Plot the selected variables out
-  if (ncomp < 2) {
-    warning("Selected variables plot can only be shown when ncomp >= 1")
-  } else {
-    par(mar=c(1,1,1,1))
-    getPlotDevice(name = "diablo_feature_selection_plot", dataset_name=comb_name, 
-                  height=8, width=8, device="svg")
-    plotVar(model)
-    dev.off()
+  # ==========================
+  method_name <- paste(method, design, sep = "-")
+  # And the hyperparameters part
+  hyperparameters <- list(
+    ncomp = make_parameter_record(
+      value = as.integer(ncomp),
+      treatment = "fixed"
+    ),
 
-  }
+
+    keepX = make_parameter_record(
+      value = keepX_json,
+      treatment = "data-derived"
+    ),
+
+    design = make_parameter_record(
+      value = design,
+      treatment = "fixed"
+    ),
+
+    design_correlation = make_parameter_record(
+      value = as.numeric(corr),
+      treatment = "data-derived"
+    ),
+
+    scheme = make_parameter_record(
+      value = "horst",
+      treatment = "fixed"
+    )
+  )
+
+  selection <- list(
+    strategy = "none"
+  )
+
+  hyperparameter_file <- write_selected_hyperparameters(
+    dataset_name = dataset_name,
+    method_name = method_name,
+    parameters = hyperparameters,
+    selection = selection
+  )
+
+  message(
+    "Selected hyperparameters written to: ",
+    hyperparameter_file
+  )
+
+  # # Plot the selected variables out
+  # if (ncomp < 2) {
+  #   warning("Selected variables plot can only be shown when ncomp >= 1")
+  # } else {
+  #   par(mar=c(1,1,1,1))
+  #   getPlotDevice(name = "diablo_feature_selection_plot", dataset_name=comb_name, 
+  #                 height=8, width=8, device="svg")
+  #   plotVar(model)
+  #   dev.off()
+
+  # }
 
   return(feats_df)
 }

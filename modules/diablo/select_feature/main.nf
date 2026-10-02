@@ -23,6 +23,7 @@ process DIABLO_SELECT_FEATURE {
   output:
     path("*.csv"),    emit: features
     path("*plot*"),   emit: plot, optional: true
+    path("*.json"),   emit: hyperparameters
     path("*.log"),    emit: log
 
   script:
