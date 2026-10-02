@@ -22,3 +22,71 @@ opt2num <- function(opt_chr) {
                                           as.numeric(x), x))
   return(opt)
 }
+
+
+make_parameter_record <- function(value, treatment) {
+  allowed_treatments <- c(
+    "tuned",
+    "fixed",
+    "default",
+    "data-derived"
+  )
+
+  if (!treatment %in% allowed_treatments) {
+    stop(
+      "Unknown parameter treatment: ",
+      treatment
+    )
+  }
+
+  list(
+    value = value,
+    treatment = treatment
+  )
+}
+
+
+write_selected_hyperparameters <- function(
+    dataset_name,
+    method_name,
+    parameters,
+    selection = NULL,
+    output_path = NULL
+) {
+  if (!requireNamespace("jsonlite", quietly = TRUE)) {
+    stop("The jsonlite package is required")
+  }
+
+  if (is.null(output_path)) {
+    safe_method_name <- method_name |>
+      tolower() |>
+      gsub("[^a-z0-9_-]+", "_", x = _)
+
+    output_path <- paste0(
+      safe_method_name,
+      "-",
+      dataset_name,
+      "_selected_hyperparameters.json"
+    )
+  }
+
+  result <- list(
+    dataset = dataset_name,
+    method = method_name,
+    analysis_stage = "model_selection",
+    selection = selection,
+    parameters = parameters
+  )
+
+  jsonlite::write_json(
+    result,
+    path = output_path,
+    pretty = TRUE,
+    auto_unbox = TRUE,
+    null = "null",
+    na = "null",
+    digits = NA
+  )
+
+  invisible(output_path)
+}
