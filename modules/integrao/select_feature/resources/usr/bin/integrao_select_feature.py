@@ -18,7 +18,7 @@ Options:
   --embedding_dims=E_DIMS           Latent space dimensionality [default: 64].
   --fusing_iteration=FUSE_IT        SNF diffusion iterations [default: 30].
   --normalization_factor=NF         Normalization factor [default: 1.0].
-  --alignment_epochs=ALI_EPO        Unsupervised alignment epochs [default: 300].
+  --alignment_epochs=ALI_EPO        Unsupervised alignment epochs [default: 500].
   --finetune_epochs=FINT_EPO        Supervised fine-tuning epochs [default: 800].
   --beta=BETA                       Beta loss weight [default: 1.0].
   --mu=MU                           Mu loss weight [default: 0.5].
@@ -33,6 +33,102 @@ import mudata as md
 import numpy as np
 import torch
 import os
+import json
+from pathlib import Path
+
+
+
+
+
+
+
+def make_json_serializable(value):
+    if isinstance(value, np.generic):
+        return value.item()
+
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+
+    if isinstance(value, dict):
+        return {
+            str(key): make_json_serializable(item)
+            for key, item in value.items()
+        }
+
+    if isinstance(value, (list, tuple)):
+        return [
+            make_json_serializable(item)
+            for item in value
+        ]
+
+    return value
+
+
+def make_parameter_record(value, treatment):
+    allowed_treatments = {
+        "tuned",
+        "fixed",
+        "default",
+        "data-derived"
+    }
+
+    if treatment not in allowed_treatments:
+        raise ValueError(
+            f"Unknown parameter treatment: {treatment}"
+        )
+
+    return {
+        "value": make_json_serializable(value),
+        "treatment": treatment
+    }
+
+
+def write_integrao_hyperparameters(
+    dataset_name,
+    method,
+    hparams,
+    n_times
+):
+    seeds = list(range(1, n_times + 1))
+
+    parameters = {
+        parameter: make_parameter_record(
+            value=value,
+            treatment="fixed"
+        )
+        for parameter, value in hparams.items()
+    }
+
+    selection = {
+        "strategy": "none",
+        "feature_scoring": "integrated_gradients",
+        "training_repetitions": n_times,
+        "seeds": seeds,
+        "aggregation": "mean_across_seeds"
+    }
+
+    result = {
+        "schema_version": "1.0",
+        "run_id": f"{dataset_name}__{method}",
+        "dataset": dataset_name,
+        "method": method,
+        "analysis_stage": "model_selection",
+        "selection": selection,
+        "parameters": parameters
+    }
+
+    output_path = f"{method}-{dataset_name}_selected_hyperparameters.json"
+    
+
+    with open(output_path, "w", encoding="utf-8") as handle:
+        json.dump(
+            result,
+            handle,
+            indent=2,
+            ensure_ascii=False
+        )
+
+    return output_path
 
 
 # -------------------------
@@ -49,6 +145,14 @@ def get_default_hyperparameters():
       num_classes=2,
   )
   return DEFAULT_HPARAMS
+
+def resolve_hyperparameters(hparams=None):
+    return {
+        **get_default_hyperparameters(),
+        **(hparams or {})
+    }
+
+  
 # -------------------------
 
 
@@ -244,16 +348,30 @@ def main(
 
     # Common objects to be used through the place
     full_dfs, modality_names, truelabel = load_data(mdata_path)
+    
+    resolved_hparams = resolve_hyperparameters(hparams)
     # Run the feature selection loop
     all_feat_dfs = run_feat_selection_loop(
         outdir=outdir, full_dfs=full_dfs, modality_names=modality_names, 
-        truelabel=truelabel, hparams=hparams, dataset_name=dataset_name, n_times=n_times)
+        truelabel=truelabel, hparams=resolved_hparams, dataset_name=dataset_name, n_times=n_times)
     # --- Aggregate feature importances ---
     agg_feat_df = summarize_feature_importance(all_feat_dfs)
     # --- Now add metadata info ---
     feats_df = wrangle_result_table(agg_feat_df, method, dataset_name)
     # Lastly write out to file
     filename = f"{method}-{dataset_name}_features_selected.csv"
+    # ANd write the hyperparams to file
+    hyperparameter_path = write_integrao_hyperparameters(
+        dataset_name=dataset_name,
+        method=method,
+        hparams=resolved_hparams,
+        n_times=n_times
+    )
+    print(
+        "Selected hyperparameters written to: "
+        f"{hyperparameter_path}"
+    )
+
     feats_df.to_csv(filename, index=False, header=True)
     return feats_df
 
