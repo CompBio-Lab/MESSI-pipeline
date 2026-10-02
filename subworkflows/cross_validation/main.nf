@@ -30,7 +30,8 @@ def shouldRunPython() {
     return !(
 			params.skip_mogonet && 
 			params.skip_integrao &&
-			params.skip_sklearn
+			params.skip_sklearn &&
+			params.skip_sksurv
 		)
 
 }
@@ -42,7 +43,8 @@ def shouldRunR() {
         params.skip_diablo && 
         params.skip_mofa &&
         params.skip_rgcca &&
-				params.skip_caret_multimodal
+	
+params.skip_caret_multimodal
     )
 }
 
