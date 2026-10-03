@@ -22,6 +22,7 @@ workflow CV_R {
   skip_rgcca  = params.skip_rgcca   // boolean: true/false
   skip_sgmr   = params.skip_sgmr    // boolean: true/false
   skip_mofa   = params.skip_mofa    // boolean: true/false
+  outcome_type = params.outcome_type // "classification" or "survival"
 
   // Method specific parameters
   num_comps = params.num_comps
@@ -112,7 +113,7 @@ workflow CV_R {
             .set { csv_results }
     // ========================================================================
     // Merge result tables together
-    MERGE_RESULT_TABLE ( csv_results, saveMode, params.outcome_type )
+    MERGE_RESULT_TABLE ( csv_results, saveMode, outcome_type )
   emit:
     csv_results = MERGE_RESULT_TABLE.out.csv_results
 }

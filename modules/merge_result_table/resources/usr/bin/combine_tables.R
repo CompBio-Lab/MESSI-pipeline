@@ -8,10 +8,10 @@ Usage:
   combine_tables.R [options]
 
 Options:
-  --input_list=FILE       Text file containing one input path per line
+  --input_list=FILE	  Text file containing one input path per line
   --method_name=MNAME     Name of method run on   [default: empty]
   --methodMode            Collecting results for method specific [default: false]
-  --outcome_type=OUTCOME  Outcome type to merge results from. One of 'classification' or 'survival'. [default: classification]
+  --outcome_type=OUTCOME  Outcome type to merge results from. One of 'classification' or 'survival'. [default: classification]	
 "
 
 # Parse docopt
@@ -35,6 +35,68 @@ select_relevant_cols <- function(table, relevant_cols) {
 
   return(table[, relevant_cols, drop = FALSE])
 }
+
+
+
+
+#clean_classification_table <- function(table, cols) {
+#  relevant_cols <- c("sample_name", "y",  "phat", "method_name", "dataset", "fold")
+#  contains_relevant_cols <- cols %in% relevant_cols
+#  if(!all(contains_relevant_cols)) {
+#    warning("\nResult table might not contain all relevant columns:\n ", 
+#    paste(relevant_cols, collapse=", "), "\n", "current is: ", 
+#    paste(cols, collapse=", "), "\n")
+    # TODO: Find a better way for this?
+#    table <- table[, relevant_cols]
+#  }
+  
+  # Also check if has right column types
+#  bv <- c(1, 0)
+#  is_binary_y <- all(is.element(table$y, bv))
+#  if (!is_binary_y) {
+#    message("\nConverting y to binary output\n")
+#    table$y <- ifelse(table$y == "yes", 1, 0)
+#  }
+#  return(table)
+#}
+
+
+#clean_survival_table <- function(table, cols) {
+#  relevant_cols <- c("sample_name", "lp", "surv_365", "surv_548", "surv_730", "surv_1095", "surv_1461", "surv_1826", "time", "status", "method_name", "dataset", "fold")
+#  contains_relevant_cols <- cols %in% relevant_cols
+#  if (!all(contains_relevant_cols)) {
+#    warning("\nResult table might not contain all relevant columns:\n ",
+#    paste(relevant_cols, collapse=", "), "\n", "current is: ", 
+#    paste(cols, collapse=", "), "\n")
+#    # And reorder it
+#    table <- table[, relevant_cols]
+#  }
+#  return(table)
+#}
+
+
+# Helper to check format of table and transform it 
+#convert_table_format <- function(table, outcome_type) {
+#  # Make sure first col is sample name
+#  cols <- colnames(table)
+#  # First col is always sample_name
+#  match_first_col <- cols[1] == "sample_name"
+#  if (!match_first_col) {
+#    stop("First column is not sample_name, wrong naming or missed somewhere")
+#  }
+  # TODO: Should at least contain sample name, phat, method_name, dataset
+  # TODO: allow this extra column of fold
+#  if (outcome_type == "classification") {
+#	table <- clean_classification_table(table, cols)
+#    
+#  }
+#  if (outcome_type == "survival") {
+#	table <- clean_survival_table(table, cols)
+#  }
+  # Otherwise return nothing and prompt to error if outcome type is incorrect
+#  return(NULL) 
+#}
+
 
 
 clean_classification_table <- function(table) {
@@ -79,6 +141,10 @@ clean_survival_table <- function(table) {
 
   return(table)
 }
+
+
+
+
 
 convert_table_format <- function(table, outcome_type) {
   # sample_name can be anywhere in the input;

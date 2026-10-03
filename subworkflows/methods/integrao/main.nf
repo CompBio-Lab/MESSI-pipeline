@@ -104,7 +104,7 @@ workflow INTEGRAO {
                     .set { result_table }
 
       // Lastly merge it, this would be quite fast
-      MERGE_RESULT_TABLE ( result_table, saveMode )
+      MERGE_RESULT_TABLE ( result_table, saveMode, params.outcome_type )
 
       // =====================================================================
       // And emit the result back to upstream (which is another merge of different method)

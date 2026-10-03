@@ -16,7 +16,7 @@ Options:
   --num_splits=NUM_SPLITS       Number of splits to generate		            [default: 10]
   --seed=SEED                   Random number seed to reproduce                 [default: 329]
   --outcome_type=OUTCOME_TYPE   Type of outcome: classification or survival     [default: classification]
-  --event_col=EVENT_COL         Column name for survival event (survival only)  [default: os_event]
+  --event_col=EVENT_COL         Column name for survival event (survival only)  [default: status]
   --output_dir=OUT_DIR          Output folder to write fold ids txt             [default: splits]
   --split_txt_name=SNAME        Name of individual fold txt file                [default: fold]
 """
@@ -40,7 +40,8 @@ class SplitConfig:
     seed: int
     identifier_col: str = "sample_name"
     outcome_type: str = "classification"
-    event_col: str = "event"
+    event_col: str = "status"
+    response_col: str = "response"
     output_dir: str = "splits"
     split_txt_name: str = "fold"
 
@@ -48,7 +49,7 @@ class SplitConfig:
 # ------------------------------------------------------------------------------
 # Utility functions (functional, stateless)
 # ------------------------------------------------------------------------------
-def load_mudata(path, identifier_col, outcome_type="classification", event_col="os_event"):
+def load_mudata(path, identifier_col, outcome_type="classification", event_col="status", response_col="response"):
     mdata = mudata.read(path)
     block_key = list(mdata.mod.keys())[0]
     block = mdata.mod[block_key]
@@ -59,7 +60,7 @@ def load_mudata(path, identifier_col, outcome_type="classification", event_col="
     if outcome_type == "survival":
         y = block.obs[event_col].values
     else:
-        y = block.obs["response"].values
+        y = block.obs[response_col].values
 
     return X, y, groups
 
@@ -120,7 +121,7 @@ def main(args):
         k=int(args["--num_splits"]),
         seed=int(args["--seed"]),
         identifier_col=args.get("--identifier_col", "sample_name"),
-        event_col=args.get("--event_col", "os_event"),
+        event_col=args.get("--event_col", "status"),
 	    outcome_type=args.get("--outcome_type", "classification"),
         output_dir=args["--output_dir"],
         split_txt_name=args["--split_txt_name"],
