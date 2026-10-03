@@ -4,7 +4,7 @@ include { getPublishPath } from "${modulesDir}/functions"
 process SKSURV_PREDICT {
 	tag "${dataset_name}-${fold_name}-${model_name}"
 	debug "${params.debug}"
-	label 'sklearn'
+	label 'sksurv'
 
 	publishDir (
 		path: "${params.outdir}/${getPublishPath(task.process)}/${dataset_name}/${fold_name}/${model_name}",

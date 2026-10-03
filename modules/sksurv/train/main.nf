@@ -5,7 +5,7 @@ include { getPublishPath } from "${modulesDir}/functions"
 
 process SKSURV_TRAIN {
 	tag "${dataset_name}-${fold_path.name}-${model_name}"
-	label 'sklearn'
+	label 'sksurv'
 	label 'process_medium'
 
 	publishDir (

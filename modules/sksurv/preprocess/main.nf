@@ -14,7 +14,7 @@ include { getPublishPath } from "${modulesDir}/functions"
 process SKSURV_PREPROCESS {
   debug "${params.debug}"
   tag "${dataset_name}"
-  label 'sklearn'
+  label 'sksurv'
   label "process_low"
 
   publishDir (
