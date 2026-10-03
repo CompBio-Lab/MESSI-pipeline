@@ -62,13 +62,14 @@ def lang 		= "all_langs"
 // ============================
 workflow CROSS_VALIDATION {
 	/*
-	This is a complex workflow, by training and cross validating at the same time
+	This is a complex workflow, by training and cross validating at the same t  ime
 	Moreover, this is ongoing for all methods, so it would crazily hard to fix
 	due to its parallelization
 	*/
     // runAllMethods   = params.runAllMethods
     // runPython       = params.runPython
     // runR            = params.runR 
+	outcome_type   = params.outcome_type
     // inputs of workflow
 	take:
 		// datasets
@@ -160,7 +161,7 @@ workflow CROSS_VALIDATION {
                 .groupTuple(by: 0)
                 .set { csv_results }
 			// Collect all result and mix it to merge it more
-			MERGE_RESULT_TABLE ( csv_results, saveMode )
+			MERGE_RESULT_TABLE ( csv_results, saveMode, outcome_type )
 			csv_results = MERGE_RESULT_TABLE.out.csv_results
 		}
 	emit:

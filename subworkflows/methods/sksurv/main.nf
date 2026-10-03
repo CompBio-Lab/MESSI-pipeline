@@ -74,7 +74,7 @@ workflow SKSURV {
                       [ it[2], it[3] ]
                     }
                     .set { result_table }
-      MERGE_RESULT_TABLE ( result_table, saveMode )
+      MERGE_RESULT_TABLE ( result_table, saveMode, params.outcome_type )
       // =====================================================================
 
     emit:

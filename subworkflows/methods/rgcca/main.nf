@@ -108,7 +108,7 @@ workflow RGCCA {
                   }
                   .set { result_table }
     // Lastly merge it, this would be quite fast
-    MERGE_RESULT_TABLE ( result_table, saveMode )
+    MERGE_RESULT_TABLE ( result_table, saveMode, params.outcome_type )
 
   //   // =====================================================================
   // }

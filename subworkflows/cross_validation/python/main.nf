@@ -1,11 +1,12 @@
 // Methods to include
-include { INTEGRAO  }             from "${subworkflowDir}/methods/integrao"
-include { SKLEARN   }             from "${subworkflowDir}/methods/sklearn"
-include { MOGONET   } 						from "${subworkflowDir}/methods/mogonet"
+include { INTEGRAO  }			from "${subworkflowDir}/methods/integrao"
+include { SKLEARN   }			from "${subworkflowDir}/methods/sklearn"
+include { MOGONET   }			from "${subworkflowDir}/methods/mogonet"
+include { SKSURV    }			from "${subworkflowDir}/methods/sksurv"
 // This module to collect results
-include { MERGE_RESULT_TABLE }    from "${modulesDir}/merge_result_table"
+include { MERGE_RESULT_TABLE }		from "${modulesDir}/merge_result_table"
 // Helper fun
-include { printBanner } 				  from "${modulesDir}/functions"
+include { printBanner}			from "${modulesDir}/functions"
 
 
 // Workflow specific params to use
@@ -19,6 +20,7 @@ workflow CV_PYTHON {
   skip_mogonet	= params.skip_mogonet	// boolean: true/false
   skip_goat 		= params.skip_goat		// boolean: true/false
   skip_sksurv   = params.skip_sksurv  // boolean: true/false
+  outcome_type  = params.outcome_type
   // Method specific parameters
   he_base_dim = params.he_base_dim
   // Inputs of workflow
@@ -85,7 +87,7 @@ workflow CV_PYTHON {
             .set { csv_results }
     // ======================================================================== 
     // Merge result tables together
-    MERGE_RESULT_TABLE ( csv_results, saveMode )
+    MERGE_RESULT_TABLE ( csv_results, saveMode, outcome_type )
   emit:
     csv_results = MERGE_RESULT_TABLE.out.csv_results
 }
