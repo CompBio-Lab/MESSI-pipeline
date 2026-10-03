@@ -87,7 +87,8 @@ workflow MESSI_BENCHMARK {
       //
       CALCULATE_METRICS ( 
         CROSS_VALIDATION.out.csv_results, 
-        params.threshold 
+        params.threshold,
+	params.outcome_type
       )
   }
 }
