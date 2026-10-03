@@ -158,7 +158,7 @@ workflow CROSS_VALIDATION {
                 .groupTuple(by: 0)
                 .set { csv_results }
 			// Collect all result and mix it to merge it more
-			MERGE_RESULT_TABLE ( csv_results, saveMode )
+			MERGE_RESULT_TABLE ( csv_results, saveMode, params.outcome_type )
 			csv_results = MERGE_RESULT_TABLE.out.csv_results
 		}
 	emit:

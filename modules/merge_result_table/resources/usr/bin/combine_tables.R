@@ -6,50 +6,104 @@ Author: Tony Liang
 
 Usage:
   combine_tables.R [options]
-  
+
 Options:
-  --tables=TABLES         Joined path of list of the result table of particular fold or dataset of method [default: empty]
+  --input_list=FILE       Text file containing one input path per line
   --method_name=MNAME     Name of method run on   [default: empty]
   --methodMode            Collecting results for method specific [default: false]
+  --outcome_type=OUTCOME  Outcome type to merge results from. One of 'classification' or 'survival'. [default: classification]
 "
 
-# Parase docopt
+# Parse docopt
 opt <- docopt::docopt(doc)
 
-# Helper to check format of table and transform it 
-convert_table_format <- function(table) {
-  # Make sure first col is sample name
-  cols <- colnames(table)
-  # First col is always sample_name
-  match_first_col <- cols[1] == "sample_name"
-  if (!match_first_col) {
-    stop("First column is not sample_name, wrong naming or missed somewhere")
+
+
+# ======================================================================
+
+# Check required columns and return them in a consistent order
+select_relevant_cols <- function(table, relevant_cols) {
+  missing_cols <- setdiff(relevant_cols, colnames(table))
+
+  if (length(missing_cols) > 0L) {
+    stop(
+      "Result table is missing required columns: ",
+      paste(missing_cols, collapse = ", "),
+      call. = FALSE
+    )
   }
-  # TODO: Should at least contain sample name, phat, method_name, dataset
-  # TODO: allow this extra column of fold
-  relevant_cols <- c("sample_name", "y",  "phat", "method_name", "dataset", "fold")
-  contains_relevant_cols <- cols %in% relevant_cols
-  if(!all(contains_relevant_cols)) {
-    warning("\nResult table might not contain all relevant columns:\n ", 
-    paste(relevant_cols, collapse=", "), "\n", "current is: ", 
-    paste(cols, collapse=", "), "\n")
-    # TODO: Find a better way for this?
-    table <- table[, relevant_cols]
+
+  return(table[, relevant_cols, drop = FALSE])
+}
+
+
+clean_classification_table <- function(table) {
+  relevant_cols <- c(
+    "sample_name", "y", "phat",
+    "method_name", "dataset", "fold"
+  )
+
+  table <- select_relevant_cols(table, relevant_cols)
+
+  # Normalize labels before validating and converting
+  y <- tolower(trimws(as.character(table$y)))
+  valid_labels <- c("0", "1", "no", "yes")
+
+  invalid <- is.na(y) | !(y %in% valid_labels)
+
+  if (any(invalid)) {
+    stop(
+      "Invalid or missing values in y: ",
+      paste(unique(y[invalid]), collapse = ", "),
+      ". Expected 0/1 or yes/no.",
+      call. = FALSE
+    )
   }
-  
-  # Also check if has right column types
-  bv <- c(1, 0)
-  is_binary_y <- all(is.element(table$y, bv))
-  if (!is_binary_y) {
-    message("\nConverting y to binary output\n")
-    table$y <- ifelse(table$y == "yes", 1, 0)
-  }
+
+  table$y <- as.integer(y %in% c("1", "yes"))
+
   return(table)
 }
 
-main <- function(tables, method_name, methodMode, readMode="csv", pattern="-result.*") {
+
+clean_survival_table <- function(table) {
+  relevant_cols <- c(
+    "sample_name", "lp",
+    "surv_365", "surv_548", "surv_730",
+    "surv_1095", "surv_1461", "surv_1826",
+    "time", "status",
+    "method_name", "dataset", "fold"
+  )
+
+  table <- select_relevant_cols(table, relevant_cols)
+
+  return(table)
+}
+
+convert_table_format <- function(table, outcome_type) {
+  # sample_name can be anywhere in the input;
+  # the cleaning functions move it to the first column.
+  if (outcome_type == "classification") {
+    return(clean_classification_table(table))
+  } else if (outcome_type == "survival") {
+    return(clean_survival_table(table))
+  } else {
+    stop(
+      "Unsupported outcome_type: ", outcome_type,
+      ". Expected 'classification' or 'survival'.",
+      call. = FALSE
+    )
+  }
+}
+
+
+
+
+main <- function(input_list, method_name, methodMode, outcome_type, readMode="csv", pattern="-result.*") {
   # Special script to handle here
-  tables <- strsplit(tables, " ") |> unlist()
+  tables <- readLines(input_list, warn=FALSE)
+  tables <- tables[nzchar(trimws(tables))]
+#  tables <- strsplit(tables, " ") |> unlist()
   # Store to list and bind by rows laters
   to_bind <- list()
   # Check which string to replace instead
@@ -62,9 +116,10 @@ main <- function(tables, method_name, methodMode, readMode="csv", pattern="-resu
     #  readMode <- "table"
     #}
   #}
-  for (table_path in tables) {
+  for (i in seq_along(tables)) {
     # TODO: need to make this label and identifier better
     # Get everything before last hypen - to retrieve unique label
+    table_path <- tables[[i]]
     label <- gsub(pattern, "", table_path)
     message("\nThis is label: ", label, "\n")
     #table <- switch(
@@ -75,7 +130,7 @@ main <- function(tables, method_name, methodMode, readMode="csv", pattern="-resu
     # Force sample name to be character, as it could come in numbers as well as id names
     table <- read.csv(table_path, header=TRUE, colClasses=c("sample_name"="character"))
     # Check the format of each table aligns before adding into list
-    to_bind[[label]] <- convert_table_format(table) # Add it to list
+    to_bind[[i]] <- convert_table_format(table, outcome_type) # Add it to list
   }
   message("\nMerging", length(to_bind), "tables\n")
   # Flatten these tables by merging rows
@@ -90,4 +145,4 @@ main <- function(tables, method_name, methodMode, readMode="csv", pattern="-resu
   return(merged_table)
 }
 
-main(tables=opt$tables, method_name=opt$method_name, methodMode=opt$methodMode)
+main(input_list=opt$input_list, method_name=opt$method_name, methodMode=opt$methodMode, outcome_type=opt$outcome_type)

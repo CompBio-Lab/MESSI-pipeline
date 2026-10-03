@@ -9,6 +9,7 @@ include { MERGE_RESULT_TABLE }    from "${modulesDir}/merge_result_table"
 def saveMode = "method"
 workflow MOFA {
   runInnerCV = params.runInnerCV
+  outcome_type = params.outcome_type
   take:
     mae_copy // ch of tuple dataset, path of mae data, directories of fold, containing all txts
     num_factors // Number of factors to tune in mofa model
@@ -24,7 +25,7 @@ workflow MOFA {
     //   // MOFA_DOWNSTREAM ( mae_copy )
     // }
     
-    MOFA_PREPROCESS ( mae_copy, num_factors )
+    MOFA_PREPROCESS ( mae_copy, num_factors, outcome_type )
 
     /*
     ==========================================================================
@@ -52,7 +53,8 @@ workflow MOFA {
 
     // As mentioned, there's a possible run inner cv option
     // runInnerCV: boolean, true or false
-    MOFA_TRAIN( train_input, runInnerCV )
+    // outcome_type: string, "classification" or "survival"
+    MOFA_TRAIN( train_input, runInnerCV, outcome_type )
     // Transform certain outputs here to use in prediction
     // Join outputs from trained models and prepare for prediction
     MOFA_TRAIN.out.model
@@ -65,7 +67,8 @@ workflow MOFA {
     // Predict each fold with their corresponding model and test data within fold                       
     MOFA_PREDICT (
       predict_input.model,
-      predict_input.test_data
+      predict_input.test_data,
+      outcome_type
     )
 
     // Collect results of predicted folds for each data and group by GSE dataset name
@@ -79,7 +82,7 @@ workflow MOFA {
     // Run these by batch of result tables (K tables per data)
     //result_tables.view()
     
-    MERGE_RESULT_TABLE ( result_tables, saveMode )
+    MERGE_RESULT_TABLE ( result_tables, saveMode, outcome_type )
     // After ran the training part, we should validate it
     emit:
       csv_results = MERGE_RESULT_TABLE.out.csv_results

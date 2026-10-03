@@ -112,7 +112,7 @@ workflow CV_R {
             .set { csv_results }
     // ========================================================================
     // Merge result tables together
-    MERGE_RESULT_TABLE ( csv_results, saveMode )
+    MERGE_RESULT_TABLE ( csv_results, saveMode, params.outcome_type )
   emit:
     csv_results = MERGE_RESULT_TABLE.out.csv_results
 }
