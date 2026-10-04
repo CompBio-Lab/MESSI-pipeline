@@ -47,6 +47,7 @@ process MOFA_PREPROCESS {
     /* data name identifier, MAE portion of data , and dir that contains txt in it" */
     tuple val(dataset_name), path(mae_path), path(split_dir)
     val(num_factors)
+    val(outcome_type)
   // TODO: This part could be different dependent on method
   output:
     /*
@@ -65,7 +66,8 @@ process MOFA_PREPROCESS {
       --mae_path=${mae_path} \
       --split_dir=${split_dir} \
       --dataset_name=${dataset_name} \
-      --num_factors=${num_factors} > \
+      --num_factors=${num_factors} \
+      --outcome_type=${outcome_type} > \
       ${dataset_name}-${getPublishPath(task.process).tokenize('/')[-1].toLowerCase()}.log
     
     echo ${dataset_name} > dataset_name

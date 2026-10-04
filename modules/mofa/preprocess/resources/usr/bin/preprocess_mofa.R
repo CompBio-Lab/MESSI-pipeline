@@ -13,6 +13,7 @@ Options:
   --split_dir=SPLIT_DIR     Directory containing list of txt file [default: empty]
   --dataset_name=NAME       Name of dataset that is splitting     [default: empty]
   --num_factors=NUM_FACTOR  Number of factors to supply into MOFA [default: 1]
+  --outcome_type=OUTCOME    Outcome type to merge results from. One of 'classification' or 'survival'. [default: classification]
 "
 
 # Parse cli args
@@ -20,9 +21,9 @@ opt <- docopt::docopt(doc)
 
 # Load libraries
 library(MOFA2)
-library(MultiAssayExperiment)
+suppressPackageStartupMessages(library(MultiAssayExperiment))
 library(here)
-library(dplyr)
+suppressPackageStartupMessages(library(dplyr))
 
 # Python related
 default_python <- "/usr/bin/python"
@@ -59,18 +60,57 @@ load_test_splits <- function(split_dir, pattern=".txt", ...) {
 }
 
 
-# Use this function to reconstruct mae
-reconstruct_mae <- function(mae) {
-  # Given an mae with delayed matrices, we could load it into
-  # memory and make it of HDF5 arrays instead
-  X <- mae@ExperimentList |> lapply(as.matrix)
-  y <- mae$response
-  # Construct MAE
-  new_mae <- MultiAssayExperiment::MultiAssayExperiment(experiments = X)
-  new_mae$response <- y
-  return(new_mae)
-}
 
+reconstruct_mae <- function(
+    mae,
+    outcome_type = "classification",
+    response_col = "response",
+    time_col = "time",
+    status_col = "status"
+) {
+  if (!outcome_type %in% c("classification", "survival")) {
+    stop("outcome_type must be 'classification' or 'survival'")
+  }
+
+  required_cols <- if (outcome_type == "classification") {
+    response_col
+  } else {
+    c(time_col, status_col)
+  }
+
+  cd <- as.data.frame(mae@colData)
+  missing_cols <- setdiff(required_cols, colnames(cd))
+  if (length(missing_cols) > 0L) {
+    stop("Missing outcome columns: ", paste(missing_cols, collapse = ", "))
+  }
+
+  # Materialize each experiment as an in-memory matrix.
+  X <- lapply(
+    MultiAssayExperiment::experiments(mae),
+    function(x) {
+      # For SummarizedExperiment, use its first assay.
+      if (methods::is(x, "SummarizedExperiment")) {
+        x <- SummarizedExperiment::assay(x)
+      }
+      as.matrix(x)
+    }
+  )
+
+  if (outcome_type == "classification") {
+    cd$response <- cd[[response_col]]
+  } else {
+    # Extract both before assignment in case source names overlap.
+    time <- cd[[time_col]]
+    status <- cd[[status_col]]
+    cd$time <- time
+    cd$status <- status
+  }
+
+  MultiAssayExperiment::MultiAssayExperiment(
+    experiments = X,
+    colData = cd
+  )
+}
 
 get_seed <- function(dataset_name) {
   d_int <- utf8ToInt(dataset_name) # Convert dataset name to integer
@@ -82,7 +122,7 @@ get_seed <- function(dataset_name) {
 
 # =================================================================================
 # MAIN entrance point
-main <- function(mae_path, split_dir, dataset_name, num_factors) {
+main <- function(mae_path, split_dir, dataset_name, num_factors, outcome_type="classification") {
   # Seed for reproducibility
   seed <- get_seed(dataset_name) # Convert dataset name to integer and sum it to get a seed
   set.seed(seed) 
@@ -156,8 +196,8 @@ main <- function(mae_path, split_dir, dataset_name, num_factors) {
     # First subset both
     split <- test_splits[[fold_name]]
     # TODO: Transpose data only when method requires it to
-    tr_mae <- mae[, -split, drop=TRUE] |> reconstruct_mae()
-    te_mae <- mae[, split, drop=TRUE] |> reconstruct_mae()
+    tr_mae <- mae[, -split, drop=TRUE] |> reconstruct_mae(outcome_type=outcome_type)
+    te_mae <- mae[, split, drop=TRUE] |> reconstruct_mae(outcome_type=outcome_type)
     # Then save each fold's train and test portion as subdirectory of fold name
     cat("\nSaving for", fold_name, "\n")
     if (!dir.exists(fold_name)) {
@@ -180,5 +220,6 @@ main(
   mae_path=opt$mae_path, 
   split_dir=opt$split_dir, 
   dataset_name=opt$dataset_name, 
-  num_factors=as.numeric(opt$num_factors)
+  num_factors=as.numeric(opt$num_factors),
+  outcome_type=opt$outcome_type
   )
