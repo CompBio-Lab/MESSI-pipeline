@@ -14,6 +14,8 @@ def method_name = "cooperative_learning"
 def saveMode = "method"
 
 workflow COOPERATIVE_LEARNING {
+
+  outcome_type = params.outcome_type
   take:
     mae_copy // ch of tuple dataset, path of mae data, directories of fold, containing all txts
   main:
@@ -28,7 +30,7 @@ workflow COOPERATIVE_LEARNING {
 
     TODO: Need to turn output of this to 'train_input'
     */
-    COOPERATIVE_LEARNING_PREPROCESS ( mae_copy )
+    COOPERATIVE_LEARNING_PREPROCESS ( mae_copy, params.outcome_type )
     mae_copy.join(COOPERATIVE_LEARNING_PREPROCESS.out.fold_splits, by: 0)
             .multiMap { it ->
               input_data: [ it[0], it[1] ] // [dataset_name, mae_data]
@@ -44,7 +46,7 @@ workflow COOPERATIVE_LEARNING {
     2. Training for each fold created through previous preprocessed data
     */
 
-    COOPERATIVE_LEARNING_TRAIN ( train_input )
+    COOPERATIVE_LEARNING_TRAIN ( train_input, outcome_type )
     // Do some transformation to make a multiMap that has two branches for predict
     COOPERATIVE_LEARNING_TRAIN.out.model
                               .join(COOPERATIVE_LEARNING_TRAIN.out.test_data, by: [0, 1])
@@ -59,7 +61,8 @@ workflow COOPERATIVE_LEARNING {
 
     COOPERATIVE_LEARNING_PREDICT ( predict_input.model,
               predict_input.test_data,
-              Channel.value(method_name)
+              Channel.value(method_name),
+              outcome_type
     )
     /* 
     4. Collect results of predicted folds for each data and group by GSE dataset name
@@ -74,7 +77,7 @@ workflow COOPERATIVE_LEARNING {
               .set { result_tables }
     // Run these by batch of result tables (K tables per data)
     // result_tables.view()  
-    MERGE_RESULT_TABLE ( result_tables, saveMode, params.outcome_type )
+    MERGE_RESULT_TABLE ( result_tables, saveMode, outcome_type )
   emit:
     csv_results = MERGE_RESULT_TABLE.out.csv_results
 }
