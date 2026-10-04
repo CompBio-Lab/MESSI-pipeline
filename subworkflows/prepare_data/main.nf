@@ -25,6 +25,7 @@ workflow PREPARE_DATA {
     filter_low_var        = params.filter_low_var         // Filter the low variance features (default: "0")
     single_modality_mode  = params.single_modality_mode   // Single modality mode (default: "False") When true, each data is expanded to all modalities, 
                                                           // and force to run in sklearn pipeline to test modality baselines
+    outcome_type          = params.outcome_type           // Outcome type (default: "classification") One of 'classification' or 'survival'
   /* Workflow starts here */
   // Workflow required input
     take:
@@ -56,10 +57,10 @@ workflow PREPARE_DATA {
     // /* ===================================================================== */
     // // Have a process to check the right format for MAE
     // // output MAE back with suitable transformations?
-    PREPARE_MAE_DATA  ( mae_pt, filter_low_var )
+    PREPARE_MAE_DATA  ( mae_pt, filter_low_var, outcome_type )
     // // Have a process to check the right format for MuData
     // // output MuData back with suitable transformation?
-    PREPARE_MU_DATA   ( mu_pt, filter_low_var  )
+    PREPARE_MU_DATA   ( mu_pt, filter_low_var, outcome_type  )
     // // // TODO: Need to test this bit first
     // PREPARE_MAE_DATA.out
     //                 .mae_data

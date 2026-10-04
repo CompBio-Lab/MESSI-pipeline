@@ -14,6 +14,7 @@ Options:
   --var_threshold=VAR_THRES     Threhold for variance to filter features from [default: 0.16]
   --replace_na_val=NA_VAL       Value to replace NANs in omics [default: 0]
   --filter_low_var=FIL_LOW_VAR  Filter low variance or not [default: 0]
+  --outcome_type=OUTCOME_TYPE   Outcome type, one of 'classification' or 'survival' [default: classification]
 """
 
 # import libraries
@@ -37,7 +38,7 @@ from process_response import process_response
 
 
 def transform_mudata_format(
-  mu_path, dataset_name, identifier_col="sample_name", 
+  mu_path, dataset_name, identifier_col="sample_name",  outcome_type="classification",
   var_threshold=0.16, replace_na_val=0, 
   scale=False, convert_to="categorical",
   filter_low_var=False
@@ -109,6 +110,7 @@ if __name__ == '__main__':
   # TODO: Remove the replace na val as its not doing anything here
   transform_mudata_format(
     mu_path=args['--mu_path'] , dataset_name=args['--dataset_name'], 
+    outcome_type=args['--outcome_type'],
     var_threshold=float(args['--var_threshold']), replace_na_val=float(args['--replace_na_val']),
     filter_low_var=bool(int(args['--filter_low_var']))
     )

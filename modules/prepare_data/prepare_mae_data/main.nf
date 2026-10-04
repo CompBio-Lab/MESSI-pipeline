@@ -23,6 +23,7 @@ process PREPARE_MAE_DATA {
   input:
   tuple val(dataset_name), path(mae_path)
   val(filter_low_var)
+  val(outcome_type)
   output:
   tuple val(dataset_name), path("${dataset_name}*processed*mae_data"),  emit: mae_data // Directory containing MultiAssayExperiment
   tuple val(dataset_name), path("*.log"),                     emit:log
@@ -30,7 +31,8 @@ process PREPARE_MAE_DATA {
   """
   transform_mae_format.R --mae_path=${mae_path} \
     --dataset_name=${dataset_name} \
-    --filter_low_var=${filter_low_var} > \
+    --filter_low_var=${filter_low_var} \
+    --outcome_type=${outcome_type} > \
     ${dataset_name}.log
   """
 }

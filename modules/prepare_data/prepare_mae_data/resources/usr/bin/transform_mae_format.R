@@ -13,6 +13,7 @@ Options:
   --dataset_name=DNAME          Name of dataset to provide as id [default: empty]
   --replace_na_val=NA_VAL       Value to replace NAs inside the data [default: 0]
   --filter_low_var=FIL_LOW_VAR  Filter low variance or not [default: 0]
+  --outcome_type=OUTCOME_TYPE   Outcome type . One of 'classification' or 'survival'. [default: classification]
 "
 library(here)
 library(mixOmics)
@@ -42,7 +43,7 @@ opt <- docopt::docopt(doc)
 # 3. Need to have a common observations names set as sample_names
 # 4. Also requires to supply a dataset_name
 
-main <- function(mae_path, dataset_name, prefix="", replace_na_val=0, center=TRUE, scale=FALSE, filter_low_var=FALSE) {
+main <- function(mae_path, dataset_name, prefix="", outcome_type="classification", replace_na_val=0, center=TRUE, scale=FALSE, filter_low_var=FALSE) {
   # Fail quickly
   if (mae_path == "empty") stop ("Need to provide a path to directory containing MAE")
   if (dataset_name == "empty") stop("Need to provide a dataset name")
@@ -56,13 +57,23 @@ main <- function(mae_path, dataset_name, prefix="", replace_na_val=0, center=TRU
   # Another preprocessing step
   X <- preprocess_view(X, replace_na_val=replace_na_val, scale=scale, filter_low_var=filter_low_var)
   # This would transform response to factor chr
-  y <- check_response(y=mae$response)
+  
+  message("\nOutcome type is: ", outcome_type)
+  if (outcome_type == "classification") {
+    y <- check_response(y=mae$response)
+  } else if (outcome_type == "survival") {
+    # TODO: uggly fix here ....
+    y <- mae@colData |> as.data.frame() |> dplyr::select(response, time, status)  |>
+      dplyr::mutate(response = check_response(response))
+  } else {
+    stop("Outcome type is not supported, please use classification or survival")
+  }
   # Put together these inputs and resave
-  dat <- list(blocks=X, response=y)
+  dat <- list(blocks=X, y=y)
   # Save each of this to both MAE and Mu
   # Add prefix of processed in the dataset name
   dname <- paste0(dataset_name, "_", "processed")
-  new_mae <- save_mae(dat, dataset_name=dname, prefix=prefix)
+  new_mae <- save_mae(dat, dataset_name=dname, prefix=prefix, outcome_type=outcome_type)
   return(new_mae)
 }
 
@@ -70,4 +81,5 @@ main <- function(mae_path, dataset_name, prefix="", replace_na_val=0, center=TRU
 # Execute the main function here
 main(mae_path=opt$mae_path, dataset_name=opt$dataset_name, 
 replace_na_val=as.numeric(opt$replace_na_val),
+outcome_type=opt$outcome_type,
 filter_low_var=as.logical(as.numeric(opt$filter_low_var)))
