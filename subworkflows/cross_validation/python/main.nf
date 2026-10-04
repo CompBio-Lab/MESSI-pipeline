@@ -14,13 +14,17 @@ def language_name = "Python"
 def saveMode = "language"
 
 workflow CV_PYTHON {
-  // Skip or trigger method to run
-  skip_integrao = params.skip_integrao // boolean: true/false
-  skip_sklearn  = params.skip_sklearn // boolean: true/false
-  skip_mogonet	= params.skip_mogonet	// boolean: true/false
-  skip_goat 		= params.skip_goat		// boolean: true/false
-  skip_sksurv   = params.skip_sksurv  // boolean: true/false
-  outcome_type  = params.outcome_type
+
+  // Determine if should run classification or survival one at a time only
+  outcome_type = params.outcome_type
+	
+  // Skip if explicitly requested OR unsupported for this outcome
+  skip_integrao = params.skip_integrao || outcome_type != 'classification'
+  skip_sklearn  = params.skip_sklearn  || outcome_type != 'classification'
+  skip_mogonet  = params.skip_mogonet  || outcome_type != 'classification'
+  skip_goat     = params.skip_goat     || outcome_type != 'classification'
+  skip_sksurv   = params.skip_sksurv   || outcome_type != 'survival'
+  
   // Method specific parameters
   he_base_dim = params.he_base_dim
   // Inputs of workflow
