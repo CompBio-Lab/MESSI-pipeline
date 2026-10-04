@@ -41,6 +41,7 @@ process RGCCA_TRAIN {
 		val(ncomp)
 		each(method)
 		each(design)
+		val(outcome_type)
 	output:
 		tuple val(dataset_name), val(fold_path.name), val("${method}-${design}"), path('*model*'),				emit: model
 		tuple val(dataset_name), val(fold_path.name), val("${method}-${design}"), path('*test_data*'),		emit: test_data
@@ -62,6 +63,7 @@ process RGCCA_TRAIN {
 				--fold_path=${fold_path} \
 				--method=${method} \
         --design=${design} \
+				--outcome_type=${outcome_type} \
 				--ncomp=${ncomp} > \
 				${data_label}-${getPublishPath(task.process).tokenize('/')[-1].toLowerCase()}.log
 		echo ${data_label} > ${data_label}

@@ -43,6 +43,7 @@ process RGCCA_PREPROCESS {
       each is fold indices
     */
     tuple val(dataset_name), path(mae_path), path(split_dir)
+    val(outcome_type)
   // TODO: This part could be different dependent on method
   output:
     /*
@@ -59,6 +60,7 @@ process RGCCA_PREPROCESS {
       --mae_path=${mae_path} \
       --split_dir=${split_dir} \
       --dataset_name=${dataset_name} \
+      --outcome_type=${outcome_type} \
       --transpose > \
       ${dataset_name}-${getPublishPath(task.process).tokenize('/')[-1].toLowerCase()}.log
     """

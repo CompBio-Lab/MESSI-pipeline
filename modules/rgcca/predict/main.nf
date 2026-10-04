@@ -27,6 +27,7 @@ process RGCCA_PREDICT {
 	input:
     tuple val(dataset_name), val(fold_name), val(method), path(model)
 		tuple val(dataset_name), val(fold_name), val(method), path(test_path)
+    val(outcome_type)
 	/*
     Minimal requierd output are the path to predicted results in a csv format
     and the log file
@@ -51,6 +52,7 @@ process RGCCA_PREDICT {
       --test_path=${test_path} \
       --method=${method} \
       --label=${data_label} \
+      --outcome_type=${outcome_type} \
       --design=${design} > \
       ${data_label}-${getPublishPath(task.process).tokenize('/')[-1]}.log
 		"""

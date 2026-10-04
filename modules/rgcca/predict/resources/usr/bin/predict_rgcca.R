@@ -1,10 +1,12 @@
 #!/usr/bin/env Rscript
 
 # Script to predict cooperative learning (simulate now)
-doc <- "This script is to make predictions on test data of particular fold, 
+doc <- "This script is to make predictions on test data of particular fold,
 using a model trained with any method from RGCCA package
 
-Output type is a path containing the predicted probabilities
+classification: output table has the predicted probabilities (phat)
+survival:       output table has the risk score (lp) and S(t) at the horizons,
+                same format as the Python survival methods
 
 Usage:
   predict_rgcca.R [options]
@@ -14,8 +16,9 @@ Options:
   --test_path=TEST_PATH     Path containing test data [default: null]
   --label=LABEL             Label of id and fold of data [default: data-fold_i]
   --method=METHOD           Method name input from upstream [default: empty]
-  --design=DESIGN	    Design matrix of the model one of full or null [default: full]
+  --design=DESIGN	          Design matrix of the model one of full or null [default: full]
   --output_ext=EXT          Extension of output table to save [default: csv]
+  --outcome_type=TYPE       classification or survival [default: classification]
 "
 
 # Helper fun to move later

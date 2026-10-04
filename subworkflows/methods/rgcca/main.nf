@@ -16,6 +16,7 @@ include { MERGE_RESULT_TABLE }  from "${modulesDir}/merge_result_table"
 def saveMode = "method"
 
 workflow RGCCA {
+  outcome_type = params.outcome_type
   take:
     // TODO: rename this data_copy to mae_copy or mu_copy depending on language
     mae_copy // ch of tuple dataset, path of mae/mu data, 
@@ -40,7 +41,7 @@ workflow RGCCA {
       TODO: Need to turn output of this to 'train_input'
     */
         
-    RGCCA_PREPROCESS ( mae_copy )
+    RGCCA_PREPROCESS ( mae_copy, outcome_type )
     // Then join the original copy with actual folds after split
     mae_copy.join(  RGCCA_PREPROCESS.out.fold_splits, by:0 )
             .multiMap { it ->
@@ -70,7 +71,7 @@ workflow RGCCA {
     ch_methods = Channel.fromList(["rgcca"]) // Skip sgcca for now
     // These are possible design matrices for the method
     ch_design = Channel.fromList(["full", "null"])
-    RGCCA_TRAIN ( train_input, ncomp, ch_methods, ch_design )
+    RGCCA_TRAIN ( train_input, ncomp, ch_methods, ch_design, outcome_type )
 
     // Do some transformation to make a multiMap that has two branches for predict
     RGCCA_TRAIN.out.model
@@ -89,7 +90,8 @@ workflow RGCCA {
 
     RGCCA_PREDICT (  
       predict_input.model,
-      predict_input.test_data
+      predict_input.test_data,
+      outcome_type
     )
 
     // ======================================================================
@@ -108,7 +110,7 @@ workflow RGCCA {
                   }
                   .set { result_table }
     // Lastly merge it, this would be quite fast
-    MERGE_RESULT_TABLE ( result_table, saveMode, params.outcome_type )
+    MERGE_RESULT_TABLE ( result_table, saveMode, outcome_type )
 
   //   // =====================================================================
   // }

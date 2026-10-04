@@ -21,12 +21,12 @@ workflow CV_R {
   skip_caret_multimodal = params.skip_caret_multimodal || outcome_type != 'classification'
   skip_demo_logit       = params.skip_demo_logit       || outcome_type != 'classification'
   skip_diablo           = params.skip_diablo           || outcome_type != 'classification'
-  skip_rgcca            = params.skip_rgcca            || outcome_type != 'classification'
   skip_sgmr             = params.skip_sgmr             || outcome_type != 'classification'
 
   // Both classification and survival
   skip_mofa             = params.skip_mofa
   skip_cplr             = params.skip_cplr
+  skip_rgcca            = params.skip_rgcca
   // Method specific parameters
   num_comps = params.num_comps
   take:

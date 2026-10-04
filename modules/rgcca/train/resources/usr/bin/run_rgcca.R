@@ -5,6 +5,12 @@ doc <- "This script is to run RGCCA method from RGCCA package, train only.
 It could possibly be ran on a inner CV model, output is a model for prediction
 usage in downstream.
 
+classification: supervised RGCCA with the response as the last block, predicted
+                later by rgcca_predict.
+survival:       unsupervised RGCCA on the omics blocks of the train fold, train
+                and test are transformed into its components and a coxnet
+                (cv.glmnet cox) is fitted on the train components.
+
 Usage:
   run_rgcca.R [options]
 
@@ -17,7 +23,11 @@ Options:
   --method=METHOD         RGCCA method to run [default: rgcca]
   --design=DESIGN	        Connection matrix of omics, one of full or null [default: full]
   --ncomp=NCOMP           Number of component to run diablo [default: 2]
+  --outcome_type=TYPE     classification or survival [default: classification]
+  --time_col=TIME_COL     colData column of survival time [default: time]
+  --status_col=STAT_COL   colData column of event indicator [default: status]
 "
+
 
 # Load libraries
 library(RGCCA)
@@ -51,42 +61,7 @@ get_seed <- function(dataset_name) {
   return(seed)
 }
 
-# Main function to run
-main <- function(mae_path, label, fold_path, inner_cv, prefix, method, design, ncomp=2, tau=1) {
-  seed <- get_seed(label) # Set seed based on dataset name, so that the result is reproducible
-  set.seed(seed)
-  # Log the params used
-  args_used <- c(as.list(environment()))
-  logging_params(args_used)
-  cat("\nLooking at this fold:", fold_path, "\n")
-  d <- list.files(path=fold_path, full.names = TRUE)
-  train_path <- d[str_detect(d, pattern = "_tr")]
-  test_path <- d[str_detect(d, pattern = "_te")]
-  # Then should read in the MAE and convert it to list of X and Y
-  # A little bit more special when reading in data, we get the X and Y altogether
-  train_data <- load_MAE(train_path, prefix="train") |> 
-                extract_Xy() |> 
-                parse_rgcca_input()
-  test_data <- load_MAE(test_path, prefix="test") |> 
-                extract_Xy() |> 
-                parse_rgcca_input()
-
-  # TODO: THIS IS VERY UGGLY FIX, that need to force coerce the data into factor
-  train_data$response <- as.factor(train_data$response)
-  test_data$response <- as.factor(test_data$response)
-
-  # Get common sample names
-  sample_names <- check_common_samples(train_data)
-  cat("\nTotal of", length(sample_names), "samples:\n", sample_names)
-  
-  # Set scheme to horst for same comparison with diablo
-  scheme <- "horst"
-
-  # Also make up the connection matrix based on the design chosen
-  # one of full or null
-  # This is number of omics including the response block, so H + 1
-  J <- length(train_data)
-  # Set up the connection matrix
+get_connection <- function(design, J) {
   if (design == "full") {
     # Full means 1 everywhere not of diagonal, meaning every omics
     # is related with other
@@ -101,7 +76,93 @@ main <- function(mae_path, label, fold_path, inner_cv, prefix, method, design, n
     message("\nCoerced connection to NULL now")
     connection <- NULL
   }
+  return(connection)
+}
+
+train_classification <- function(train_data, test_data, tau, connection, method, ncomp, scheme, outcome_type) {
+  # These input objects are for rgcca internally usage only
+  train_input <- train_data |>
+                parse_rgcca_input(outcome_type=outcome_type)
+  test_input <- test_data |>
+                parse_rgcca_input(outcome_type=outcome_type)
+
+  # TODO: THIS IS VERY UGGLY FIX, that need to force coerce the data into factor
+  train_input$response <- as.factor(train_input$response)
+  test_input$response <- as.factor(test_input$response)
   
+  rgcca_model <- rgcca(train_input, tau=tau, connection=connection, 
+                   method=method, response=length(train_input), ncomp=ncomp,
+                   scheme=scheme
+                   )
+  result <- list(model=rgcca_model, test_data=test_input)
+  return(result)
+}
+
+train_survival <- function(train_data, test_data, tau, connection, method, ncomp,scheme, outcome_type) {
+  # These input objects are for rgcca internally usage only
+  train_input <- train_data |>
+                parse_rgcca_input(outcome_type=outcome_type)
+  test_input <- test_data |>
+                parse_rgcca_input(outcome_type=outcome_type)
+  
+  rgcca_model <- rgcca(
+    train_input, tau=tau, connection=connection, 
+    method=method, response=NULL, ncomp=ncomp,
+    scheme=scheme
+  )
+  
+  # Same transformation for train and test (uses the train scaling)
+  train_z <- do.call(
+    cbind,
+    RGCCA::rgcca_transform(rgcca_model, train_input)
+  )
+  test_z <- do.call(
+    cbind,
+    RGCCA::rgcca_transform(rgcca_model, train_input)
+  )
+  # cv.glmnet always tunes lambda by inner CV on the train fold
+  coxnet <- glmnet::cv.glmnet(train_z, survival::Surv(train_data$Y$time, train_data$Y$status),
+                    family = "cox", alpha = 1)
+  model <- list(outcome_type = "survival", method = method, ncomp = ncomp,
+                rgcca = rgcca_model, coxnet = coxnet)
+  test_output <- list(X = test_z, time = test_data$Y$time, status = test_data$Y$status)
+  result <- list(model = model, test_data = test_output)
+  return(result)
+}
+
+# Main function to run
+main <- function(mae_path, label, fold_path, inner_cv, prefix, method, design, ncomp=2, tau=1, outcome_type="classification") {
+  seed <- get_seed(label) # Set seed based on dataset name, so that the result is reproducible
+  set.seed(seed)
+  # Log the params used
+  args_used <- c(as.list(environment()))
+  logging_params(args_used)
+  cat("\nLooking at this fold:", fold_path, "\n")
+  d <- list.files(path=fold_path, full.names = TRUE)
+  train_path <- d[str_detect(d, pattern = "_tr")]
+  test_path <- d[str_detect(d, pattern = "_te")]
+  # Then should read in the MAE and convert it to list of X and Y
+  # A little bit more special when reading in data, we get the X and Y altogether
+  train_data <- load_MAE(train_path, prefix="train") |> 
+                extract_Xy(outcome_type=outcome_type)
+  test_data <- load_MAE(test_path, prefix="test") |> 
+                extract_Xy(outcome_type=outcome_type)
+  
+  
+  # Set scheme to horst for same comparison with diablo
+  scheme <- "horst"
+
+  # Also make up the connection matrix based on the design chosen
+  # one of full or null
+  # This is number of omics including the response block, so H + 1
+  # For survival, the response block is not included in the connection matrix, so J = H
+  if (outcome_type == "classification") {
+    J <- length(train_data$X) + 1
+  } else if (outcome_type == "survival") {
+    J <- length(train_data$X)
+  }
+  # Set up the connection matrix
+  connection <- get_connection(design, J)
   # Train a modelel modele to run inner cv or not
   if (inner_cv) {
     cat("\nTraining with inner cv per single fold, this could take more time\n")
@@ -111,10 +172,13 @@ main <- function(mae_path, label, fold_path, inner_cv, prefix, method, design, n
     message("\nNot running inner cv per fold\n")
     # use default settings
     # The response block is always set at the end of the list of data
-    model <- rgcca(train_data, tau=tau, connection=connection, 
-                   method=method, response=length(train_data), ncomp=ncomp,
-                   scheme=scheme
-                   )
+    if (outcome_type == "classification") {
+      message("\nRunning supervised RGCCA with response block\n")
+      result <- train_classification(train_data, test_data, tau, connection, method, ncomp, scheme, outcome_type)
+    } else if (outcome_type == "survival") {
+      message("\nRunning unsupervised RGCCA without response block\n")
+      result <- train_survival(train_data, test_data, tau, connection, method, ncomp, scheme, outcome_type)
+    }
     message("\nFitted model\n")
   }
 
@@ -123,9 +187,9 @@ main <- function(mae_path, label, fold_path, inner_cv, prefix, method, design, n
   test_file <- paste(label, paste0(method, "_test_data.rds"), sep="-")
   cat("\nSaving files to", label, "\n")
   # Write out to disk
-  saveRDS(object = model, model_file)
-  saveRDS(object = test_data, test_file)
-  return(model)
+  saveRDS(object = result$model, model_file)
+  saveRDS(object = result$test_data, test_file)
+  return(result$model)
 }
 # Call the function here
 main(mae_path  = opt$mae_path,
@@ -135,7 +199,8 @@ main(mae_path  = opt$mae_path,
      prefix    = opt$prefix,
      method    = opt$method,
      design    = opt$design,
-     ncomp     = as.numeric(opt$ncomp)
+     ncomp     = as.numeric(opt$ncomp),
+     outcome_type = opt$outcome_type
      )
 
 message("Done")
