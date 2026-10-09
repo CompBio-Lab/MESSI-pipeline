@@ -68,7 +68,8 @@ export NXF_DISABLE_CHECK_LATEST='true'
 #SELECT_FEAT='true' # Or use 'false'
 SELECT_FEAT='false'
 
-CSV_FILE="data/samplesheet_momix.csv"
+#CSV_FILE="data/samplesheet_momix.csv"
+CSV_FILE="data/samplesheet_momix_3.csv"
 #CSV_FILE="data/local_samplesheet.csv"
 #CSV_FILE="data/samplesheet_bulk.csv"
 #CSV_FILE="data/samplesheet_multimodal.csv"
@@ -81,8 +82,9 @@ T="true"
 
 FILTER="1" # True in nextflow
 #FILTER="0"
-
-K_FOLD_NUMBER=2
+OUTCOME_TYPE="classification"
+#OUTCOME_TYPE="survival"
+K_FOLD_NUMBER=5
 #K_FOLD_NUMBER=5
 #SK_MODS="Logit,XGBoost"
 #SK_MODS="Logit,MLP"
@@ -101,15 +103,17 @@ nextflow run main.nf \
   --samplesheet ${CSV_FILE} \
   --filter_low_var $FILTER \
   --outdir results \
-  --skip_rgcca $F \
-  --skip_mofa $F \
-  --skip_sklearn $F \
-  --skip_caret_multimodal $F \
-  --skip_diablo $F \
+  --skip_sksurv $T \
+  --skip_rgcca $T \
+  --skip_mofa $T \
+  --skip_sklearn $T \
+  --skip_caret_multimodal $T \
+  --skip_diablo $T \
   --skip_cplr $F \
-  --skip_mogonet $F \
-  --skip_integrao $F \
+  --skip_mogonet $T \
+  --skip_integrao $T \
   --pipeline_dir ./ \
   --k_fold_number $K_FOLD_NUMBER \
   --selectFeature $F \
+  --outcome_type $OUTCOME_TYPE \
   --publish_relevant $F

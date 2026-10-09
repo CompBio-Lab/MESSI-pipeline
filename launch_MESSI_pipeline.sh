@@ -63,7 +63,8 @@ export NXF_OFFLINE='true'
 NXF_SRC_MAIN=$PIPELINE_DIR/main.nf
 # Profile order matters, since the later one overrides the prior ones
 #PROFILE=sockeye,simulated_data
-PROFILE=sockeye,real_data
+#PROFILE=sockeye,real_data
+PROFILE=sockeye,run_survival
 # Or use this one for development usage
 #PROFILE=sockeye,test,debug
 #PARAMS_FILE=remote_params.yaml
@@ -72,9 +73,16 @@ PROFILE=sockeye,real_data
 timestamp=$(date +"%Y%m%d_%H%M%S")
 PROFILE_SUFFIX=${PROFILE#sockeye,}
 PROFILE_SUFFIX="${PROFILE_SUFFIX//,/–}"
-OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results-${PROFILE_SUFFIX}
+#OUTDIR=${timestamp}-job${SLURM_JOB_ID}-MESSI_results-${PROFILE_SUFFIX}
 # Samplesheet should maybe have it in profile only and not with CLI as it overrides it
-SAMPLESHEET=data/samplesheet_momix_3.csv
+#SAMPLESHEET="data/samplesheet_simulated_full.csv"
+#SAMPLESHEET=data/samplesheet_bulk.csv
+#SAMPLESHEET="data/samplesheet_multimodal.csv"
+#SAMPLESHEET="data/samplesheet_covid_only.csv"
+#SAMPLESHEET="data/samplesheet_htx_only.csv"
+#SAMPLESHEET="data/samplesheet_all.csv"
+SAMPLESHEET="data/samplesheet_momix_full.csv"
+#SAMPLESHEET=data/samplesheet_momix_3.csv
 #SAMPLESHEET=data/samplesheet_simulated_data.csv
 #SAMPLESHEET=data/samplesheet_simulated_part1.csv
 #SAMPLESHEET=data/samplesheet_simulated_part2.csv
@@ -84,15 +92,24 @@ SAMPLESHEET=data/samplesheet_momix_3.csv
 #SAMPLESHEET=data/samplesheet_test_small.csv
 #SAMPLESHEET=data/samplesheet_325-405.csv
 #echo "Running pipeline with ${NXF_SRC_MAIN}"
-#echo "Running data under '${SAMPLESHEET}'"
+echo "Running data under '${SAMPLESHEET}'"
+SAMPLESHEET_NAME="${SAMPLESHEET##*/}"
+SAMPLESHEET_NAME="${SAMPLESHEET_NAME%.*}"
+OUTDIR="${timestamp}-job${SLURM_JOB_ID}-MESSI_results-${PROFILE_SUFFIX}-${SAMPLESHEET_NAME}"
 # =============================================================================
 # 4. Run the pipeline on the work dir
+T=true
+F=false
+
+OUTCOME="survival"
+
 # The ansi-log option is used for redirecting output
 nextflow run ${NXF_SRC_MAIN} \
   -profile ${PROFILE} \
   --outdir ${OUTDIR} \
   --samplesheet ${SAMPLESHEET} \
-  -ansi-log false
+  -ansi-log false \
+  -resume
 # =============================================================================
 # 5. Compress output results and move back to submitted directory
 #cd ${TMPDIR}
