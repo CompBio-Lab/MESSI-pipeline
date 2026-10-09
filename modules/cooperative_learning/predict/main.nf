@@ -22,6 +22,7 @@ process COOPERATIVE_LEARNING_PREDICT {
     tuple val(dataset_name), val(fold_name), path(model)
 		tuple val(dataset_name), val(fold_name), path(test_path)
     val(method_name)
+		val(outcome_type)
 	output:
     tuple val(dataset_name), val(fold_name), val(method_name), path("*result*"), emit: result_table
 		path('*log*'), optional: true, emit: log
@@ -32,6 +33,7 @@ process COOPERATIVE_LEARNING_PREDICT {
       --model=${model} \
       --test_path=${test_path} \
 			--label=${data_label} \
+			--outcome_type=${outcome_type} \
       --method_name=${method_name} > \
       ${data_label}-${getPublishPath(task.process).tokenize('/')[-1]}.log
 

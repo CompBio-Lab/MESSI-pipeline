@@ -21,6 +21,7 @@ process MOFA_PREDICT {
 	input:
     tuple val(dataset_name), val(fold_name), path(model)
 		tuple val(dataset_name), val(fold_name), path(test_path)
+		val(outcome_type)
 	output:
     tuple val(dataset_name), val(fold_name), val("mofa"), path("*result*"), emit: result_table
     //tuple val(dataset_name), val(fold_name), val("mofa"), path("*weight*"), emit: weight
@@ -31,7 +32,8 @@ process MOFA_PREDICT {
     predict_mofa.R \
       --model=${model} \
       --test_path=${test_path} \
-			--label=${data_label} > \
+			--label=${data_label} \
+			--outcome_type=${outcome_type} > \
 			${data_label}-${getPublishPath(task.process).tokenize('/')[-1]}.log
 
 		echo mofa > method_name

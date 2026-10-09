@@ -52,12 +52,10 @@ def build_reducer(X_df, mod_names, n_comp=50, random_state=42):
 # model_name is name of classifier to use from sklearn
 # See main function of available options
 def train(train_data, model_name, target_col="response", reduction="empty"):
-    # Convert the mdata to merged dataframe column wise
-    merged_df, mod_names = combine_mdata2df(train_data)
-    # Transform the mudata into X and y for sklearn
+    # Combine the MuData into a single dataframe for X and y
+    X_df, y_df, mod_names = combine_mdata2df(train_data, target_col)
     # X_df contains all count data from the views
     # y_df contains response
-    X_df, y_df = merged_df.drop(columns=[target_col]), merged_df[[target_col]]
     # Dynamically load classifier class
     # The third is params_dist which is for cv tuning, so discard it
     classifier_class, params, _ = load_classifier_class(model_name)

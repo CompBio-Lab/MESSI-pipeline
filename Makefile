@@ -72,6 +72,7 @@ clean:
 	@rm -rf  .nextflow
 	rm -rf tmp
 	find work/ -type f -print0 | xargs -0 -P 8 -n 100 rm -f
+	@rm -rf work
 	@rm -rf plugins
 	@rm -rf .config
 	@rm -f .bash_history

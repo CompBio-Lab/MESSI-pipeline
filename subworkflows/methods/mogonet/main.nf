@@ -79,7 +79,7 @@ workflow MOGONET {
                   .set { result_tables }
     // Run these by batch of result tables (K tables per data)
     // result_tables.view() 
-    MERGE_RESULT_TABLE ( result_tables, saveMode )
+    MERGE_RESULT_TABLE ( result_tables, saveMode, params.outcome_type )
   emit:
     csv_results = MERGE_RESULT_TABLE.out.csv_results
     // Uncomment this bit below and comment above to debug

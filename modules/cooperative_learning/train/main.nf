@@ -26,6 +26,7 @@ process COOPERATIVE_LEARNING_TRAIN {
 	// Input, output blocks
 	input:
 		tuple val(dataset_name), path(mae_path), path(fold_path)
+		val(outcome_type)
 	output:
 		tuple val(dataset_name), val(fold_path.name), path('*model.rds'),			 	emit: model
 		tuple val(dataset_name), val(fold_path.name), path('*test_data.rds'),	 	emit: test_data
@@ -38,6 +39,7 @@ process COOPERATIVE_LEARNING_TRAIN {
 		run_cooperative_learning.R \
 				--mae_path=${mae_path} \
 				--label=${data_label} \
+				--outcome_type=${outcome_type} \
 				--fold_path=${fold_path} > \
 				${data_label}-${getPublishPath(task.process).tokenize('/')[-1].toLowerCase()}.log
 		"""

@@ -21,6 +21,8 @@ import pandas as pd
 import mudata
 import os
 import copy
+import json
+import numpy as np
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -29,6 +31,103 @@ from get_feats_df import get_feats_df
 from run_random_search_cv import run_random_search_cv
 from combine_mdata2df import combine_mdata2df
 from load_classifier_class import load_classifier_class
+
+
+
+
+def make_json_serializable(value):
+    """Convert common NumPy values into JSON-compatible Python values."""
+
+    if isinstance(value, np.generic):
+        return value.item()
+
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+
+    if isinstance(value, dict):
+        return {
+            str(key): make_json_serializable(item)
+            for key, item in value.items()
+        }
+
+    if isinstance(value, (list, tuple)):
+        return [make_json_serializable(item) for item in value]
+
+    return value
+
+
+def remove_pipeline_prefix(best_params, step_name):
+    """
+    Convert parameters such as logisticregression__C into C.
+    """
+
+    prefix = f"{step_name}__"
+
+    return {
+        key[len(prefix):] if key.startswith(prefix) else key: value
+        for key, value in best_params.items()
+    }
+
+
+def write_selected_hyperparameters(
+    search,
+    init_params,
+    dataset_name,
+    model_name,
+    n_iter,
+    random_state,
+    scoring="roc_auc"
+    ):
+    """
+    Write the selected and intentionally fixed model parameters to JSON.
+    """
+
+    step_name = search.best_estimator_.steps[-1][0]
+
+    selected_params = remove_pipeline_prefix(
+        search.best_params_,
+        step_name=step_name
+    )
+
+    parameter_records = {}
+
+    # Parameters intentionally fixed in load_classifier_class().
+    # Do not label a parameter as fixed if it was subsequently tuned.
+    for parameter, value in init_params.items():
+        if parameter not in selected_params:
+            parameter_records[parameter] = {
+                "value": make_json_serializable(value),
+                "treatment": "fixed"
+            }
+
+    for parameter, value in selected_params.items():
+        parameter_records[parameter] = {
+            "value": make_json_serializable(value),
+            "treatment": "tuned"
+        }
+
+    method = f"sklearn-{model_name.lower().replace(' ', '_')}"
+
+    result = {
+        "dataset": dataset_name,
+        "method": method,
+        "analysis_stage": "model_selection",
+        "selection": {
+            "strategy": "randomized_search",
+            "metric": scoring,
+            "n_iter": n_iter,
+            "random_state": random_state,
+            "best_cv_score": make_json_serializable(search.best_score_)
+        },
+        "parameters": parameter_records
+    }
+
+    output_path = f"{method}-{dataset_name}_selected_hyperparameters.json"
+
+    with open(output_path, "w", encoding="utf-8") as handle:
+        json.dump(result, handle, indent=2, ensure_ascii=False)
+
+    return output_path
 
 
 # This is the main entrance of the script
@@ -60,28 +159,24 @@ def main(mu_path, dataset_name, model_name, block_num=0, n_iter=10, random_state
     raw_mdata = mudata.read(mu_path)
     # Use a copy here to avoid mixing up stuff
     mdata = raw_mdata.copy()
-    # TODO: this is uggly solution now
-    # Take the modality out for usage later
-    modality_names = list(mdata.mod.keys())
-    # Then convert the mdata to merged dataframe column wise
-    merged_df = combine_mdata2df(mdata)
-    # And split them to X and Y
-    X_df, y_df = merged_df.drop(columns=[target_col]), merged_df[[target_col]]
+    # Combine the MuData into a single dataframe for X and y
+    X_df, y_df, modality_names = combine_mdata2df(mdata, target_col=target_col)
+    # sklearn expects a one-dimensional target
+    y = y_df[target_col].to_numpy().ravel()
+
     # For a model , apply a CV on full data to find optimal hyperparam
     # then instantiate new model with best param to get feature importance or weight
     print(f"Model name is '{model_name}'")
     classifier_class, init_params, param_dist = load_classifier_class(model_name=model_name)
     clf_instance = classifier_class(**init_params) # Instantiate object from class with model init params
     # Then apply random CV on the parameter distribution of given model
-    optimal_params_dict = run_random_search_cv(clf_instance, X=X_df, Y=y_df, param_distributions=param_dist, n_iter=n_iter, random_state=random_state)
-    # Now, instantiate new instance of the model with optimal params instead
-    opt_clf_instance = classifier_class(**optimal_params_dict)
-    print(opt_clf_instance)
-    # Apply scaling and fit final model
-    opt_clf = make_pipeline(StandardScaler(), opt_clf_instance)
-    opt_clf.fit(X_df, y_df["response"].ravel())
+    search = run_random_search_cv(clf_instance, X=X_df, Y=y, param_distributions=param_dist, n_iter=n_iter, random_state=random_state)
+    print("Best parameters:", search.best_params_)
+    print("Best CV ROC-AUC:", search.best_score_)
     # Extract the classifier from the pipeline
-    classifier = opt_clf.steps[-1][1]   # Adjust this based on your pipeline's step name
+      # Already refitted on the complete dataset because refit=True.
+    optimal_pipeline = search.best_estimator_
+    classifier = optimal_pipeline.steps[-1][1] # Adjust this based on your pipeline's step name
     # Then could either extract their weights or feature importance
     feats_df = get_feats_df(
         classifier=classifier, feat_names=X_df.columns, 
@@ -89,9 +184,25 @@ def main(mu_path, dataset_name, model_name, block_num=0, n_iter=10, random_state
         modality_names=modality_names)    
     # Fix naming here for output, specifically add sklearn and turn it to lower
     method = f"sklearn-{model_name.lower().replace(' ', '_')}"
-    filename = f"{method}-{dataset_name}_features_selected.csv"
+    feature_path = f"{method}-{dataset_name}_features_selected.csv"
     # And write it to file
-    feats_df.to_csv(filename, index=False)
+    feats_df.to_csv(feature_path, index=False)
+
+    # Also writing out the hyperparms selected
+    hyperparameter_path = write_selected_hyperparameters(
+        search=search,
+        init_params=init_params,
+        dataset_name=dataset_name,
+        model_name=model_name,
+        n_iter=n_iter,
+        random_state=random_state,
+        scoring="roc_auc"
+    )
+
+    print(f"Selected features written to: {feature_path}")
+    print(f"Selected hyperparameters written to: {hyperparameter_path}")
+
+
     return(feats_df)
 
 

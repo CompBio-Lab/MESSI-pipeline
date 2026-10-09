@@ -21,6 +21,7 @@ process MOFA_SELECT_FEATURE {
     val(num_factors)
   output:
     path("*.csv"),                  emit: features
+    path("*.json"),                 emit: hyperparameters
     path("*plot*"), optional:true,  emit: plot
     path("*.log"),                  emit: log
 

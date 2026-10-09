@@ -62,6 +62,9 @@ nfolds=5, criteria_order="standardized_coef") {
   set.seed(seed)
   # PARAMS
   method <- "cooperative_learning"
+  model_family <- binomial()
+  lambda_rule <- "lambda.min"
+
   # Log the params used
   args_used <- c(as.list(environment()))
   logging_params(args_used)
@@ -81,12 +84,12 @@ nfolds=5, criteria_order="standardized_coef") {
   }
   # fit the model (but with cv) , note: their default nfolds is actual 10 but that takes long time
   cv_model <- cv.multiview(x_list = X,  y = Y, 
-                          family = binomial(), type.measure=type.measure, 
+                          family = model_family, type.measure=type.measure, 
                           rho=rho, alpha=alpha, nfolds=nfolds)
   
   
   # Get the lambda to use
-  s <- cv_model$lambda.min
+  selected_lambda <- cv_model$lambda.min
 
   # Plot the loss vs different lambdas, the model under the hood is using glmnet
   par(mar=c(1,1,1,1))
@@ -96,7 +99,7 @@ nfolds=5, criteria_order="standardized_coef") {
   dev.off()
   
     # Now get those features out by taking top n percent of features in each view
-  feats_df <- coef_ordered(cv_model, s=s) %>%
+  feats_df <- coef_ordered(cv_model, s=selected_lambda) %>%
     as_tibble() %>%
     rename(feature=view_col) %>%
     mutate(
@@ -119,6 +122,57 @@ nfolds=5, criteria_order="standardized_coef") {
   # write it to disk
   feats_file <- paste0(method, "-", dataset_name, "_", "features_selected", ".csv")
   write.csv(x=feats_df, file=feats_file, row.names=FALSE)
+  # ===========================
+  # And the hyperparameters part
+  hyperparameters <- list(
+  lambda = make_parameter_record(
+    value = as.numeric(selected_lambda),
+    treatment = "tuned"
+  ),
+
+  rho = make_parameter_record(
+    value = as.numeric(rho),
+    treatment = "fixed"
+  ),
+
+  alpha = make_parameter_record(
+    value = as.numeric(alpha),
+    treatment = "fixed"
+  ),
+
+  family = make_parameter_record(
+    value = list(
+      family = model_family$family,
+      link = model_family$link
+    ),
+    treatment = "fixed"
+   )
+  )
+
+  selection <- list(
+    strategy = "cv.multiview",
+    tuned_parameter = "lambda",
+    selected_rule = lambda_rule,
+    lambda_sequence = "automatically generated",
+    candidate_count = length(cv_model$lambda),
+    metric = type.measure,
+    validation = "kfold",
+    folds = as.integer(nfolds),
+    random_seed = as.integer(seed),
+    best_cv_error = min(cv_model$cvm, na.rm = TRUE)
+  )
+
+  hyperparameter_file <- write_selected_hyperparameters(
+    dataset_name = dataset_name,
+    method_name = method,
+    parameters = hyperparameters,
+    selection = selection
+  )
+
+  message(
+    "Selected hyperparameters written to: ",
+    hyperparameter_file
+  )
   return(feats_df)
 }
 

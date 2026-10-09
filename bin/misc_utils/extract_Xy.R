@@ -29,7 +29,7 @@ parseY <- function(Y, verbose = FALSE) {
 }
 
 # Convert MAE to list of X and Y
-extract_Xy <- function(mae, verbose_target=FALSE) {
+extract_Xy <- function(mae, outcome_type="classification", verbose_target=FALSE) {
   # Note need to transpose back to p * n
   # TODO: add check for dimension match
   # COOP LR do not like delayed matrix, so transform it to S3 matrix
@@ -43,11 +43,22 @@ extract_Xy <- function(mae, verbose_target=FALSE) {
   # MAE response would be a dataframe?
   # In simulated data this is always atomic, but in real, they are
   # transformed to dataframe first, so need to pull it
-  y_temp <- mae$response
-  if (is.data.frame(y_temp)) {
-    Y <- parseY(y_temp |> dplyr::pull(response), verbose = verbose_target)
-  } else {
-    Y <- parseY(y_temp, verbose = verbose_target)
+  if (outcome_type == "survival") {
+    #stop("Survival outcome type is not implemented yet")
+    y_df <- SummarizedExperiment::colData(mae) |> as.data.frame()
+    # And get the time and status columns
+    out <- y_df[, c("time", "status")]
+    return(list(X=X, Y=out))
+  } 
+  if (outcome_type == "classification") {
+    y_temp <- mae$response
+    if (is.data.frame(y_temp)) {
+      Y <- parseY(y_temp |> dplyr::pull(response), verbose = verbose_target)
+    } else {
+      Y <- parseY(y_temp, verbose = verbose_target)
+    }
+    return(list(X=X, Y=Y))
   }
-  return(list(X=X, Y=Y))
+  # Otherwise stop
+  stop("Unsupported outcome_type: ", outcome_type)
 }

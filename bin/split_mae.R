@@ -13,6 +13,9 @@ Options:
   --split_dir=SPLIT_DIR     Directory containing list of txt file [default: empty]
   --dataset_name=NAME       Name of dataset that is splitting     [default: empty]
   --transpose               Transpose the data as method requires [default: False]
+  --outcome_type=TYPE       classification or survival            [default: classification]
+  --time_col=TIME_COL       colData column of survival time       [default: time]
+  --status_col=STAT_COL     colData column of event indicator     [default: status]
 "
 
 # Parase docopt
@@ -63,21 +66,60 @@ load_test_splits <- function(split_dir, pattern=".txt", ...) {
 
 # }
 
-# Use this function to reconstruct mae
-reconstruct_mae <- function(mae) {
-  # Given an mae with delayed matrices, we could load it into
-  # memory and make it of HDF5 arrays instead
-  X <- mae@ExperimentList |> lapply(as.matrix)
-  y <- mae$response
-  # Construct MAE
-  new_mae <- MultiAssayExperiment::MultiAssayExperiment(experiments = X)
-  new_mae$response <- y
-  return(new_mae)
+reconstruct_mae <- function(
+    mae,
+    outcome_type = "classification",
+    response_col = "response",
+    time_col = "time",
+    status_col = "status"
+) {
+  if (!outcome_type %in% c("classification", "survival")) {
+    stop("outcome_type must be 'classification' or 'survival'")
+  }
+
+  cd <- SummarizedExperiment::colData(mae) |> as.data.frame()
+
+  required_cols <- if (outcome_type == "classification") {
+    response_col
+  } else {
+    c(time_col, status_col)
+  }
+
+  missing_cols <- setdiff(required_cols, colnames(cd))
+  if (length(missing_cols) > 0L) {
+    stop("Missing outcome columns: ", paste(missing_cols, collapse = ", "))
+  }
+
+  # Materialize each experiment as an in-memory matrix.
+  X <- lapply(
+    MultiAssayExperiment::experiments(mae),
+    function(x) {
+      # For SummarizedExperiment, use its first assay.
+      if (methods::is(x, "SummarizedExperiment")) {
+        x <- SummarizedExperiment::assay(x)
+      }
+      as.matrix(x)
+    }
+  )
+
+  if (outcome_type == "classification") {
+    cd$response <- cd[[response_col]]
+  } else {
+    # Extract both before assignment in case source names overlap.
+    time <- cd[[time_col]]
+    status <- cd[[status_col]]
+    cd$time <- time
+    cd$status <- status
+  }
+
+  MultiAssayExperiment::MultiAssayExperiment(
+    experiments = X,
+    colData = cd
+  )
 }
 
-
 # Actual fun to split each MAE to train and test portion
-split_mae <- function(mae_path, split_dir, dataset_name) {
+split_mae <- function(mae_path, split_dir, dataset_name, outcome_type="classification") {
   # Read in the MAE
   # Note the prefix "" is required here?
   mae <- MultiAssayExperiment::loadHDF5MultiAssayExperiment(dir=mae_path, prefix="")
@@ -92,8 +134,8 @@ split_mae <- function(mae_path, split_dir, dataset_name) {
       # First subset both
       split <- test_splits[[fold_name]]
       # TODO: Transpose data only when method requires it to
-      tr_mae <- mae[, -split, drop=TRUE] |> reconstruct_mae()
-      te_mae <- mae[, split, drop=TRUE] |> reconstruct_mae()
+      tr_mae <- mae[, -split, drop=TRUE] |> reconstruct_mae(outcome_type = outcome_type)
+      te_mae <- mae[, split, drop=TRUE] |> reconstruct_mae(outcome_type = outcome_type)
       # Then save each fold's train and test portion as subdirectory of fold name
       cat("\nSaving for", fold_name, "\n")
       if (!dir.exists(fold_name)) {
@@ -111,4 +153,4 @@ split_mae <- function(mae_path, split_dir, dataset_name) {
     }
 }
 
-split_mae(mae_path=opt$mae_path, split_dir=opt$split_dir, dataset_name=opt$dataset_name)
+split_mae(mae_path=opt$mae_path, split_dir=opt$split_dir, dataset_name=opt$dataset_name, outcome_type=opt$outcome_type)

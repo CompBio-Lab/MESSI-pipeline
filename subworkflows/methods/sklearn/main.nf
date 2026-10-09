@@ -31,9 +31,16 @@ def saveMode = "method"
 
 workflow SKLEARN {
   // Classifier to train for sklearn
-  model_name  = Channel.fromList(params.sklearn_classifier_names)
+  // Set classifier to Logit only if single_mode is true
+  model_name = Channel.fromList(params.sklearn_classifier_names)
+  
   // Reduction method (pca or empty)
-  reduction   = Channel.fromList(params.sklearn_reduction)
+  // Set reduction to empty if single_mode is true
+  if ( params.single_modality_mode ) {
+    reduction = Channel.of("empty")
+  } else {
+    reduction = Channel.fromList(params.sklearn_reduction)
+  }
   take:
   // TODO: rename this data_copy to mae_copy or mu_copy depending on language
   data_copy // ch of tuple dataset, path of mae/mu data, 
@@ -114,7 +121,7 @@ workflow SKLEARN {
                     }
                     .set { result_table }
       // Lastly merge it, this would be quite fast
-      MERGE_RESULT_TABLE ( result_table, saveMode )
+      MERGE_RESULT_TABLE ( result_table, saveMode, params.outcome_type )
 
       // =====================================================================
       // And emit the result back to upstream (which is another merge of different method)

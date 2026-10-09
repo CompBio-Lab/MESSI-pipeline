@@ -22,6 +22,7 @@ process RGCCA_SELECT_FEATURE {
     each(design)
   output:
     path("*.csv"),    emit: features
+    path("*.json"),   emit: hyperparameters
     path("*plot*"),   emit: plot
     path("*.log"),    emit: log
 

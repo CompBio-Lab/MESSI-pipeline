@@ -79,6 +79,9 @@ main <- function(mae_path, label, fold_path, inner_cv, prefix, method, design, n
   sample_names <- check_common_samples(train_data)
   cat("\nTotal of", length(sample_names), "samples:\n", sample_names)
   
+  # Set scheme to horst for same comparison with diablo
+  scheme <- "horst"
+
   # Also make up the connection matrix based on the design chosen
   # one of full or null
   # This is number of omics including the response block, so H + 1
@@ -109,7 +112,8 @@ main <- function(mae_path, label, fold_path, inner_cv, prefix, method, design, n
     # use default settings
     # The response block is always set at the end of the list of data
     model <- rgcca(train_data, tau=tau, connection=connection, 
-                   method=method, response=length(train_data), ncomp=ncomp
+                   method=method, response=length(train_data), ncomp=ncomp,
+                   scheme=scheme
                    )
     message("\nFitted model\n")
   }

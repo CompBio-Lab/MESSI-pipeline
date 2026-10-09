@@ -14,15 +14,19 @@ params.full_mode = false
 def language_name = "R"
 def saveMode = "language"
 workflow CV_R {
-  // Skip or trigger method to run
-  skip_caret_multimodal = params.skip_caret_multimodal // boolean: true/false
-  skip_demo_logit = params.skip_demo_logit // boolean: true/false
-  skip_cplr   = params.skip_cplr    // boolean: true/false
-  skip_diablo = params.skip_diablo  // boolean: true/false
-  skip_rgcca  = params.skip_rgcca   // boolean: true/false
-  skip_sgmr   = params.skip_sgmr    // boolean: true/false
-  skip_mofa   = params.skip_mofa    // boolean: true/false
+   outcome_type = params.outcome_type // "classification" or "survival"
 
+  // Skip or trigger method to run
+  // Classification only
+  skip_caret_multimodal = params.skip_caret_multimodal || outcome_type != 'classification'
+  skip_demo_logit       = params.skip_demo_logit       || outcome_type != 'classification'
+  skip_diablo           = params.skip_diablo           || outcome_type != 'classification'
+  skip_rgcca            = params.skip_rgcca            || outcome_type != 'classification'
+  skip_sgmr             = params.skip_sgmr             || outcome_type != 'classification'
+
+  // Both classification and survival
+  skip_mofa             = params.skip_mofa
+  skip_cplr             = params.skip_cplr
   // Method specific parameters
   num_comps = params.num_comps
   take:
@@ -112,7 +116,7 @@ workflow CV_R {
             .set { csv_results }
     // ========================================================================
     // Merge result tables together
-    MERGE_RESULT_TABLE ( csv_results, saveMode )
+    MERGE_RESULT_TABLE ( csv_results, saveMode, outcome_type )
   emit:
     csv_results = MERGE_RESULT_TABLE.out.csv_results
 }

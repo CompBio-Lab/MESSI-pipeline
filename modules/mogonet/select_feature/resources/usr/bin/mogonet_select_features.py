@@ -21,10 +21,110 @@ import pandas as pd
 import mudata
 import hashlib
 import copy
+import json
 # Custom functions import
 from prepare_mogonet_single_split import prepare_mogonet_feat_select
 from feature_importance import  cal_feat_imp, summarize_imp_feat
 
+
+def make_json_serializable(value):
+    """Convert common NumPy values into JSON-compatible Python values."""
+
+    if isinstance(value, np.generic):
+        return value.item()
+
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+
+    if isinstance(value, dict):
+        return {
+            str(key): make_json_serializable(item)
+            for key, item in value.items()
+        }
+
+    if isinstance(value, (list, tuple)):
+        return [make_json_serializable(item) for item in value]
+
+    return value
+
+
+def write_selected_hyperparameters(
+    dataset_name,
+    he_base_dim,
+    adj_parameter,
+    lr_e_pretrain,
+    lr_e,
+    lr_c,
+    num_epoch_pretrain,
+    num_epoch,
+    num_class,
+    random_state,
+):
+    method = "mogonet"
+
+    result = {
+        "schema_version": "1.0",
+        "run_id": f"{method}-{dataset_name}",
+        "dataset": dataset_name,
+        "method": method,
+        "analysis_stage": "model_selection",
+        "selection": {
+            "strategy": "fixed_configuration",
+            "hyperparameter_tuning": False,
+        },
+        "parameters": {
+            "he_base_dim": {
+                "value": he_base_dim,
+                "treatment": "fixed",
+            },
+            "adj_parameter": {
+                "value": adj_parameter,
+                "treatment": "fixed",
+            },
+            "lr_e_pretrain": {
+                "value": lr_e_pretrain,
+                "treatment": "fixed",
+            },
+            "lr_e": {
+                "value": lr_e,
+                "treatment": "fixed",
+            },
+            "lr_c": {
+                "value": lr_c,
+                "treatment": "fixed",
+            },
+            "num_epoch_pretrain": {
+                "value": num_epoch_pretrain,
+                "treatment": "fixed",
+            },
+            "num_epoch": {
+                "value": num_epoch,
+                "treatment": "fixed",
+            },
+            "num_class": {
+                "value": num_class,
+                "treatment": "fixed",
+            },
+            "random_state": {
+                "value": random_state,
+                "treatment": "fixed",
+            },
+        },
+    }
+
+    output_path = f"{method}-{dataset_name}_selected_hyperparameters.json"
+
+    with open(output_path, "w", encoding="utf-8") as handle:
+        json.dump(
+            result,
+            handle,
+            indent=2,
+            ensure_ascii=False,
+        )
+
+    print(f"Selected hyperparameters written to: {output_path}")
+
+    return output_path
 
 # def get_view_list(data_folder):
 #     # First list all *_featname.csv in current data folder
@@ -60,7 +160,15 @@ def seed_everything(seed: int):
 # TODO: The feat importance is always 0?
 # and make sure to have topn to be big number
 # like 10% of datasize
-def main(mu_path, dataset_name, n_percent, random_state=123, block_num=0, test_size=0.25, reps=5, num_class=2, he_base_dim=2, adj_parameter=5, num_epoch=200):
+def main(mu_path, dataset_name, n_percent, random_state=123, block_num=0, test_size=0.25, reps=5,
+    num_class=2,
+    he_base_dim=2,
+    adj_parameter=5,
+    lr_e_pretrain=1e-3,
+    lr_e=5e-4,
+    lr_c=1e-3,
+    num_epoch_pretrain=50,
+    num_epoch=200):
     """
     Parameters
     ----------
@@ -103,6 +211,19 @@ def main(mu_path, dataset_name, n_percent, random_state=123, block_num=0, test_s
     filename = f"{method}-{dataset_name}_features_selected.csv"
     # And write it to file
     feats_df.to_csv(filename, index=False)
+    # Also write out the hyperparams
+    write_selected_hyperparameters(
+      dataset_name=dataset_name,
+      he_base_dim=he_base_dim,
+      adj_parameter=adj_parameter,
+      lr_e_pretrain=lr_e_pretrain,
+      lr_e=lr_e,
+      lr_c=lr_c,
+      num_epoch_pretrain=num_epoch_pretrain,
+      num_epoch=num_epoch,
+      num_class=num_class,
+      random_state=random_state,
+  )
     return(feats_df)
 
 

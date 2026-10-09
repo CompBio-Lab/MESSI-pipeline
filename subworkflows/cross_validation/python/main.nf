@@ -1,11 +1,12 @@
 // Methods to include
-include { INTEGRAO  }             from "${subworkflowDir}/methods/integrao"
-include { SKLEARN   }             from "${subworkflowDir}/methods/sklearn"
-include { MOGONET   } 						from "${subworkflowDir}/methods/mogonet"
+include { INTEGRAO  }			from "${subworkflowDir}/methods/integrao"
+include { SKLEARN   }			from "${subworkflowDir}/methods/sklearn"
+include { MOGONET   }			from "${subworkflowDir}/methods/mogonet"
+include { SKSURV    }			from "${subworkflowDir}/methods/sksurv"
 // This module to collect results
-include { MERGE_RESULT_TABLE }    from "${modulesDir}/merge_result_table"
+include { MERGE_RESULT_TABLE }		from "${modulesDir}/merge_result_table"
 // Helper fun
-include { printBanner } 				  from "${modulesDir}/functions"
+include { printBanner}			from "${modulesDir}/functions"
 
 
 // Workflow specific params to use
@@ -13,11 +14,17 @@ def language_name = "Python"
 def saveMode = "language"
 
 workflow CV_PYTHON {
-  // Skip or trigger method to run
-  skip_integrao = params.skip_integrao // boolean: true/false
-  skip_sklearn  = params.skip_sklearn // boolean: true/false
-  skip_mogonet	= params.skip_mogonet	// boolean: true/false
-  skip_goat 		= params.skip_goat		// boolean: true/false
+
+  // Determine if should run classification or survival one at a time only
+  outcome_type = params.outcome_type
+	
+  // Skip if explicitly requested OR unsupported for this outcome
+  skip_integrao = params.skip_integrao || outcome_type != 'classification'
+  skip_sklearn  = params.skip_sklearn  || outcome_type != 'classification'
+  skip_mogonet  = params.skip_mogonet  || outcome_type != 'classification'
+  skip_goat     = params.skip_goat     || outcome_type != 'classification'
+  skip_sksurv   = params.skip_sksurv   || outcome_type != 'survival'
+  
   // Method specific parameters
   he_base_dim = params.he_base_dim
   // Inputs of workflow
@@ -25,6 +32,13 @@ workflow CV_PYTHON {
     mu_copy 	//  channel of (key, key/path_to_mu, split_indices), 
               // where each split_indices/ contains
               // list of txt files.
+
+     // NEW (single-modality mode): same tuple shape as mu_copy, but containing
+    // the expanded per-modality datasets ('<dataset>-<modality>'). Only
+    // sklearn consumes them: single-block input is not meaningful for
+    // multi-block integration methods (INTEGRAO, MOGONET). Empty channel
+    // when params.single_modality_mode is false.
+    mu_copy_unimodal
   main:
     /*
       Need to first allocate empty output for each of the methods
@@ -42,8 +56,16 @@ workflow CV_PYTHON {
     // SKLEARN
     sklearn_results = Channel.empty()
     if (!skip_sklearn) {
-        SKLEARN ( mu_copy )
+        // Mix inputs of mudata and unimodal
+        SKLEARN ( mu_copy.mix( mu_copy_unimodal ) )
         sklearn_results = SKLEARN.out.csv_results
+    }
+
+    // SKSURV
+    sksurv_results = Channel.empty()
+    if (!skip_sksurv) {
+      SKSURV ( mu_copy )
+      sksurv_results = SKSURV.out.csv_results
     }
     
     // MOGONET
@@ -57,9 +79,10 @@ workflow CV_PYTHON {
     // Collect all result and mix it to merge it more
     Channel.empty()
             // Then these are outputs of methods
-            .mix( integrao_results )
-            .mix( sklearn_results )
-            .mix( mogonet_results )
+            .mix( integrao_results  )
+            .mix( sklearn_results   )
+            .mix( mogonet_results   )
+            .mix( sksurv_results    )
             .map { it ->
               [ language_name, it[0], it[1] ]  // Ch [R, method name, path of summary csv of method]
             }
@@ -68,7 +91,7 @@ workflow CV_PYTHON {
             .set { csv_results }
     // ======================================================================== 
     // Merge result tables together
-    MERGE_RESULT_TABLE ( csv_results, saveMode )
+    MERGE_RESULT_TABLE ( csv_results, saveMode, outcome_type )
   emit:
     csv_results = MERGE_RESULT_TABLE.out.csv_results
 }

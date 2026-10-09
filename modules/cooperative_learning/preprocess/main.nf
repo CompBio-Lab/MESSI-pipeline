@@ -20,6 +20,7 @@ process COOPERATIVE_LEARNING_PREPROCESS {
   /*Input and output blocks*/
   input:
   tuple val(dataset_name), path(mae_path), path(split_dir)
+  val(outcome_type)
   output:
   /*
     Series of folder, each represent a fold, whereas within fold there are 
@@ -38,6 +39,7 @@ process COOPERATIVE_LEARNING_PREPROCESS {
   --mae_path=${mae_path} \
   --split_dir=${split_dir} \
   --dataset_name=${dataset_name} \
+  --outcome_type=${outcome_type} \
   --transpose > \
   ${dataset_name}-${getPublishPath(task.process).tokenize('/')[-1].toLowerCase()}.log
   """

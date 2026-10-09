@@ -25,6 +25,7 @@ process MOFA_TRAIN {
 	input:
 		tuple val(dataset_name), path(mae_path), path(fold_path)
     val(run_inner_cv)
+		val(outcome_type)
 	output:
 		tuple val(dataset_name), val(fold_path.name), path('*model.rds'),    	emit: model
     tuple val(dataset_name), val(fold_path.name), path('*test_data.rds'),	emit: test_data
@@ -37,6 +38,7 @@ process MOFA_TRAIN {
         --mae_path=${mae_path} \
         --label=${data_label} \
         --fold_path=${fold_path} \
+				--outcome_type=${outcome_type} \
         --run_inner_cv > \
         ${data_label}-${getPublishPath(task.process).tokenize('/')[-1].toLowerCase()}.log
       echo ${dataset_name} > dataset_name
@@ -46,7 +48,8 @@ process MOFA_TRAIN {
       run_mofa.R \
         --mae_path=${mae_path} \
         --label=${data_label} \
-        --fold_path=${fold_path} > \
+        --fold_path=${fold_path} \
+        --outcome_type=${outcome_type} > \
         ${data_label}-${getPublishPath(task.process).tokenize('/')[-1].toLowerCase()}.log
       echo ${dataset_name} > dataset_name
       """

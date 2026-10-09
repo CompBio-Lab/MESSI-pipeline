@@ -30,7 +30,8 @@ def shouldRunPython() {
     return !(
 			params.skip_mogonet && 
 			params.skip_integrao &&
-			params.skip_sklearn
+			params.skip_sklearn &&
+			params.skip_sksurv
 		)
 
 }
@@ -42,7 +43,8 @@ def shouldRunR() {
         params.skip_diablo && 
         params.skip_mofa &&
         params.skip_rgcca &&
-				params.skip_caret_multimodal
+	
+params.skip_caret_multimodal
     )
 }
 
@@ -60,20 +62,25 @@ def lang 		= "all_langs"
 // ============================
 workflow CROSS_VALIDATION {
 	/*
-	This is a complex workflow, by training and cross validating at the same time
+	This is a complex workflow, by training and cross validating at the same t  ime
 	Moreover, this is ongoing for all methods, so it would crazily hard to fix
 	due to its parallelization
 	*/
     // runAllMethods   = params.runAllMethods
     // runPython       = params.runPython
     // runR            = params.runR 
+	outcome_type   = params.outcome_type
     // inputs of workflow
 	take:
 		// datasets
 		mae_data
 		mu_data
 		splits_indices
-
+		// NEW (single-modality mode): channel of [unimodal_dataset_name, mu_path].
+		// Routed to Python methods ONLY (currently sklearn), never to R methods
+		// or multi-block integration methods. Empty channel when
+		// params.single_modality_mode is false.
+		mu_data_unimodal
 	main:
 		// runAllMethods   = params.runAllMethods
     // Determine if should run python or R or both
@@ -110,8 +117,17 @@ workflow CROSS_VALIDATION {
             }
             .set { ch_full_exp }
 
+		
+
 		// ch_full_exp.mae_copy.count().view {"Total is ${it}"}
 		// ch_full_exp.mae_copy.view()
+
+		// The unimodal ones goes here
+		mu_data_unimodal
+			.join( splits_indices, by: 0 ) // The first element of the tuple is the dataset name, so join by that
+			.map { dname, mu_path, indices -> [ dname, mu_path, indices ] }
+			.set { unimodal_exp }
+
 		// Note, this cannot be viewed, you need ch_data.mae.view() or ch_data.mu.view()
 		// Execute these two (they should be in parallel)
 		// Execute language workflows or specific only
@@ -123,16 +139,17 @@ workflow CROSS_VALIDATION {
 			} 
 			else if ( runPython ) {
 				log.info "Running methods in Python only"
-				CV_PYTHON ( ch_full_exp.mudata_copy )
+				CV_PYTHON ( ch_full_exp.mudata_copy, unimodal_exp )
 				csv_results = CV_PYTHON.out.csv_results
 			} 
 			else {
 				log.info "None of the method could be run, check if parameter provided"
+				csv_results = Channel.empty()
 			}
 		} 
 		else {
 			log.info "Running all CVs with both R and Python"
-			CV_PYTHON ( ch_full_exp.mudata_copy )
+			CV_PYTHON ( ch_full_exp.mudata_copy, unimodal_exp )
 			CV_R ( ch_full_exp.mae_copy )
 			// Mix results together and set to csv_results
 			Channel.empty()
@@ -144,7 +161,7 @@ workflow CROSS_VALIDATION {
                 .groupTuple(by: 0)
                 .set { csv_results }
 			// Collect all result and mix it to merge it more
-			MERGE_RESULT_TABLE ( csv_results, saveMode )
+			MERGE_RESULT_TABLE ( csv_results, saveMode, outcome_type )
 			csv_results = MERGE_RESULT_TABLE.out.csv_results
 		}
 	emit:
