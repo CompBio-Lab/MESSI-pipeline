@@ -1,9 +1,20 @@
 # Flow of methods and instructions
 
+Each method has cross-validation from Nextflow, such that the folds are created priorly, and each method use same folds to ensure same comparisons carried. And, each fold is being handled parallely with very few times as batch mode (one complete chunk).
 
-Each method has cross-validation from Nextflow, such that the folds are created priorly, and each mtehod use same folds to ensure same comparisons carried. And, each fold is being handled parallely with very few times as batch mode (one complete chunk).
+## Guides for Adding Methods
 
-To see detailed step by step instructions, you could see this [guide](adding_r-based_method/adding_r-based_method.md)
+- **[Quick Reference Guide](adding_method_quick_reference.md)** ⚡ - Fast reference for adding a method (checklist format)
+  
+- **[Complete Guide for Adding Methods](adding_method_guide.md)** 📚 - Comprehensive guide covering:
+  - Dockerfile creation and container setup
+  - Using template generator in `bin/adding_method/`
+  - Implementing the four processes: preprocess, train, predict, feature_selection
+  - Binary script templates for R and Python
+  - Integration with CV_R or CV_PYTHON workflows
+  - Step-by-step instructions with examples
+  
+- **[R-based Method Tutorial](adding_r-based_method/adding_r-based_method.md)** 🔬 - Detailed walkthrough using logistic regression as example
 
 
 Here, we breakdown the high level steps of each method flow:
@@ -33,10 +44,10 @@ For example, if method was on `diablo`, and on both ROSMAP and Breast TCGA datas
 | patient-4 | 0 | 0.67 | diablo | ROSMAP |
 | SR41 | 0 | 0.71 | diablo | TCGA |
 
-Some explantions:
+Some explanations:
 
 - sample_name:  Patient identifier inside the dataset, as if like each row id of a dataframe
 - y:            The class label, either 1 or 0 in binary classification
-- phat:         Predicted proability of y == 1, so P(Y=1)
+- phat:         Predicted probability of y == 1, so P(Y=1)
 - method_name:  Name of the method ran (DIABLO, MOGONET, ...)
 - dataset:      Name of the dataset of study (TCGA, ROSMAP, ...)
