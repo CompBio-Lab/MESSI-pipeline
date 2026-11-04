@@ -1,0 +1,6 @@
+{
+  "_comment": "Everything the fixed wrappers (templates/*/messi_run.* and messi_contract.*) load. Used by `add_method.py check-image` and quoted in docs/adding_a_method.md. Keep it equal to what the wrappers actually load.",
+  "commands": ["bash", "ps"],
+  "R": ["MultiAssayExperiment", "HDF5Array"],
+  "Python": ["numpy", "pandas", "mudata"]
+}
