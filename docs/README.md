@@ -4,7 +4,7 @@ The pipeline designs to be evaluating $K$ ML, probabilistic, DL based methods ov
 
 For more information on how to run and execute the project on a remote setting, please look at the top level `README` at [here](../README.md)
 
-To view tutorials on adding a new method to the pipeline please see [here](tutorials/README.md)
+To add a new method to the pipeline, see [adding_a_method.md](adding_a_method.md). 
 
 ## Implementation
 

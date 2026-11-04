@@ -26,6 +26,8 @@ A Nextflow pipeline for benchmarking multimodal (genomics, proteomics, metabolom
 10. [References](#references)
 ---
 
+> **Adding a new method?** See [docs/adding_a_method.md](docs/adding_a_method.md).
+
 ## Overview
 
 The **MESSI Pipeline** provides a standardized benchmarking framework for multimodal data integration methods implemented in R and Python. It supports:
