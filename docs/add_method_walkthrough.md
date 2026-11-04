@@ -2,7 +2,7 @@
 
 The developer writes **three functions in one file**; a single command generates the
 four Nextflow processes, wires the method into five files (printing every inserted
-line), and validates it end to end. Below is real output on this server
+line), and validates it end to end. Below is real output on a linux server
 (dataset `rosmap`, 2-fold CV, reusing existing images, non-root containers),
 shown for both an R and a Python method.
 
@@ -64,6 +64,3 @@ features, roc_auc 0.83.
 
 ---
 
-*Figures are rendered terminal output; the copy-pasteable text of every block is in
-`add_method_examples.md`. The DIABLO regression on `rosmap` is byte-identical between
-`dev` and this branch (all four output files `SAME`), so existing methods are unaffected.*
